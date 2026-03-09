@@ -1,23 +1,31 @@
 # src/athena/simulation/context.py
-from typing import Any
 
 
 def _sanitize_brief_for_opponent(brief: dict) -> dict:
-    """Strip internal_analysis, return only filed_brief contents."""
+    """Strip internal_analysis, return only filed_brief contents.
+
+    Separate from _sanitize_brief_for_judge to allow divergent
+    sanitization rules in future (e.g., redacting settlement signals).
+    """
     return brief["filed_brief"]
 
 
 def _sanitize_brief_for_judge(brief: dict) -> dict:
-    """Strip internal_analysis, return only filed_brief contents."""
+    """Strip internal_analysis, return only filed_brief contents.
+
+    Separate from _sanitize_brief_for_opponent to allow divergent
+    sanitization rules in future (e.g., adding procedural metadata).
+    """
     return brief["filed_brief"]
 
 
 def build_context_appellant(case_data: dict, run_params: dict) -> dict:
+    own_id = next(p["id"] for p in case_data["parties"] if p["role"] == "appellant")
     return {
         "facts": case_data["facts"],
         "evidence": [
             e for e in case_data["evidence"]
-            if e["produced_by"] == "opponente"
+            if e["produced_by"] == own_id
             or e["admissibility"] == "uncontested"
         ],
         "legal_texts": case_data["legal_texts"],
