@@ -18,7 +18,8 @@ def _extract_cited_ids(data: Any, collected: set | None = None) -> set[str]:
                 if isinstance(value, list):
                     collected.update(v for v in value if isinstance(v, str))
             elif key == "supports" and isinstance(value, str):
-                collected.add(value)
+                # Intra-brief reference (ARG2 supports ARG1) — skip, not a case file ID
+                pass
             elif key in ("to_argument", "derived_from", "objection_id") and isinstance(value, str):
                 collected.add(value)
             elif key == "id" and isinstance(value, str):

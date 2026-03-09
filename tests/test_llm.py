@@ -21,6 +21,16 @@ class TestParseJsonResponse:
         result = parse_json_response(raw)
         assert result == {"key": "value"}
 
+    def test_strips_thinking_blocks(self):
+        raw = '<think>\nLet me analyze this...\n{"not": "this"}\n</think>\n{"key": "value"}'
+        result = parse_json_response(raw)
+        assert result == {"key": "value"}
+
+    def test_strips_thinking_with_braces(self):
+        raw = '<think>\nThe structure { "a": 1 } looks right.\n</think>\n{"actual": "data"}'
+        result = parse_json_response(raw)
+        assert result == {"actual": "data"}
+
     def test_raises_on_invalid_json(self):
         raw = "This is not JSON at all"
         with pytest.raises(ValueError):

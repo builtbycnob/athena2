@@ -37,10 +37,17 @@ def _call_model(system_prompt: str, user_prompt: str, temperature: float) -> str
     return response
 
 
+def _strip_thinking(text: str) -> str:
+    """Strip <think>...</think> blocks from Qwen3.5 thinking mode output."""
+    return re.sub(r"<think>.*?</think>\s*", "", text, flags=re.DOTALL)
+
+
 def parse_json_response(raw: str) -> dict:
-    """Extract and parse JSON from LLM response, handling markdown blocks."""
-    # Try direct parse first
-    text = raw.strip()
+    """Extract and parse JSON from LLM response, handling thinking blocks and markdown."""
+    # Strip thinking blocks first (Qwen3.5 thinking mode)
+    text = _strip_thinking(raw.strip())
+
+    # Try direct parse
     try:
         return json.loads(text)
     except json.JSONDecodeError:
