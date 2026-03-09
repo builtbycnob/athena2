@@ -2,6 +2,7 @@
 import json
 import re
 from mlx_lm import load, generate
+from mlx_lm.sample_utils import make_sampler
 
 
 _MODEL = None
@@ -25,11 +26,12 @@ def _call_model(system_prompt: str, user_prompt: str, temperature: float) -> str
     prompt = _TOKENIZER.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True
     )
+    sampler = make_sampler(temp=temperature)
     response = generate(
         _MODEL,
         _TOKENIZER,
         prompt=prompt,
-        temperature=temperature,
+        sampler=sampler,
         max_tokens=8192,
     )
     return response
