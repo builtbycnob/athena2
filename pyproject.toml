@@ -19,6 +19,9 @@ dev = [
     "pytest-asyncio",
 ]
 
+[project.scripts]
+athena = "athena.cli:main"
+
 [build-system]
 requires = ["setuptools>=68.0"]
 build-backend = "setuptools.build_meta"
