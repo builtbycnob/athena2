@@ -26,11 +26,26 @@ class GraphState(TypedDict):
     respondent_validation: dict | None
     judge_decision: dict | None
     judge_validation: dict | None
-    retry_count: int
     error: str | None
 
 
 MAX_RETRIES = 2
+
+
+def _run_agent_with_retry(
+    system: str, user: str, temp: float, validate_fn, max_retries: int = MAX_RETRIES
+) -> tuple[dict, dict]:
+    """Run LLM with validation and retry. Returns (output, validation_dump)."""
+    output = invoke_llm(system, user, temp)
+    validation = validate_fn(output)
+    for _ in range(max_retries):
+        if validation.valid:
+            break
+        error_feedback = "\n".join(validation.errors)
+        retry_user = f"{user}\n\n## ERRORI DA CORREGGERE\n{error_feedback}\n\nRiproduci l'output completo corretto."
+        output = invoke_llm(system, retry_user, temp)
+        validation = validate_fn(output)
+    return output, validation.model_dump()
 
 
 def _node_appellant(state: GraphState) -> dict:
@@ -38,23 +53,12 @@ def _node_appellant(state: GraphState) -> dict:
     system, user = build_appellant_prompt(ctx)
     temp = state["params"]["temperature"]["appellant"]
     try:
-        output = invoke_llm(system, user, temp)
         case = CaseFile(**state["case"])
-        validation = validate_agent_output(output, "appellant", case)
-        if not validation.valid and state["retry_count"] < MAX_RETRIES:
-            error_feedback = "\n".join(validation.errors)
-            retry_user = f"{user}\n\n## ERRORI DA CORREGGERE\n{error_feedback}\n\nRiproduci l'output completo corretto."
-            output = invoke_llm(system, retry_user, temp)
-            validation = validate_agent_output(output, "appellant", case)
-            return {
-                "appellant_brief": output,
-                "appellant_validation": validation.model_dump(),
-                "retry_count": state["retry_count"] + 1,
-            }
-        return {
-            "appellant_brief": output,
-            "appellant_validation": validation.model_dump(),
-        }
+        output, val = _run_agent_with_retry(
+            system, user, temp,
+            lambda o: validate_agent_output(o, "appellant", case),
+        )
+        return {"appellant_brief": output, "appellant_validation": val}
     except Exception as e:
         return {"error": f"Appellant failed: {e}"}
 
@@ -68,29 +72,14 @@ def _node_respondent(state: GraphState) -> dict:
     system, user = build_respondent_prompt(ctx)
     temp = state["params"]["temperature"]["respondent"]
     try:
-        output = invoke_llm(system, user, temp)
         case = CaseFile(**state["case"])
-        validation = validate_agent_output(
-            output, "respondent", case,
-            appellant_brief=state["appellant_brief"],
+        output, val = _run_agent_with_retry(
+            system, user, temp,
+            lambda o: validate_agent_output(
+                o, "respondent", case, appellant_brief=state["appellant_brief"]
+            ),
         )
-        if not validation.valid and state["retry_count"] < MAX_RETRIES:
-            error_feedback = "\n".join(validation.errors)
-            retry_user = f"{user}\n\n## ERRORI DA CORREGGERE\n{error_feedback}\n\nRiproduci l'output completo corretto."
-            output = invoke_llm(system, retry_user, temp)
-            validation = validate_agent_output(
-                output, "respondent", case,
-                appellant_brief=state["appellant_brief"],
-            )
-            return {
-                "respondent_brief": output,
-                "respondent_validation": validation.model_dump(),
-                "retry_count": state["retry_count"] + 1,
-            }
-        return {
-            "respondent_brief": output,
-            "respondent_validation": validation.model_dump(),
-        }
+        return {"respondent_brief": output, "respondent_validation": val}
     except Exception as e:
         return {"error": f"Respondent failed: {e}"}
 
@@ -107,39 +96,18 @@ def _node_judge(state: GraphState) -> dict:
     system, user = build_judge_prompt(ctx)
     temp = state["params"]["temperature"]["judge"]
     try:
-        output = invoke_llm(system, user, temp)
         case = CaseFile(**state["case"])
-        validation = validate_agent_output(
-            output, "judge", case,
-            appellant_brief=state["appellant_brief"],
-            respondent_brief=state["respondent_brief"],
-        )
-        if not validation.valid and state["retry_count"] < MAX_RETRIES:
-            error_feedback = "\n".join(validation.errors)
-            retry_user = f"{user}\n\n## ERRORI DA CORREGGERE\n{error_feedback}\n\nRiproduci l'output completo corretto."
-            output = invoke_llm(system, retry_user, temp)
-            validation = validate_agent_output(
-                output, "judge", case,
+        output, val = _run_agent_with_retry(
+            system, user, temp,
+            lambda o: validate_agent_output(
+                o, "judge", case,
                 appellant_brief=state["appellant_brief"],
                 respondent_brief=state["respondent_brief"],
-            )
-            return {
-                "judge_decision": output,
-                "judge_validation": validation.model_dump(),
-                "retry_count": state["retry_count"] + 1,
-            }
-        return {
-            "judge_decision": output,
-            "judge_validation": validation.model_dump(),
-        }
+            ),
+        )
+        return {"judge_decision": output, "judge_validation": val}
     except Exception as e:
         return {"error": f"Judge failed: {e}"}
-
-
-def _should_continue(state: GraphState) -> str:
-    if state.get("error"):
-        return END
-    return "next"
 
 
 def build_graph():
@@ -168,7 +136,6 @@ def run_single(case_data: dict, run_params: dict) -> dict:
         "respondent_validation": None,
         "judge_decision": None,
         "judge_validation": None,
-        "retry_count": 0,
         "error": None,
     }
     return graph.invoke(initial_state)
