@@ -6,7 +6,7 @@ from mlx_lm import load, generate
 
 _MODEL = None
 _TOKENIZER = None
-_MODEL_PATH = "mlx-community/Qwen3.5-122B-A10B-4bit"
+_MODEL_PATH = "mlx-community/Qwen3.5-35B-A3B-4bit"
 
 
 def _ensure_model():
