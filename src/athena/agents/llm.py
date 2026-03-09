@@ -29,7 +29,7 @@ def _call_model(system_prompt: str, user_prompt: str, temperature: float) -> str
         _MODEL,
         _TOKENIZER,
         prompt=prompt,
-        temp=temperature,
+        temperature=temperature,
         max_tokens=8192,
     )
     return response
