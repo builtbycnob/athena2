@@ -1,9 +1,11 @@
 # src/athena/simulation/validation.py
+from typing import Any
+
 from athena.schemas.case import CaseFile
 from athena.schemas.state import ValidationResult
 
 
-def _extract_cited_ids(data: dict, collected: set | None = None) -> set[str]:
+def _extract_cited_ids(data: Any, collected: set | None = None) -> set[str]:
     """Recursively extract all ID-like references from agent output."""
     if collected is None:
         collected = set()
