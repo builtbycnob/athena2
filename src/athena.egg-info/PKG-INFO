@@ -1,0 +1,15 @@
+Metadata-Version: 2.4
+Name: athena
+Version: 0.1.0
+Summary: Adversarial Tactical Hearing & Equilibrium Navigation Agent
+Requires-Python: >=3.11
+Requires-Dist: langgraph
+Requires-Dist: langchain-core
+Requires-Dist: langchain-community
+Requires-Dist: mlx-lm
+Requires-Dist: langfuse
+Requires-Dist: pydantic>=2.0
+Requires-Dist: pyyaml
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: pytest-asyncio; extra == "dev"

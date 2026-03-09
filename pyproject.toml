@@ -1,0 +1,31 @@
+[project]
+name = "athena"
+version = "0.1.0"
+description = "Adversarial Tactical Hearing & Equilibrium Navigation Agent"
+requires-python = ">=3.11"
+dependencies = [
+    "langgraph",
+    "langchain-core",
+    "langchain-community",
+    "mlx-lm",
+    "langfuse",
+    "pydantic>=2.0",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

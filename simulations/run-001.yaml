@@ -1,0 +1,43 @@
+simulation:
+  case_ref: "gdp-milano-17928-2025"
+  language: "it"
+
+  judge_profiles:
+    - id: "formalista_pro_cass"
+      jurisprudential_orientation: "follows_cassazione"
+      formalism: "high"
+    - id: "formalista_anti_cass"
+      jurisprudential_orientation: "distinguishes_cassazione"
+      formalism: "high"
+    - id: "sostanzialista_pro_cass"
+      jurisprudential_orientation: "follows_cassazione"
+      formalism: "low"
+    - id: "sostanzialista_anti_cass"
+      jurisprudential_orientation: "distinguishes_cassazione"
+      formalism: "low"
+
+  appellant_profiles:
+    - id: "aggressivo"
+      style: |
+        Attacca frontalmente la giurisprudenza sfavorevole.
+        Obiettivo primario: annullamento. Toni decisi,
+        argomentazione assertiva. Evidenzia le contraddizioni
+        dell'avversario.
+    - id: "prudente"
+      style: |
+        Distingui la giurisprudenza senza attaccarla direttamente.
+        Presenta la riqualificazione come esito ragionevole e
+        proporzionato. Toni collaborativi con il giudice.
+    - id: "tecnico"
+      style: |
+        Concentrati sui vizi formali del verbale e sulla lettera
+        della legge. Minimizza il ruolo della giurisprudenza.
+        Argomentazione analitica e testuale.
+
+  # Fix I3: temperatura fissa per ruolo, non random
+  temperature:
+    appellant: 0.5
+    respondent: 0.4
+    judge: 0.3  # più bassa per decisioni più consistenti
+
+  runs_per_combination: 5  # Fix C2: 4x3x5 = 60 run, con confidence intervals

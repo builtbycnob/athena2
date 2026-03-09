@@ -1,0 +1,139 @@
+schema_version: "0.1.0"
+
+case:
+  id: "gdp-milano-17928-2025"
+  title: "Opposizione sanzione CdS — art. 143 vs artt. 6-7"
+
+  jurisdiction:
+    country: "IT"
+    court: "giudice_di_pace"
+    venue: "Milano"
+    applicable_law:
+      - "D.Lgs. 285/1992"
+      - "L. 689/1981"
+      - "L. 177/2024"
+    key_precedents:
+      - id: "cass_16515_2005"
+        citation: "Cass. civ. n. 16515/2005"
+        holding: "Equiparazione contromano/controsenso ai fini sanzionatori"
+        weight: "contested"
+    procedural_rules:
+      # PoC: il grafo è hardcoded per questo rito.
+      # Futuro: le regole guideranno la costruzione dinamica del grafo.
+      rite: "opposizione_sanzione_amministrativa"
+      phases: ["ricorso", "costituzione_resistente", "udienza", "decisione"]
+      allowed_moves:
+        appellant: ["memoria", "produzione_documenti", "discussione_orale"]
+        respondent: ["memoria_costituzione", "produzione_documenti", "discussione_orale"]
+
+  parties:
+    - id: "opponente"
+      role: "appellant"
+      type: "persona_fisica"
+      objectives:
+        primary: "annullamento_verbale"
+        subordinate: "riqualificazione_artt_6_7"
+
+    - id: "comune_milano"
+      role: "respondent"
+      type: "pubblica_amministrazione"
+      entity: "Comune di Milano — Polizia Locale"
+      objectives:
+        primary: "conferma_verbale"
+        subordinate: "conferma_anche_con_riduzione"
+
+  stakes:
+    current_sanction:
+      norm: "art. 143 CdS"
+      fine_range: [170, 680]
+      points_deducted: 4
+    alternative_sanction:
+      norm: "artt. 6-7 CdS"
+      fine_range: [42, 173]
+      points_deducted: 0
+    litigation_cost_estimate: 1500
+    non_monetary: "precedente sfavorevole su fedina conducente"
+
+  evidence:
+    - id: "DOC1"
+      type: "atto_pubblico"
+      description: "Verbale Polizia Locale n. XXX"
+      produced_by: "comune_milano"
+      admissibility: "uncontested"
+      supports_facts: ["F1", "F2", "F3"]
+    - id: "DOC2"
+      type: "prova_documentale"
+      description: "Documentazione segnaletica stradale"
+      produced_by: "opponente"
+      admissibility: "uncontested"
+      supports_facts: ["F3"]
+
+  facts:
+    undisputed:
+      - id: "F1"
+        description: "Transito del veicolo in senso vietato"
+        evidence: ["DOC1"]
+      - id: "F2"
+        description: "Verbale elevato ex art. 143 CdS"
+        evidence: ["DOC1"]
+      - id: "F3"
+        description: "La strada era a senso unico"
+        evidence: ["DOC1", "DOC2"]
+    disputed:
+      - id: "D1"
+        description: "Correttezza della qualificazione giuridica"
+        appellant_position: "Art. 143 inapplicabile — è controsenso, non contromano"
+        respondent_position: "Art. 143 applicabile per Cass. 16515/2005"
+        depends_on_facts: ["F1", "F3"]
+
+  legal_texts:
+    - id: "art_143_cds"
+      norm: "Art. 143 D.Lgs. 285/1992"
+      text: |
+        [testo completo da inserire]
+    - id: "art_6_cds"
+      norm: "Art. 6 D.Lgs. 285/1992"
+      text: |
+        [testo completo da inserire]
+    - id: "art_7_cds"
+      norm: "Art. 7 D.Lgs. 285/1992"
+      text: |
+        [testo completo da inserire]
+    - id: "art_1_l689"
+      norm: "Art. 1 L. 689/1981"
+      text: |
+        [testo completo da inserire]
+
+  seed_arguments:
+    appellant:
+      - id: "SEED_ARG1"
+        claim: "Errata qualificazione giuridica"
+        direction: "Art. 143 non copre la fattispecie"
+        references_facts: ["F1", "F3", "D1"]
+      - id: "SEED_ARG2"
+        claim: "Contraddizione interna del verbale"
+        direction: "Verbale descrive senso unico, applica norma da doppio senso"
+        references_facts: ["F3"]
+      - id: "SEED_ARG3"
+        claim: "Divieto di analogia in malam partem"
+        direction: "Art. 1 L. 689/1981 vieta estensione analogica"
+        references_facts: ["D1"]
+      - id: "SEED_ARG4"
+        claim: "Silenzio qualificato del legislatore"
+        direction: "Riforme CdS non hanno mai unificato le fattispecie"
+        references_facts: ["D1"]
+    respondent:
+      - id: "SEED_RARG1"
+        claim: "Legittimità ex Cass. 16515/2005"
+        direction: "Cassazione equipara le due condotte"
+        references_facts: ["F1", "D1"]
+
+  timeline:
+    - date: "2025-XX-XX"
+      event: "Violazione e elevazione verbale"
+    - date: "2025-XX-XX"
+      event: "Notifica verbale"
+    - date: "2025-XX-XX"
+      event: "Deposito ricorso"
+    - date: "pending"
+      event: "Udienza GdP"

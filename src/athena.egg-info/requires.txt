@@ -1,0 +1,11 @@
+langgraph
+langchain-core
+langchain-community
+mlx-lm
+langfuse
+pydantic>=2.0
+pyyaml
+
+[dev]
+pytest
+pytest-asyncio
