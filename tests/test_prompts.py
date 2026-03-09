@@ -1,0 +1,90 @@
+# tests/test_prompts.py
+import json
+from athena.agents.prompts import (
+    build_appellant_prompt,
+    build_respondent_prompt,
+    build_judge_prompt,
+)
+
+
+class TestAppellantPrompt:
+    def test_includes_advocacy_style(self, sample_case_data, sample_run_params):
+        from athena.simulation.context import build_context_appellant
+        ctx = build_context_appellant(sample_case_data, sample_run_params)
+        system, user = build_appellant_prompt(ctx)
+        assert "Attacca frontalmente" in system
+
+    def test_includes_legal_texts(self, sample_case_data, sample_run_params):
+        from athena.simulation.context import build_context_appellant
+        ctx = build_context_appellant(sample_case_data, sample_run_params)
+        system, user = build_appellant_prompt(ctx)
+        assert "art_143_cds" in user or "Art. 143" in user
+
+    def test_returns_system_and_user(self, sample_case_data, sample_run_params):
+        from athena.simulation.context import build_context_appellant
+        ctx = build_context_appellant(sample_case_data, sample_run_params)
+        system, user = build_appellant_prompt(ctx)
+        assert isinstance(system, str)
+        assert isinstance(user, str)
+        assert len(system) > 100
+        assert len(user) > 100
+
+
+class TestRespondentPrompt:
+    def test_includes_appellant_arguments(
+        self, sample_case_data, sample_run_params, sample_appellant_brief
+    ):
+        from athena.simulation.context import build_context_respondent
+        ctx = build_context_respondent(
+            sample_case_data, sample_run_params, sample_appellant_brief
+        )
+        system, user = build_respondent_prompt(ctx)
+        assert "ARG1" in user
+
+    def test_no_internal_analysis_in_prompt(
+        self, sample_case_data, sample_run_params, sample_appellant_brief
+    ):
+        from athena.simulation.context import build_context_respondent
+        ctx = build_context_respondent(
+            sample_case_data, sample_run_params, sample_appellant_brief
+        )
+        system, user = build_respondent_prompt(ctx)
+        assert "key_vulnerabilities" not in user
+        assert "strongest_point" not in user
+
+
+class TestJudgePrompt:
+    def test_includes_judge_profile(
+        self,
+        sample_case_data,
+        sample_run_params,
+        sample_appellant_brief,
+        sample_respondent_brief,
+    ):
+        from athena.simulation.context import build_context_judge
+        ctx = build_context_judge(
+            sample_case_data,
+            sample_run_params,
+            sample_appellant_brief,
+            sample_respondent_brief,
+        )
+        system, user = build_judge_prompt(ctx)
+        assert "follows_cassazione" in system
+
+    def test_no_advocacy_style_in_prompt(
+        self,
+        sample_case_data,
+        sample_run_params,
+        sample_appellant_brief,
+        sample_respondent_brief,
+    ):
+        from athena.simulation.context import build_context_judge
+        ctx = build_context_judge(
+            sample_case_data,
+            sample_run_params,
+            sample_appellant_brief,
+            sample_respondent_brief,
+        )
+        system, user = build_judge_prompt(ctx)
+        assert "advocacy_style" not in user
+        assert "Attacca frontalmente" not in user
