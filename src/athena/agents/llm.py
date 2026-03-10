@@ -138,9 +138,10 @@ def parse_json_response(
     repair_result = extract_json(raw, return_metadata=True)
 
     if repair_result.applied_fixes:
-        for fix in repair_result.applied_fixes:
+        real_fixes = [f for f in repair_result.applied_fixes if f != "none_succeeded"]
+        for fix in real_fixes:
             _stats["repair_types"][fix] = _stats["repair_types"].get(fix, 0) + 1
-        if repair_result.applied_fixes != ["none_succeeded"]:
+        if real_fixes:
             _stats["repairs"] += 1
 
     try:
@@ -185,7 +186,7 @@ def invoke_llm(
             print(f"[LLM] JSON repaired: {fixes_str}", flush=True)
         return result.data
     except JSONTruncatedError:
-        retry_max = max_tokens * 2
+        retry_max = min(max_tokens * 2, _CONTEXT_WINDOW - prompt_tokens)
         _stats["retries"] += 1
         print(
             f"[LLM] Truncated at {output_tokens} tok, retrying with {retry_max} max_tokens",
