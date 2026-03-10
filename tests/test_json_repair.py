@@ -104,6 +104,59 @@ class TestExtractJsonMergedKeyColon:
         assert json.loads(result) == {"title": "test", "score": 3.5, "type": "saas"}
 
 
+class TestExtractJsonEmbeddedQuotes:
+    def test_embedded_quotes_italian_legal(self):
+        """Real failure pattern: "contromano" used for emphasis inside string."""
+        text = '{"claim": "non integra il reato di \\"contromano\\", bensì una violazione"}'
+        # First verify the properly escaped version works
+        assert json.loads(text)["claim"] == 'non integra il reato di "contromano", bensì una violazione'
+
+        # Now test the UNESCAPED version (what the model actually produces)
+        bad = '{"claim": "non integra il reato di "contromano", bensì una violazione"}'
+        result = extract_json(bad)
+        parsed = json.loads(result)
+        assert "contromano" in parsed["claim"]
+        assert "violazione" in parsed["claim"]
+
+    def test_embedded_quotes_multiple(self):
+        """Multiple embedded quotes in same value."""
+        bad = '{"text": "il "contromano" e il "controsenso" sono diversi"}'
+        result = extract_json(bad)
+        parsed = json.loads(result)
+        assert "contromano" in parsed["text"]
+        assert "controsenso" in parsed["text"]
+
+    def test_embedded_quotes_real_artifact(self):
+        """Reproduce exact pattern from failure artifact."""
+        bad = (
+            '{"claim": "L\'art. 143 CdS è inapplicabile in quanto la fattispecie '
+            'descritta dal verbale non integra il reato di "contromano", bensì una '
+            'violazione di norme di circolazione generica.", "score": 0.85}'
+        )
+        result = extract_json(bad)
+        parsed = json.loads(result)
+        assert parsed["score"] == 0.85
+        assert "contromano" in parsed["claim"]
+
+    def test_normal_json_not_affected(self):
+        """Valid JSON with proper escaping must not be changed."""
+        good = '{"key": "value", "num": 42, "nested": {"a": "b"}}'
+        result = extract_json(good)
+        assert json.loads(result) == {"key": "value", "num": 42, "nested": {"a": "b"}}
+
+    def test_array_values_not_affected(self):
+        """Array of strings must not be broken."""
+        good = '{"items": ["alpha", "beta", "gamma"], "count": 3}'
+        result = extract_json(good)
+        assert json.loads(result) == {"items": ["alpha", "beta", "gamma"], "count": 3}
+
+    def test_reports_fix_in_metadata(self):
+        bad = '{"text": "il "test" è valido"}'
+        result = extract_json(bad, return_metadata=True)
+        assert "embedded_quotes" in result.applied_fixes
+        json.loads(result.text)
+
+
 class TestExtractJsonTrailingCommas:
     def test_trailing_comma_object(self):
         text = '{"key": "val",}'

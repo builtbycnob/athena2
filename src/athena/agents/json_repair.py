@@ -176,6 +176,106 @@ def _extract_from_markdown(text: str) -> str | None:
     return None
 
 
+def _fix_embedded_quotes(text: str) -> str:
+    """Fix unescaped double quotes used for emphasis inside JSON string values.
+
+    Common in Italian legal text where the model writes e.g.:
+        "claim": "...il reato di "contromano", bensì..."
+    The inner "contromano" quotes break JSON parsing.
+
+    Uses a state machine: when inside a string and we encounter a `"`,
+    we check if what follows looks like valid JSON continuation.
+    If not, it's an embedded quote and we escape it.
+    """
+    result = []
+    i = 0
+    in_string = False
+
+    while i < len(text):
+        ch = text[i]
+
+        # Handle escape sequences inside strings
+        if ch == '\\' and in_string and i + 1 < len(text):
+            result.append(ch)
+            result.append(text[i + 1])
+            i += 2
+            continue
+
+        if ch == '"':
+            if not in_string:
+                in_string = True
+                result.append(ch)
+                i += 1
+            else:
+                # Potential end of string — look ahead to decide
+                j = i + 1
+                while j < len(text) and text[j] in ' \t\n\r':
+                    j += 1
+
+                if j >= len(text) or text[j] in '}]':
+                    # End of object/array — real terminator
+                    in_string = False
+                    result.append(ch)
+                    i += 1
+                elif text[j] == ':':
+                    # Ended a key — real terminator
+                    in_string = False
+                    result.append(ch)
+                    i += 1
+                elif text[j] == ',':
+                    # After comma: check if next token is valid JSON
+                    k = j + 1
+                    while k < len(text) and text[k] in ' \t\n\r':
+                        k += 1
+                    if k < len(text) and text[k] == '"':
+                        # Comma then quote — could be next key/value or embedded
+                        # Find closing quote of potential key/value
+                        m = k + 1
+                        while m < len(text):
+                            if text[m] == '\\' and m + 1 < len(text):
+                                m += 2
+                                continue
+                            if text[m] == '"':
+                                break
+                            m += 1
+                        if m < len(text):
+                            # Check what follows the closing quote
+                            n = m + 1
+                            while n < len(text) and text[n] in ' \t\n\r':
+                                n += 1
+                            if n < len(text) and text[n] in ':,}]':
+                                # Valid JSON continuation — real terminator
+                                in_string = False
+                                result.append(ch)
+                                i += 1
+                            else:
+                                # Not valid JSON — embedded quote
+                                result.append('\\"')
+                                i += 1
+                        else:
+                            in_string = False
+                            result.append(ch)
+                            i += 1
+                    elif k < len(text) and text[k] in '{[0123456789tfn-':
+                        # Comma then value/object/array — real terminator
+                        in_string = False
+                        result.append(ch)
+                        i += 1
+                    else:
+                        # Comma then bare text — embedded quote
+                        result.append('\\"')
+                        i += 1
+                else:
+                    # Followed by letter/other — embedded quote
+                    result.append('\\"')
+                    i += 1
+        else:
+            result.append(ch)
+            i += 1
+
+    return ''.join(result)
+
+
 def extract_json(text: str, *, return_metadata: bool = False) -> str | RepairResult:
     """Extract and repair JSON from LLM output.
 
@@ -230,6 +330,17 @@ def extract_json(text: str, *, return_metadata: bool = False) -> str | RepairRes
         if return_metadata:
             return RepairResult(text=fixed0, applied_fixes=applied_fixes, was_truncated=False)
         return fixed0
+    except json.JSONDecodeError:
+        pass
+
+    # Fix 0.5: Embedded quotes (e.g. Italian "contromano" inside strings)
+    fixed05 = _fix_embedded_quotes(candidate)
+    try:
+        json.loads(fixed05)
+        applied_fixes.append("embedded_quotes")
+        if return_metadata:
+            return RepairResult(text=fixed05, applied_fixes=applied_fixes, was_truncated=False)
+        return fixed05
     except json.JSONDecodeError:
         pass
 
@@ -300,7 +411,7 @@ def extract_json(text: str, *, return_metadata: bool = False) -> str | RepairRes
             pass
 
     # Fix 6: Combined fixes
-    combined = candidate
+    combined = _fix_embedded_quotes(candidate)
     combined = re.sub(r'([{,]\s*)"(\w+):', r'\1"\2":', combined)
     combined = re.sub(r'(":\s*)([A-Za-z$])', r'\1"\2', combined)
     combined = re.sub(r',\s*([}\]])', r'\1', combined)
