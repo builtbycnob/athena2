@@ -17,7 +17,7 @@ from athena.agents.errors import (
 
 _MODEL = None
 _TOKENIZER = None
-_MODEL_PATH = "mlx-community/Qwen3.5-35B-A3B-4bit"
+_MODEL_PATH = "nightmedia/Qwen3.5-35B-A3B-Text-qx64-hi-mlx"
 _CONTEXT_WINDOW = 262144
 _DEFAULT_MAX_TOKENS = 16384
 _FAILURE_DIR = "output/failures"
