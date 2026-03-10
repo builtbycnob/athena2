@@ -242,7 +242,7 @@ class TestGenerateDecisionTree:
 class TestGenerateStrategicMemo:
     @patch("athena.output.memo._call_model")
     def test_returns_llm_response(self, mock_call):
-        mock_call.return_value = "Memo strategico generato dal modello."
+        mock_call.return_value = ("Memo strategico generato dal modello.", "stop", 100, 50)
         agg = _make_aggregated()
         case_data = {"case": {"id": "test-case", "title": "Test"}}
         result = generate_strategic_memo(agg, case_data)
@@ -251,7 +251,7 @@ class TestGenerateStrategicMemo:
 
     @patch("athena.output.memo._call_model")
     def test_prompt_includes_probability_data(self, mock_call):
-        mock_call.return_value = "Memo."
+        mock_call.return_value = ("Memo.", "stop", 100, 50)
         agg = _make_aggregated()
         case_data = {"case": {"id": "test-case", "title": "Test"}}
         generate_strategic_memo(agg, case_data)
@@ -263,7 +263,7 @@ class TestGenerateStrategicMemo:
 
     @patch("athena.output.memo._call_model")
     def test_prompt_includes_argument_effectiveness(self, mock_call):
-        mock_call.return_value = "Memo."
+        mock_call.return_value = ("Memo.", "stop", 100, 50)
         agg = _make_aggregated()
         case_data = {"case": {"id": "test-case", "title": "Test"}}
         generate_strategic_memo(agg, case_data)
@@ -274,7 +274,7 @@ class TestGenerateStrategicMemo:
 
     @patch("athena.output.memo._call_model")
     def test_prompt_includes_precedent_analysis(self, mock_call):
-        mock_call.return_value = "Memo."
+        mock_call.return_value = ("Memo.", "stop", 100, 50)
         agg = _make_aggregated()
         case_data = {"case": {"id": "test-case", "title": "Test"}}
         generate_strategic_memo(agg, case_data)
@@ -284,7 +284,7 @@ class TestGenerateStrategicMemo:
 
     @patch("athena.output.memo._call_model")
     def test_prompt_includes_dominated_strategies(self, mock_call):
-        mock_call.return_value = "Memo."
+        mock_call.return_value = ("Memo.", "stop", 100, 50)
         agg = _make_aggregated()
         agg["dominated_strategies"] = ["aggressivo"]
         case_data = {"case": {"id": "test-case", "title": "Test"}}
@@ -295,7 +295,7 @@ class TestGenerateStrategicMemo:
 
     @patch("athena.output.memo._call_model")
     def test_prompt_includes_case_data(self, mock_call):
-        mock_call.return_value = "Memo."
+        mock_call.return_value = ("Memo.", "stop", 100, 50)
         agg = _make_aggregated()
         case_data = {"case": {"id": "test-case", "title": "Test opposizione"}}
         generate_strategic_memo(agg, case_data)
@@ -305,7 +305,7 @@ class TestGenerateStrategicMemo:
 
     @patch("athena.output.memo._call_model")
     def test_system_prompt_requests_italian(self, mock_call):
-        mock_call.return_value = "Memo."
+        mock_call.return_value = ("Memo.", "stop", 100, 50)
         agg = _make_aggregated()
         case_data = {"case": {"id": "test"}}
         generate_strategic_memo(agg, case_data)
@@ -316,7 +316,7 @@ class TestGenerateStrategicMemo:
 
     @patch("athena.output.memo._call_model")
     def test_n_runs_in_prompt(self, mock_call):
-        mock_call.return_value = "Memo."
+        mock_call.return_value = ("Memo.", "stop", 100, 50)
         agg = _make_aggregated()
         case_data = {"case": {"id": "test"}}
         generate_strategic_memo(agg, case_data)
