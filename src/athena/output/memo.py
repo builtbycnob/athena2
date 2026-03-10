@@ -108,4 +108,5 @@ def generate_strategic_memo(aggregated: dict, case_data: dict) -> str:
     )
     user_prompt = _build_user_prompt(aggregated, case_data)
 
-    return _call_model(system_prompt, user_prompt, temperature=0.4)
+    text, _, _, _ = _call_model(system_prompt, user_prompt, temperature=0.4)
+    return text
