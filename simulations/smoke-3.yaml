@@ -1,0 +1,33 @@
+# simulations/smoke-3.yaml — Test all advocacy styles: 1 judge × 3 styles × 1 run
+simulation:
+  case_ref: "gdp-milano-17928-2025"
+  language: "it"
+
+  judge_profiles:
+    - id: "formalista_pro_cass"
+      jurisprudential_orientation: "follows_cassazione"
+      formalism: "high"
+
+  appellant_profiles:
+    - id: "aggressivo"
+      style: |
+        Attacca frontalmente la giurisprudenza sfavorevole.
+        Obiettivo primario: annullamento. Toni decisi,
+        argomentazione assertiva.
+    - id: "prudente"
+      style: |
+        Distingui la giurisprudenza senza attaccarla direttamente.
+        Presenta la riqualificazione come esito ragionevole e
+        proporzionato. Toni collaborativi con il giudice.
+    - id: "tecnico"
+      style: |
+        Concentrati sui vizi formali del verbale e sulla lettera
+        della legge. Minimizza il ruolo della giurisprudenza.
+        Argomentazione analitica e testuale.
+
+  temperature:
+    appellant: 0.5
+    respondent: 0.4
+    judge: 0.3
+
+  runs_per_combination: 1
