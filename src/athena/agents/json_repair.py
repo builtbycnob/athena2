@@ -140,7 +140,13 @@ def _strip_thinking(text: str) -> str:
 
 
 def _find_json_block(text: str) -> str:
-    """Find the last balanced {...} block in text."""
+    """Find the last balanced {...} block in text.
+
+    NOTE: The reverse-scan brace counting does not track whether braces
+    appear inside JSON string values.  This is intentional — the function
+    is only the initial candidate finder and downstream repair stages
+    handle edge cases where braces appear inside strings.
+    """
     stripped = text.strip()
     if stripped.startswith("{"):
         return _clean(stripped)
@@ -238,8 +244,13 @@ def extract_json(text: str, *, return_metadata: bool = False) -> str | RepairRes
     except json.JSONDecodeError:
         pass
 
-    # Fix 2: Single quotes
-    fixed2 = candidate.replace("'", '"')
+    # Fix 2: Single quotes — only replace quotes acting as JSON delimiters,
+    # not apostrophes inside text values (e.g. Italian "l'articolo").
+    fixed2 = re.sub(
+        r"(?<=[\[{,:])\s*'|'\s*(?=[:,\]}])",
+        lambda m: m.group().replace("'", '"'),
+        candidate,
+    )
     try:
         json.loads(fixed2)
         applied_fixes.append("single_quotes")

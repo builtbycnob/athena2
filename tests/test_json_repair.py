@@ -122,6 +122,20 @@ class TestExtractJsonSingleQuotes:
         result = extract_json(text)
         assert json.loads(result) == {"key": "value"}
 
+    def test_single_quotes_with_apostrophe_in_value(self):
+        """Italian text with apostrophes must not be corrupted."""
+        text = """{'note': "l'articolo 143 nell'ambito del CdS"}"""
+        result = extract_json(text)
+        parsed = json.loads(result)
+        assert "l'articolo" in parsed["note"]
+
+    def test_single_quotes_all_single(self):
+        text = "{'key': 'value', 'num': 42}"
+        result = extract_json(text)
+        parsed = json.loads(result)
+        assert parsed["key"] == "value"
+        assert parsed["num"] == 42
+
 
 class TestExtractJsonNewlines:
     def test_newline_in_value(self):
@@ -166,6 +180,16 @@ class TestExtractJsonWithRepair:
         text = '{"a": 1, "b": "two"}'
         result = extract_json(text)
         assert result == text
+
+
+class TestExtractJsonEdgeCases:
+    def test_empty_input(self):
+        result = extract_json("", return_metadata=True)
+        assert result.applied_fixes == ["none_succeeded"]
+
+    def test_whitespace_only(self):
+        result = extract_json("   ", return_metadata=True)
+        assert result.applied_fixes == ["none_succeeded"]
 
 
 class TestExtractJsonReturnsRepairResult:
