@@ -109,7 +109,15 @@ def validate_agent_output(
         assessments = output.get("internal_analysis", {}).get(
             "strength_self_assessments", {}
         )
-        if assessments and all(v > 0.8 for v in assessments.values()):
+        numeric_assessments = []
+        for v in assessments.values():
+            try:
+                numeric_assessments.append(float(v))
+            except (ValueError, TypeError):
+                warnings.append(
+                    f"self_assessment non numerico: {str(v)[:80]} — attesi valori 0.0-1.0"
+                )
+        if numeric_assessments and all(v > 0.8 for v in numeric_assessments):
             warnings.append(
                 "Tutti i self_assessment > 0.8 — possibile mancanza di autocritica"
             )

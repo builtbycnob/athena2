@@ -217,6 +217,7 @@ PREFERISCI: "L'opponente argomenta (ARG1) che l'art. [X] non copre la fattispeci
 - Referenzia SOLO ID presenti nel fascicolo.
 - Rispondi a OGNI argomento dell'opponente.
 - "opponent_strongest_point" è obbligatorio.
+- I self_assessment devono essere numerici (float 0.0-1.0). 0.3 = debole, 0.7 = solido, 0.9 = molto forte.
 - Rispondi ESCLUSIVAMENTE con il JSON richiesto, senza testo aggiuntivo."""
 
 

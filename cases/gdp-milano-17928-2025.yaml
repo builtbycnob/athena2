@@ -88,21 +88,50 @@ case:
 
   legal_texts:
     - id: "art_143_cds"
-      norm: "Art. 143 D.Lgs. 285/1992"
+      norm: "Art. 143 D.Lgs. 285/1992 — Posizione dei veicoli sulla carreggiata"
       text: |
-        [testo completo da inserire]
+        1. I veicoli devono circolare sulla parte destra della carreggiata e in prossimità del margine destro della medesima, anche quando la strada è libera.
+        2. I veicoli sprovvisti di motore e gli animali devono essere tenuti il più vicino possibile al margine destro della carreggiata.
+        2-bis. La disposizione del comma 2 non si applica ai velocipedi nelle zone di attestamento ciclabili, nelle strade urbane ciclabili e nelle zone ciclabili, in cui i velocipedi possono occupare qualunque posizione sulla carreggiata. Nelle corsie ciclabili i velocipedi devono occupare la parte più esterna della corsia.
+        3. La disposizione del comma 2 si applica anche agli altri veicoli quando si incrociano ovvero percorrono una curva o un raccordo convesso, a meno che circolino su strade a due carreggiate separate o su una carreggiata ad almeno due corsie per ogni senso di marcia o su una carreggiata a senso unico di circolazione.
+        4. Quando una strada è divisa in due carreggiate separate, si deve percorrere quella di destra; quando è divisa in tre carreggiate separate, si deve percorrere quella di destra o quella centrale, salvo diversa segnalazione.
+        5. Salvo diversa segnalazione, quando una carreggiata è a due o più corsie per senso di marcia, si deve percorrere la corsia più libera a destra; la corsia o le corsie di sinistra sono riservate al sorpasso.
+        7. All'interno dei centri abitati, salvo diversa segnalazione, quando una carreggiata è a due o più corsie per senso di marcia, si deve percorrere la corsia libera più a destra; la corsia o le corsie di sinistra sono riservate al sorpasso. Tuttavia i conducenti, qualunque sia l'intensità del traffico, possono impegnare la corsia più opportuna in relazione alla direzione che essi intendono prendere alla successiva intersezione; i conducenti stessi non possono peraltro cambiare corsia se non per predisporsi a svoltare a destra o a sinistra, o per fermarsi, in conformità delle norme che regolano queste manovre, ovvero per effettuare la manovra di sorpasso che in tale ipotesi è consentita anche a destra.
+        8. Nelle strade con binari tranviari a raso, i veicoli possono procedere sui binari stessi purché, compatibilmente con le esigenze della circolazione, non ostacolino o rallentino la marcia dei tram, salva diversa segnalazione.
+        9. Nelle strade con doppi binari tranviari a raso, entrambi su di un lato della carreggiata, i veicoli possono marciare a sinistra della zona interessata dai binari, purché rimangano sempre entro la parte della carreggiata relativa al loro senso di circolazione.
+        10. Ove la fermata dei tram o dei filobus sia corredata da apposita isola salvagente posta a destra dell'asse della strada, i veicoli, salvo diversa segnalazione che imponga il passaggio su un lato determinato, possono transitare indifferentemente a destra o a sinistra del salvagente, purché rimangano entro la parte della carreggiata relativa al loro senso di circolazione e purché non comportino intralcio al movimento dei viaggiatori.
+        11. Chiunque circola contromano è soggetto alla sanzione amministrativa del pagamento di una somma da € 167 a € 665.
+        12. Chiunque circola contromano in corrispondenza delle curve, dei raccordi convessi o in ogni altro caso di limitata visibilità, ovvero percorre la carreggiata contromano, quando la strada sia divisa in più carreggiate separate, è soggetto alla sanzione amministrativa del pagamento di una somma da € 327 a € 1.308. Dalla violazione prevista dal presente comma consegue la sanzione amministrativa accessoria della sospensione della patente da uno a tre mesi, ai sensi del capo I, sezione II, del titolo VI. In casi di recidiva la sospensione è da due a sei mesi. Qualora dalla circolazione contromano di un veicolo ai sensi del presente comma derivi un incidente con morte o lesioni personali gravi o gravissime, è sempre disposta la confisca del predetto veicolo.
+        13. Chiunque viola le altre disposizioni del presente articolo è soggetto alla sanzione amministrativa del pagamento di una somma da € 42 a € 173.
+
     - id: "art_6_cds"
-      norm: "Art. 6 D.Lgs. 285/1992"
+      norm: "Art. 6 D.Lgs. 285/1992 — Regolamentazione della circolazione fuori dei centri abitati"
       text: |
-        [testo completo da inserire]
+        1. Il prefetto, per motivi di sicurezza pubblica o inerenti alla sicurezza della circolazione, di tutela della salute, nonché per esigenze di carattere militare può, conformemente alle direttive del Ministro delle infrastrutture e dei trasporti, sospendere temporaneamente la circolazione di tutte o di alcune categorie di utenti sulle strade o su tratti di esse. Il prefetto, inoltre, nei giorni festivi o in particolari altri giorni fissati con apposito calendario, da emanarsi con decreto del Ministro delle infrastrutture e dei trasporti, può vietare la circolazione di veicoli adibiti al trasporto di cose. Nel regolamento sono stabilite le condizioni ed eventuali deroghe.
+        1-bis. Nei casi in cui risulti necessario limitare le emissioni derivanti dal traffico veicolare in relazione ai livelli delle sostanze inquinanti nell'aria, le regioni e le province autonome di Trento e di Bolzano possono disporre riduzioni della velocità di circolazione dei veicoli sulle strade extraurbane.
+        1-ter. L'ente proprietario o gestore dell'infrastruttura stradale provvede a rendere noti all'utenza i provvedimenti adottati ai sensi del comma 1-bis.
+        1-quater. Il controllo della velocità nelle aree individuate può essere effettuato secondo le norme previste.
+        1-quinquies. Chiunque non osserva i limiti di velocità stabiliti è soggetto alle sanzioni previste dall'articolo 142.
+        1-sexies. Per straordinarie e motivate esigenze connesse alla tutela di particolari ambiti di rilevanza culturale, paesaggistica o naturalistica tutelati dall'UNESCO, le regioni e province autonome possono istituire zone a traffico limitato territoriali per periodi non superiori a cinque mesi all'anno.
+        2. Il prefetto stabilisce, anno per anno, le opportune prescrizioni per il transito periodico di armenti e di greggi determinando gli itinerari e gli intervalli di tempo e di spazio.
+        4. L'ente proprietario della strada può, con ordinanza: a) disporre la sospensione della circolazione per motivi di incolumità pubblica o urgenti esigenze tecniche; b) stabilire obblighi, divieti e limitazioni di carattere temporaneo o permanente; c) riservare corsie a determinate categorie di veicoli; d) vietare, limitare o subordinare al pagamento la sosta dei veicoli; e) prescrivere l'utilizzo di mezzi antisdrucciolevoli o pneumatici invernali; f) vietare temporaneamente la sosta per esigenze tecniche o di pulizia; f-bis) prescrivere l'utilizzo esclusivo di pneumatici invernali in previsione di manifestazioni nevose.
+        12. Chi non rispetta i provvedimenti di sospensione è soggetto a sanzione amministrativa da € 173 a € 694; per conducenti di veicoli adibiti al trasporto di cose da € 430 a € 1.731 con sospensione della patente.
+        14. Chi viola altri obblighi, divieti e limitazioni è soggetto a sanzione da € 87 a € 344.
+
     - id: "art_7_cds"
-      norm: "Art. 7 D.Lgs. 285/1992"
+      norm: "Art. 7 D.Lgs. 285/1992 — Regolamentazione della circolazione nei centri abitati"
       text: |
-        [testo completo da inserire]
+        1. Nei centri abitati i comuni possono, con ordinanza del sindaco: a) adottare i provvedimenti indicati nell'art. 6, commi 1, 2 e 4; b) limitare la circolazione di tutte o di alcune categorie di veicoli nei casi in cui risulti necessario ridurre le emissioni derivanti dal traffico veicolare e tutelare il patrimonio culturale; c) stabilire la precedenza su determinate strade o tratti di strade; d) riservare limitati spazi alla sosta per veicoli della polizia stradale, vigili del fuoco, servizi di soccorso, veicoli per disabili, donne in gravidanza con bambino, veicoli elettrici, stazioni ferroviarie, trasporto scolastico; e) stabilire aree nelle quali è autorizzato il parcheggio; f) stabilire fasce di sosta e parcheggi a pagamento; g) prescrivere orari per veicoli categoria N per carico e scarico merci; h) istituire aree attrezzate per autocaravan; i) riservare strade o corsie ai servizi pubblici di trasporto; i-bis) consentire circolazione bidirezionale velocipedi su strade a senso unico con limite ≤30 km/h; i-quater) istituire zone di attestamento ciclabile in intersezioni semaforizzate.
+        2. I divieti di sosta si intendono dalle ore 8 alle ore 20, salvo diversa indicazione.
+        9. I comuni delimitano le aree pedonali e zone a traffico limitato; possono subordinare l'ingresso al pagamento.
+        13. Chi non ottempera ai provvedimenti di sospensione della circolazione è soggetto a sanzione da € 87 a € 344.
+        14. Chiunque viola gli altri obblighi, divieti e limitazioni previsti nel presente articolo è soggetto alla sanzione amministrativa del pagamento di una somma da € 42 a € 173. Per violazioni relative a corsie riservate, zone pedonali e ZTL: da € 83 a € 332.
+
     - id: "art_1_l689"
-      norm: "Art. 1 L. 689/1981"
+      norm: "Art. 1 L. 689/1981 — Principio di legalità"
       text: |
-        [testo completo da inserire]
+        Nessuno può essere assoggettato a sanzioni amministrative se non in forza di una legge che sia entrata in vigore prima della commissione della violazione.
+        Le leggi che prevedono sanzioni amministrative si applicano soltanto nei casi e per i tempi in esse considerati.
 
   seed_arguments:
     appellant:

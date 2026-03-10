@@ -1,4 +1,6 @@
 # src/athena/simulation/graph.py
+import time
+
 from langgraph.graph import StateGraph, END
 from typing import TypedDict, Any
 
@@ -15,6 +17,10 @@ from athena.agents.prompts import (
 )
 from athena.agents.llm import invoke_llm
 from athena.schemas.case import CaseFile
+
+
+def _log(msg: str) -> None:
+    print(msg, flush=True)
 
 
 class GraphState(TypedDict):
@@ -49,6 +55,9 @@ def _run_agent_with_retry(
 
 
 def _node_appellant(state: GraphState) -> dict:
+    run_id = state["params"].get("run_id", "?")
+    _log(f"[{run_id}]   Appellant: generating...")
+    t0 = time.time()
     ctx = build_context_appellant(state["case"], state["params"])
     system, user = build_appellant_prompt(ctx)
     temp = state["params"]["temperature"]["appellant"]
@@ -58,14 +67,19 @@ def _node_appellant(state: GraphState) -> dict:
             system, user, temp,
             lambda o: validate_agent_output(o, "appellant", case),
         )
+        _log(f"[{run_id}]   Appellant: done ({time.time()-t0:.1f}s, valid={val['valid']})")
         return {"appellant_brief": output, "appellant_validation": val}
     except Exception as e:
+        _log(f"[{run_id}]   Appellant: FAILED ({time.time()-t0:.1f}s) — {e}")
         return {"error": f"Appellant failed: {e}"}
 
 
 def _node_respondent(state: GraphState) -> dict:
     if state.get("error"):
         return {}
+    run_id = state["params"].get("run_id", "?")
+    _log(f"[{run_id}]   Respondent: generating...")
+    t0 = time.time()
     ctx = build_context_respondent(
         state["case"], state["params"], state["appellant_brief"]
     )
@@ -79,14 +93,19 @@ def _node_respondent(state: GraphState) -> dict:
                 o, "respondent", case, appellant_brief=state["appellant_brief"]
             ),
         )
+        _log(f"[{run_id}]   Respondent: done ({time.time()-t0:.1f}s, valid={val['valid']})")
         return {"respondent_brief": output, "respondent_validation": val}
     except Exception as e:
+        _log(f"[{run_id}]   Respondent: FAILED ({time.time()-t0:.1f}s) — {e}")
         return {"error": f"Respondent failed: {e}"}
 
 
 def _node_judge(state: GraphState) -> dict:
     if state.get("error"):
         return {}
+    run_id = state["params"].get("run_id", "?")
+    _log(f"[{run_id}]   Judge: generating...")
+    t0 = time.time()
     ctx = build_context_judge(
         state["case"],
         state["params"],
@@ -105,8 +124,10 @@ def _node_judge(state: GraphState) -> dict:
                 respondent_brief=state["respondent_brief"],
             ),
         )
+        _log(f"[{run_id}]   Judge: done ({time.time()-t0:.1f}s, valid={val['valid']})")
         return {"judge_decision": output, "judge_validation": val}
     except Exception as e:
+        _log(f"[{run_id}]   Judge: FAILED ({time.time()-t0:.1f}s) — {e}")
         return {"error": f"Judge failed: {e}"}
 
 

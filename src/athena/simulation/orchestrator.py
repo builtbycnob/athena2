@@ -6,38 +6,39 @@ invokes run_single (the LangGraph graph) for each, and collects results.
 """
 
 import itertools
+import sys
+import time
 from typing import Any
 
 from athena.simulation.graph import build_graph
 
 
+def _log(msg: str) -> None:
+    """Print and flush immediately for real-time progress visibility."""
+    print(msg, flush=True)
+
+
 def run_monte_carlo(case_data: dict, simulation_config: dict) -> list[dict]:
-    """Execute all simulation combinations and collect results.
-
-    Args:
-        case_data: Parsed case file data.
-        simulation_config: Simulation configuration containing:
-            - judge_profiles: list of judge profile dicts (each with 'id' key)
-            - appellant_profiles: list of appellant profile dicts (each with 'id' key)
-            - runs_per_combination: int, number of runs per (judge, appellant) pair
-            - temperature: dict with per-role temperature settings
-            - language: str, output language (default 'it')
-
-    Returns:
-        List of result dicts, one per successful run, each containing:
-            run_id, judge_profile, appellant_profile, and run output fields.
-    """
+    """Execute all simulation combinations and collect results."""
     combinations = list(itertools.product(
         simulation_config["judge_profiles"],
         simulation_config["appellant_profiles"],
         range(simulation_config["runs_per_combination"]),
     ))
 
+    total = len(combinations)
     results: list[dict] = []
+    failed: list[dict] = []
     graph = build_graph()
+    sim_start = time.time()
 
-    for judge_profile, appellant_profile, run_n in combinations:
+    _log(f"[MC] Starting {total} runs")
+
+    for i, (judge_profile, appellant_profile, run_n) in enumerate(combinations, 1):
         run_id = f"{judge_profile['id']}__{appellant_profile['id']}__{run_n:03d}"
+        run_start = time.time()
+
+        _log(f"[MC] Run {i}/{total}: {run_id}")
 
         initial_state = {
             "case": case_data,
@@ -60,8 +61,11 @@ def run_monte_carlo(case_data: dict, simulation_config: dict) -> list[dict]:
 
         try:
             final_state = graph.invoke(initial_state)
+            elapsed = time.time() - run_start
 
             if final_state.get("error"):
+                _log(f"[MC]   FAIL ({elapsed:.1f}s): {final_state['error']}")
+                failed.append({"run_id": run_id, "error": final_state["error"]})
                 continue
 
             results.append({
@@ -77,8 +81,19 @@ def run_monte_carlo(case_data: dict, simulation_config: dict) -> list[dict]:
                     "judge": (final_state.get("judge_validation") or {}).get("warnings", []),
                 },
             })
-        except Exception:
-            # Run failed — skip and count as failed
+            _log(f"[MC]   OK ({elapsed:.1f}s) — {len(results)}/{i} succeeded so far")
+
+        except Exception as e:
+            elapsed = time.time() - run_start
+            _log(f"[MC]   EXCEPTION ({elapsed:.1f}s): {e}")
+            failed.append({"run_id": run_id, "error": str(e)})
             continue
+
+    total_time = time.time() - sim_start
+    _log(f"[MC] Done in {total_time:.0f}s — {len(results)}/{total} succeeded, {len(failed)} failed")
+    if failed:
+        _log(f"[MC] Failed runs:")
+        for f in failed:
+            _log(f"[MC]   {f['run_id']}: {f['error'][:100]}")
 
     return results

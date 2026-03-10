@@ -12,6 +12,7 @@ import sys
 
 import yaml
 
+from athena.agents.llm import get_stats
 from athena.schemas.simulation import SimulationConfig
 from athena.simulation.orchestrator import run_monte_carlo
 from athena.simulation.aggregator import aggregate_results
@@ -51,13 +52,25 @@ def main(argv: list[str] | None = None) -> None:
     # --- Load inputs ---
     print(f"[ATHENA] Loading case file: {args.case}")
     with open(args.case) as f:
-        case_data = yaml.safe_load(f)
+        case_raw = yaml.safe_load(f)
+    # Unwrap top-level 'case' key if present
+    case_data = case_raw.get("case", case_raw)
+    # Map YAML field names to schema field names
+    if "id" in case_data and "case_id" not in case_data:
+        case_data["case_id"] = case_data.pop("id")
+    # Promote key_precedents from jurisdiction to top level if missing
+    if "key_precedents" not in case_data:
+        jur = case_data.get("jurisdiction")
+        if isinstance(jur, dict):
+            case_data["key_precedents"] = jur.get("key_precedents", [])
 
     print(f"[ATHENA] Loading simulation config: {args.simulation}")
     with open(args.simulation) as f:
         sim_raw = yaml.safe_load(f)
 
-    sim_config = SimulationConfig(**sim_raw)
+    # YAML has a top-level 'simulation' key wrapper
+    sim_data = sim_raw.get("simulation", sim_raw)
+    sim_config = SimulationConfig(**sim_data)
     sim_config_dict = sim_config.model_dump()
 
     print(f"[ATHENA] Total runs planned: {sim_config.total_runs}")
@@ -112,5 +125,12 @@ def main(argv: list[str] | None = None) -> None:
     with open(raw_path, "w") as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
     print(f"[ATHENA] Saved: {raw_path}")
+
+    # --- LLM stats ---
+    stats = get_stats()
+    print(f"[ATHENA] LLM stats: {stats['calls']} calls, "
+          f"{stats['total_tokens']} tokens, "
+          f"{stats['total_time']:.0f}s total, "
+          f"{stats['avg_tok_s']:.1f} avg tok/s")
 
     print(f"[ATHENA] Done. {len(results)} runs, outputs in {args.output}/")
