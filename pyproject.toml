@@ -20,6 +20,10 @@ dev = [
     "pytest-asyncio",
     "jsonschema",
 ]
+kg = [
+    "graphiti-core>=0.5",
+    "neo4j>=5.0",
+]
 
 [project.scripts]
 athena = "athena.cli:main"

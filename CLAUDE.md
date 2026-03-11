@@ -22,15 +22,17 @@ A legal proceeding is inherently a multi-agent game with incomplete information.
 
 ## Game Theory Layer
 
-Implemented (high value):
-- Extensive form game trees (sequential moves: filing → response → discovery → motions → trial)
-- Settlement range estimation (BATNA analysis, Nash bargaining)
-- Bayesian updating as new information emerges
-- Sensitivity analysis ("if judge weighs evidence X as weak, case flips")
-- Dominated strategy identification
+Implemented:
+- Dominated strategy identification (v0.4 — statistical, from Monte Carlo aggregation)
+- Outcome valuation: verdict→EUR mapping per party perspective (v0.6)
+- BATNA analysis: per-party expected value of litigation with CI ranges (v0.6)
+- Nash bargaining: bilateral settlement range (ZOPA + Nash solution) (v0.6)
+- EV by strategy: per-strategy expected value ranking (v0.6)
+- Sensitivity analysis: parameter sweeps + tornado ranking (v0.6)
 
 Future:
-- Mixed strategies, signaling games, multi-stage bargaining
+- Extensive form game trees (sequential moves: filing → response → discovery → motions → trial)
+- Bayesian updating, mixed strategies, signaling games, multi-stage bargaining
 
 ## Architecture Decisions
 
@@ -57,16 +59,40 @@ Future:
 - **Red Teamer** — attacks YOUR strategy specifically, finds weaknesses
 - **Synthesizer** — aggregates simulations + analysis into actionable recommendations
 
-## Tech Stack (Target)
+## Tech Stack
 
-- Python, LangGraph (orchestration), MLX (local inference on Mac Studio M3 Ultra)
-- Langfuse (observability), Graphiti (knowledge graph for precedents/case law — future)
-- Telegram or CLI for interaction
-- YAML-driven case definitions
+- Python, LangGraph (orchestration), oMLX (local inference via OpenAI-compatible HTTP)
+- MLX on Mac Studio M3 Ultra, model: Qwen3.5-35B-A3B-Text (text-only, 35B MoE)
+- Langfuse (observability), Neo4j CE + knowledge graph (`src/athena/knowledge/`, optional `--kg` flag)
+- CLI entry point (`athena run`), YAML-driven case/simulation definitions
+- JSON Schema structured output via oMLX `response_format`
+- ThreadPoolExecutor for parallel Monte Carlo runs
+- Pure-computation game theory module (`src/athena/game_theory/`)
+
+## Knowledge Graph Layer (v0.7)
+
+Optional Neo4j-backed knowledge graph (`--kg` flag / `ATHENA_KG_ENABLED=1`):
+- **Ontology**: Pydantic entity/edge models mapping case schemas to graph nodes (`ontology.py`)
+- **Ingestion**: case YAML → graph (`case_loader.py`), per-run results (`result_loader.py`), aggregated stats + game theory (`stats_loader.py`)
+- **Context enrichment**: pre-simulation queries — seed arg ranking by judge, best precedent strategy, expected counters (`context_enrichment.py`)
+- **Post-analysis**: argument trajectories cross-judge, determinative argument identification (`post_analysis.py`)
+- **CLI**: `athena run --kg`, `athena kg-status`
+- **Graceful degradation**: KG off by default, all 266 tests pass without Neo4j, import failures → warning + continue
+- **Dependencies**: `graphiti-core>=0.5`, `neo4j>=5.0` as optional `[kg]` group
 
 ## Current Phase
 
-Brainstorming / early design. First milestone: model a real case as proof-of-concept.
+v0.7 implemented (knowledge graph layer) on `feat/v0.7-knowledge-graph`, uncommitted.
+All feature branches (v0.5 N-party, v0.6 game theory, v0.7 KG) pending merge to main.
+266 tests green, all mocked — no smoke test with real LLM yet.
+
+**Immediate next steps**:
+1. Commit v0.7, merge to main (carries v0.5+v0.6+v0.7)
+2. Smoke test with real oMLX (core pipeline)
+3. Smoke test with real oMLX + Neo4j (KG pipeline)
+4. Wire generic graph (`build_graph_from_phases` → replace legacy, v0.5.1)
+
+**Roadmap**: v0.8 meta-agents (red teamer, game theorist agent) → v0.9 temporal KG + IRAC → v1.0 multi-jurisdiction → v1.1 sparring mode → v1.2 cross-case intelligence
 
 ## Key Risks & Open Questions
 
@@ -75,6 +101,8 @@ Brainstorming / early design. First milestone: model a real case as proof-of-con
 - Validation: need past cases with known outcomes as test set
 - NOT legal advice — strategic analysis tool, decisions remain human
 - Confidentiality: another reason for local-only inference
+- N-party generic graph (`build_graph_from_phases`) is scaffolding — not yet wired to production orchestrator (v0.5.1)
+- Knowledge graph requires Neo4j CE — optional, graceful degradation when unavailable
 
 ## Related Work
 

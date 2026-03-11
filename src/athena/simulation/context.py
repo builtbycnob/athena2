@@ -20,6 +20,7 @@ def build_party_context(
     party_id: str,
     prior_briefs: dict[str, dict] | None = None,
     visibility: dict | None = None,
+    kg_insights: dict | None = None,
 ) -> dict:
     """Generic context for any party agent.
 
@@ -51,7 +52,7 @@ def build_party_context(
     # Party profile from run_params
     profile = run_params.get("party_profiles", {}).get(party_id, {})
 
-    return {
+    ctx = {
         "own_party": party,
         "facts": case_data["facts"],
         "evidence": evidence,
@@ -63,6 +64,9 @@ def build_party_context(
         "prior_briefs": prior_briefs,
         "profile": profile,
     }
+    if kg_insights:
+        ctx["kg_insights"] = kg_insights
+    return ctx
 
 
 def build_adjudicator_context(

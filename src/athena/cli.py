@@ -86,12 +86,59 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--concurrency", type=int, default=None,
         help="Concurrent simulation runs (default: $ATHENA_CONCURRENCY or 4)",
     )
+    run_parser.add_argument(
+        "--kg", action="store_true", default=False,
+        help="Enable knowledge graph (requires Neo4j, default: off)",
+    )
+
+    # kg status subcommand
+    sub.add_parser("kg-status", help="Show knowledge graph status (node/edge counts)")
 
     return parser.parse_args(argv)
 
 
+def _kg_status() -> None:
+    """Show knowledge graph status."""
+    try:
+        os.environ.setdefault("ATHENA_KG_ENABLED", "1")
+        from athena.knowledge.config import health_check
+        status = health_check()
+        if status["status"] == "ok":
+            print(f"[KG] Status: OK")
+            print(f"[KG] URI: {status['uri']}")
+            print(f"[KG] Database: {status['database']}")
+            print(f"[KG] Nodes: {status['node_count']}")
+            print(f"[KG] Edges: {status['edge_count']}")
+        else:
+            print(f"[KG] Status: ERROR — {status['error']}")
+    except Exception as e:
+        print(f"[KG] Cannot connect to Neo4j: {e}")
+
+
+def _init_kg(args) -> bool:
+    """Initialize KG if --kg flag set or ATHENA_KG_ENABLED=1. Returns True if enabled."""
+    kg_enabled = getattr(args, "kg", False) or os.environ.get("ATHENA_KG_ENABLED") == "1"
+    if not kg_enabled:
+        return False
+
+    os.environ["ATHENA_KG_ENABLED"] = "1"
+    try:
+        from athena.knowledge.config import get_driver
+        get_driver()
+        print("[KG] Knowledge graph connected")
+        return True
+    except Exception as e:
+        print(f"[KG] Warning: knowledge graph unavailable ({e}), continuing without KG")
+        os.environ["ATHENA_KG_ENABLED"] = "0"
+        return False
+
+
 def main(argv: list[str] | None = None) -> None:
     args = _parse_args(argv)
+
+    if args.command == "kg-status":
+        _kg_status()
+        return
 
     if args.command != "run":
         print("Usage: athena run --case CASE.yaml --simulation SIM.yaml --output DIR")
@@ -113,6 +160,16 @@ def main(argv: list[str] | None = None) -> None:
             case_data["key_precedents"] = jur.get("key_precedents", [])
     # Migrate v1 case format (hardcoded appellant/respondent) to v2 (N-party)
     case_data = migrate_case_v1(case_data)
+
+    # --- Knowledge Graph init + case ingestion ---
+    kg_active = _init_kg(args)
+    if kg_active:
+        try:
+            from athena.knowledge import ingest_case
+            counts = ingest_case(case_data)
+            print(f"[KG] Case ingested: {counts['nodes']} nodes, {counts['edges']} edges")
+        except Exception as e:
+            print(f"[KG] Warning: case ingestion failed ({e})")
 
     print(f"[ATHENA] Loading simulation config: {args.simulation}")
     with open(args.simulation) as f:
@@ -148,6 +205,37 @@ def main(argv: list[str] | None = None) -> None:
     print("[ATHENA] Aggregating results...")
     aggregated = aggregate_results(results, sim_config.total_runs)
 
+    # --- Game theory analysis ---
+    game_analysis = None
+    if "stakes" in case_data:
+        print("[ATHENA] Running game theory analysis...")
+        from athena.game_theory import analyze as gt_analyze
+        game_analysis = gt_analyze(aggregated, case_data, results)
+    else:
+        print("[ATHENA] Skipping game theory analysis (no stakes in case data)")
+
+    # --- KG: store aggregation + game theory ---
+    if kg_active:
+        try:
+            from athena.knowledge import store_aggregation, store_game_theory
+            store_aggregation(case_data["case_id"], aggregated)
+            if game_analysis:
+                store_game_theory(case_data["case_id"], game_analysis)
+            print("[KG] Aggregation and game theory stored")
+        except Exception as e:
+            print(f"[KG] Warning: stats ingestion failed ({e})")
+
+    # --- KG: post-analysis for memo ---
+    kg_post = None
+    if kg_active:
+        try:
+            from athena.knowledge import get_post_analysis
+            kg_post = get_post_analysis(case_data["case_id"])
+            if kg_post:
+                print("[KG] Post-analysis retrieved for memo")
+        except Exception as e:
+            print(f"[KG] Warning: post-analysis query failed ({e})")
+
     # --- Generate outputs ---
     print("[ATHENA] Generating probability table...")
     table_md = format_probability_table(aggregated)
@@ -155,15 +243,34 @@ def main(argv: list[str] | None = None) -> None:
     print("[ATHENA] Generating decision tree...")
     tree_txt = generate_decision_tree(aggregated)
 
+    gt_summary_md = None
+    if game_analysis is not None:
+        print("[ATHENA] Generating game theory summary...")
+        from athena.output.game_theory_summary import format_game_theory_summary
+        gt_summary_md = format_game_theory_summary(game_analysis)
+
     print("[ATHENA] Generating strategic memo (requires LLM)...")
     try:
-        memo_md = generate_strategic_memo(aggregated, case_data)
+        memo_md = generate_strategic_memo(
+            aggregated, case_data, game_analysis=game_analysis, kg_insights=kg_post,
+        )
     except Exception as e:
         memo_md = f"# Strategic Memo\n\nMemo generation failed: {e}\n"
         print(f"[ATHENA] Warning: memo generation failed ({e}), saved placeholder")
 
     # --- Save outputs ---
     os.makedirs(args.output, exist_ok=True)
+
+    if game_analysis is not None:
+        gt_json_path = os.path.join(args.output, "game_theory.json")
+        with open(gt_json_path, "w") as f:
+            json.dump(game_analysis.model_dump(), f, indent=2, ensure_ascii=False)
+        print(f"[ATHENA] Saved: {gt_json_path}")
+
+        gt_summary_path = os.path.join(args.output, "game_theory_summary.md")
+        with open(gt_summary_path, "w") as f:
+            f.write(gt_summary_md)
+        print(f"[ATHENA] Saved: {gt_summary_path}")
 
     table_path = os.path.join(args.output, "probability_table.md")
     with open(table_path, "w") as f:

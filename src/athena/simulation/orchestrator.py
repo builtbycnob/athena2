@@ -144,6 +144,16 @@ def _run_one(
                 "judge": (final_state.get("judge_validation") or {}).get("warnings", []),
             },
         }
+
+        # KG: store run result (thread-safe, fail-safe)
+        if os.environ.get("ATHENA_KG_ENABLED") == "1":
+            try:
+                from athena.knowledge import store_run_result
+                case_id = case_data.get("case_id", "unknown")
+                store_run_result(case_id, result)
+            except Exception as e:
+                _log(f"[KG] Warning: result ingestion failed: {e}")
+
         _log(f"[MC]   OK ({elapsed:.1f}s) — {run_id}")
         return {"status": "ok", "run_id": run_id, "elapsed": elapsed, "result": result}
 
