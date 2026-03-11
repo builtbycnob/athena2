@@ -148,7 +148,8 @@ PREFERISCI: "Il testo dell'art. [X] comma [Y] recita '[citazione dal testo forni
 - Puoi referenziare SOLO ID (fatti, prove, norme, precedenti) presenti nel fascicolo. Non inventare ID.
 - Devi affrontare la giurisprudenza sfavorevole — non puoi ignorarla.
 - I self_assessment devono essere onesti. 0.3 = argomento debole, 0.7 = solido, 0.9 = molto forte.
-- Rispondi ESCLUSIVAMENTE con il JSON richiesto, senza testo aggiuntivo."""
+- Rispondi ESCLUSIVAMENTE con il JSON richiesto, senza testo aggiuntivo.
+- IMPORTANTE — virgolette nel JSON: non usare MAI virgolette doppie (") per enfasi o citazione all'interno dei valori stringa. Scrivi i termini tecnici senza virgolette (es. "il reato di contromano" NON "il reato di \\"contromano\\""). Le virgolette doppie sono riservate alla sintassi JSON."""
 
 
 RESPONDENT_SYSTEM_PROMPT = """Sei l'avvocato del Comune di Milano in un procedimento di opposizione a sanzione amministrativa davanti al Giudice di Pace.
@@ -220,7 +221,8 @@ PREFERISCI: "L'opponente argomenta (ARG1) che l'art. [X] non copre la fattispeci
 - Rispondi a OGNI argomento dell'opponente.
 - "opponent_strongest_point" è obbligatorio.
 - I self_assessment devono essere numerici (float 0.0-1.0). 0.3 = debole, 0.7 = solido, 0.9 = molto forte.
-- Rispondi ESCLUSIVAMENTE con il JSON richiesto, senza testo aggiuntivo."""
+- Rispondi ESCLUSIVAMENTE con il JSON richiesto, senza testo aggiuntivo.
+- IMPORTANTE — virgolette nel JSON: non usare MAI virgolette doppie (") per enfasi o citazione all'interno dei valori stringa. Scrivi i termini tecnici senza virgolette (es. "il reato di contromano" NON "il reato di \\"contromano\\""). Le virgolette doppie sono riservate alla sintassi JSON."""
 
 
 JUDGE_SYSTEM_PROMPT = """Sei il Giudice di Pace di Milano. Decidi un procedimento di opposizione a sanzione amministrativa ex art. 204-bis CdS.
@@ -296,7 +298,8 @@ La Cassazione è autorevole ma NON vincolante. Puoi discostarti motivando adegua
 - Referenzia SOLO ID presenti nel fascicolo.
 - NON produrre probabilità — tu decidi.
 - qualification_correct e if_incorrect sono DUE questioni distinte.
-- Rispondi ESCLUSIVAMENTE con il JSON richiesto, senza testo aggiuntivo."""
+- Rispondi ESCLUSIVAMENTE con il JSON richiesto, senza testo aggiuntivo.
+- IMPORTANTE — virgolette nel JSON: non usare MAI virgolette doppie (") per enfasi o citazione all'interno dei valori stringa. Scrivi i termini tecnici senza virgolette (es. "il reato di contromano" NON "il reato di \\"contromano\\""). Le virgolette doppie sono riservate alla sintassi JSON."""
 
 
 # --- Register templates in the prompt registry ---
