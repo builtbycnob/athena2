@@ -208,9 +208,9 @@ def _call_model_omlx(
 
     text = choice["message"]["content"]
     finish_reason = choice.get("finish_reason", "stop")
-    prompt_tokens = usage.get("prompt_tokens", 0)
-    output_tokens = usage.get("completion_tokens", 0)
-    cached_tokens = usage.get("cached_tokens", 0)
+    prompt_tokens = usage.get("prompt_tokens") or 0
+    output_tokens = usage.get("completion_tokens") or 0
+    cached_tokens = usage.get("cached_tokens") or 0
 
     elapsed = time.time() - t0
     tok_s = output_tokens / elapsed if elapsed > 0 else 0
