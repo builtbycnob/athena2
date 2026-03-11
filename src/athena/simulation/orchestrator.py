@@ -62,7 +62,7 @@ def _generate_combinations(sim_config: dict) -> list[dict]:
 
         combinations.append({
             "run_id": run_id,
-            "judge_profile": judge_prof.get("parameters", judge_prof),
+            "judge_profile": {**judge_prof.get("parameters", judge_prof), "id": judge_prof["id"]},
             "party_profiles": {
                 pid: prof for pid, prof in party_profs.items()
             },
