@@ -144,7 +144,11 @@ def _ensure_omlx() -> httpx.Client:
         if _OMLX_CLIENT is not None:
             return _OMLX_CLIENT
 
-        client = httpx.Client(base_url=_OMLX_BASE_URL, timeout=_OMLX_TIMEOUT)
+        client = httpx.Client(
+            base_url=_OMLX_BASE_URL,
+            timeout=_OMLX_TIMEOUT,
+            limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+        )
         deadline = time.time() + 30.0
         while True:
             try:
@@ -163,11 +167,20 @@ def _ensure_omlx() -> httpx.Client:
                 time.sleep(2)
 
 
+_SAMPLING_PARAMS = {
+    "repetition_penalty": 1.3,
+    "repetition_context_size": 256,
+    "top_p": 0.8,
+    "top_k": 20,
+}
+
+
 def _call_model_omlx(
     system_prompt: str,
     user_prompt: str,
     temperature: float,
     max_tokens: int = _DEFAULT_MAX_TOKENS,
+    json_schema: dict | None = None,
 ) -> tuple[str, str, int, int]:
     """Call oMLX via OpenAI-compatible HTTP API. Returns (text, finish_reason, prompt_tokens, output_tokens)."""
     client = _ensure_omlx()
@@ -180,7 +193,13 @@ def _call_model_omlx(
         "temperature": temperature,
         "max_tokens": max_tokens,
         "chat_template_kwargs": {"enable_thinking": False},
+        **_SAMPLING_PARAMS,
     }
+    if json_schema is not None:
+        payload["response_format"] = {
+            "type": "json_schema",
+            "json_schema": {"name": "response", "schema": json_schema},
+        }
 
     backoff = [1, 3, 10]
     last_err = None
@@ -248,10 +267,11 @@ def _call_model(
     user_prompt: str,
     temperature: float,
     max_tokens: int = _DEFAULT_MAX_TOKENS,
+    json_schema: dict | None = None,
 ) -> tuple[str, str, int, int]:
     """Dispatch to oMLX or MLX backend. Returns (text, finish_reason, prompt_tokens, output_tokens)."""
     if _BACKEND == "omlx":
-        return _call_model_omlx(system_prompt, user_prompt, temperature, max_tokens)
+        return _call_model_omlx(system_prompt, user_prompt, temperature, max_tokens, json_schema)
     elif _BACKEND == "mlx":
         return _call_model_mlx(system_prompt, user_prompt, temperature, max_tokens)
     else:
@@ -345,6 +365,7 @@ def invoke_llm(
     user_prompt: str,
     temperature: float,
     max_tokens: int = _DEFAULT_MAX_TOKENS,
+    json_schema: dict | None = None,
 ) -> dict:
     """Invoke LLM and return parsed JSON dict.
 
@@ -355,7 +376,7 @@ def invoke_llm(
     4. If still fails: save artifact and raise classified error
     """
     raw, finish_reason, prompt_tokens, output_tokens = _call_model(
-        system_prompt, user_prompt, temperature, max_tokens
+        system_prompt, user_prompt, temperature, max_tokens, json_schema
     )
 
     try:
@@ -373,6 +394,7 @@ def invoke_llm(
                 "finish_reason": finish_reason,
                 "applied_fixes": result.applied_fixes,
                 "backend": _BACKEND,
+                "structured_output": json_schema is not None,
             },
         )
         return result.data
@@ -391,7 +413,7 @@ def invoke_llm(
             "Produci l'output JSON completo."
         )
         raw2, fr2, pt2, ot2 = _call_model(
-            system_prompt, retry_user, temperature, retry_max
+            system_prompt, retry_user, temperature, retry_max, json_schema
         )
         try:
             result2 = parse_json_response(raw2, fr2, pt2, ot2)

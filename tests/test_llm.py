@@ -225,7 +225,7 @@ class TestBackendDispatch:
         llm_mod._BACKEND = "omlx"
         try:
             llm_mod._call_model("s", "u", 0.5)
-            mock_omlx.assert_called_once_with("s", "u", 0.5, llm_mod._DEFAULT_MAX_TOKENS)
+            mock_omlx.assert_called_once_with("s", "u", 0.5, llm_mod._DEFAULT_MAX_TOKENS, None)
         finally:
             llm_mod._BACKEND = old
 
@@ -308,6 +308,71 @@ class TestThreadSafety:
             assert MockClient.call_count == 1
         finally:
             llm_mod._OMLX_CLIENT = None
+
+
+class TestOmlxPayload:
+    """Tests for structured output and sampling params in oMLX payload."""
+
+    @patch("athena.agents.llm._OMLX_CLIENT")
+    def test_json_schema_in_omlx_payload(self, _):
+        mock_client = MagicMock()
+        resp = MagicMock()
+        resp.json.return_value = _make_omlx_response()
+        resp.raise_for_status = MagicMock()
+        mock_client.post.return_value = resp
+
+        llm_mod._OMLX_CLIENT = mock_client
+        old_calls = llm_mod._stats["calls"]
+        try:
+            schema = {"type": "object", "properties": {"x": {"type": "number"}}}
+            llm_mod._call_model_omlx("sys", "usr", 0.5, json_schema=schema)
+            payload = mock_client.post.call_args[1]["json"]
+            assert payload["response_format"] == {
+                "type": "json_schema",
+                "json_schema": {"name": "response", "schema": schema},
+            }
+        finally:
+            llm_mod._OMLX_CLIENT = None
+            llm_mod._stats["calls"] = old_calls
+
+    @patch("athena.agents.llm._OMLX_CLIENT")
+    def test_json_schema_none_omits_response_format(self, _):
+        mock_client = MagicMock()
+        resp = MagicMock()
+        resp.json.return_value = _make_omlx_response()
+        resp.raise_for_status = MagicMock()
+        mock_client.post.return_value = resp
+
+        llm_mod._OMLX_CLIENT = mock_client
+        old_calls = llm_mod._stats["calls"]
+        try:
+            llm_mod._call_model_omlx("sys", "usr", 0.5)
+            payload = mock_client.post.call_args[1]["json"]
+            assert "response_format" not in payload
+        finally:
+            llm_mod._OMLX_CLIENT = None
+            llm_mod._stats["calls"] = old_calls
+
+    @patch("athena.agents.llm._OMLX_CLIENT")
+    def test_sampling_params_in_payload(self, _):
+        mock_client = MagicMock()
+        resp = MagicMock()
+        resp.json.return_value = _make_omlx_response()
+        resp.raise_for_status = MagicMock()
+        mock_client.post.return_value = resp
+
+        llm_mod._OMLX_CLIENT = mock_client
+        old_calls = llm_mod._stats["calls"]
+        try:
+            llm_mod._call_model_omlx("sys", "usr", 0.5)
+            payload = mock_client.post.call_args[1]["json"]
+            assert payload["repetition_penalty"] == 1.3
+            assert payload["top_p"] == 0.8
+            assert payload["top_k"] == 20
+            assert payload["repetition_context_size"] == 256
+        finally:
+            llm_mod._OMLX_CLIENT = None
+            llm_mod._stats["calls"] = old_calls
 
 
 class TestResetStats:

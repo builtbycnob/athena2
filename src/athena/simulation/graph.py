@@ -18,6 +18,7 @@ from athena.agents.prompts import (
 )
 from athena.agents.llm import invoke_llm
 from athena.schemas.case import CaseFile
+from athena.schemas.structured_output import AGENT_SCHEMAS
 
 
 def _log(msg: str) -> None:
@@ -38,19 +39,32 @@ class GraphState(TypedDict):
 
 MAX_RETRIES = 2
 
+_MAX_TOKENS = {"appellant": 4096, "respondent": 4096, "judge": 6144}
+
 
 def _run_agent_with_retry(
-    system: str, user: str, temp: float, validate_fn, max_retries: int = MAX_RETRIES
+    system: str,
+    user: str,
+    temp: float,
+    validate_fn,
+    max_retries: int = MAX_RETRIES,
+    json_schema: dict | None = None,
+    max_tokens: int | None = None,
 ) -> tuple[dict, dict]:
     """Run LLM with validation and retry. Returns (output, validation_dump)."""
-    output = invoke_llm(system, user, temp)
+    kwargs: dict = {}
+    if json_schema is not None:
+        kwargs["json_schema"] = json_schema
+    if max_tokens is not None:
+        kwargs["max_tokens"] = max_tokens
+    output = invoke_llm(system, user, temp, **kwargs)
     validation = validate_fn(output)
     for _ in range(max_retries):
         if validation.valid:
             break
         error_feedback = "\n".join(validation.errors)
         retry_user = f"{user}\n\n## ERRORI DA CORREGGERE\n{error_feedback}\n\nRiproduci l'output completo corretto."
-        output = invoke_llm(system, retry_user, temp)
+        output = invoke_llm(system, retry_user, temp, **kwargs)
         validation = validate_fn(output)
     return output, validation.model_dump()
 
@@ -68,6 +82,8 @@ def _node_appellant(state: GraphState) -> dict:
         output, val = _run_agent_with_retry(
             system, user, temp,
             lambda o: validate_agent_output(o, "appellant", case),
+            json_schema=AGENT_SCHEMAS["appellant"],
+            max_tokens=_MAX_TOKENS["appellant"],
         )
         _log(f"[{run_id}]   Appellant: done ({time.time()-t0:.1f}s, valid={val['valid']})")
         return {"appellant_brief": output, "appellant_validation": val}
@@ -95,6 +111,8 @@ def _node_respondent(state: GraphState) -> dict:
             lambda o: validate_agent_output(
                 o, "respondent", case, appellant_brief=state["appellant_brief"]
             ),
+            json_schema=AGENT_SCHEMAS["respondent"],
+            max_tokens=_MAX_TOKENS["respondent"],
         )
         _log(f"[{run_id}]   Respondent: done ({time.time()-t0:.1f}s, valid={val['valid']})")
         return {"respondent_brief": output, "respondent_validation": val}
@@ -127,6 +145,8 @@ def _node_judge(state: GraphState) -> dict:
                 appellant_brief=state["appellant_brief"],
                 respondent_brief=state["respondent_brief"],
             ),
+            json_schema=AGENT_SCHEMAS["judge"],
+            max_tokens=_MAX_TOKENS["judge"],
         )
         _log(f"[{run_id}]   Judge: done ({time.time()-t0:.1f}s, valid={val['valid']})")
         return {"judge_decision": output, "judge_validation": val}
