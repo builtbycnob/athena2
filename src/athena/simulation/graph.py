@@ -1,6 +1,7 @@
 # src/athena/simulation/graph.py
 import time
 
+from langfuse import observe
 from langgraph.graph import StateGraph, END
 from typing import TypedDict, Any
 
@@ -54,6 +55,7 @@ def _run_agent_with_retry(
     return output, validation.model_dump()
 
 
+@observe(name="appellant")
 def _node_appellant(state: GraphState) -> dict:
     run_id = state["params"].get("run_id", "?")
     _log(f"[{run_id}]   Appellant: generating...")
@@ -74,6 +76,7 @@ def _node_appellant(state: GraphState) -> dict:
         return {"error": f"Appellant failed: {e}"}
 
 
+@observe(name="respondent")
 def _node_respondent(state: GraphState) -> dict:
     if state.get("error"):
         return {}
@@ -100,6 +103,7 @@ def _node_respondent(state: GraphState) -> dict:
         return {"error": f"Respondent failed: {e}"}
 
 
+@observe(name="judge")
 def _node_judge(state: GraphState) -> dict:
     if state.get("error"):
         return {}

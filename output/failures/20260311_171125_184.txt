@@ -1,0 +1,84 @@
+--- CONTEXT ---
+finish_reason=stop
+
+--- RAW OUTPUT (8027 chars) ---
+{
+  "filed_brief": {
+    "arguments": [
+      {
+        "id": "ARG1",
+        "type": "new",
+        "derived_from": "null",
+        "claim": "L'applicazione dell'art. 143 CdS è illegittima per errata qualificazione giuridica: la fattispecie del "controsenso" non coincide con quella del "contromano".",
+        "legal_reasoning": "Il testo dell'art. 143, commi 11 e 12, del Codice della Strada sanziona specificamente la circolazione "contromano", definita come la violazione del senso di marcia imposto su una carreggiata a doppio senso. La fattispecie in esame, descritta nei fatti F1 e F3, riguarda invece un transito in "senso vietato" su una strada a senso unico. Il legislatore ha distinto nettamente queste due condotte: il "contromano" implica l'opposizione al flusso normale su una strada bidirezionale, mentre il "senso vietato" è la violazione di un divieto di accesso su una strada unidirezionale. Applicare la norma sul contromano a un caso di senso vietato viola il principio di tassatività della norma penale e amministrativa (art. 1 L. 689/1981), poiché la condotta non rientra nella tipicità prevista dalla norma sanzionatoria applicata. La giurisprudenza di Cassazione n. 16515/2005, seppur citata dall'opponente, non può essere estesa oltre il suo ambito di applicazione specifico, poiché il testo normativo non contempla un'equiparazione automatica tra le due fattispecie.",
+        "norm_text_cited": ["art_143_cds", "art_1_l689"],
+        "facts_referenced": ["F1", "F3"],
+        "evidence_cited": ["DOC1", "DOC2"],
+        "precedents_addressed": [
+          {
+            "id": "cass_16515_2005",
+            "strategy": "criticize",
+            "reasoning": "L'orientamento della Cassazione n. 16515/2005, sebbene autorevole, è criticabile in quanto opera un'equiparazione di fatto che non trova riscontro nel testo letterale della legge. La Corte ha ignorato la distinzione semantica e giuridica tra "contromano" (viola il senso di marcia) e "senso vietato" (viola un divieto di accesso), creando una sorta di analogia in malam partem vietata dall'art. 1 L. 689/1981. Poiché il testo di legge è chiaro nel distinguere le fattispecie, l'interpretazione estensiva proposta dalla Cassazione deve essere disapplicata in favore della lettera della norma che non prevede la sanzione per il caso di specie."
+          }
+        ],
+        "supports": null
+      },
+      {
+        "id": "ARG2",
+        "type": "new",
+        "derived_from": "null",
+        "claim": "Il verbale è affetto da vizio di motivazione e contraddizione interna per aver applicato una norma sul "contromano" a una violazione di "senso unico".",
+        "legal_reasoning": "Il verbale (DOC1) descrive inequivocabilmente la circostanza di fatto F3: la strada era a senso unico. Tuttavia, l'agente ha elevato la sanzione ex art. 143 commi 11-12 CdS, norma che presuppone l'esistenza di un doppio senso di marcia. Esiste una contraddizione logica insanabile tra la constatazione del fatto (senso unico) e la qualificazione giuridica scelta (contromano). Il "contromano" non può esistere se non c'è un senso di marcia opposto da rispettare; in una strada a senso unico, l'unico errore possibile è il "senso vietato", che non è sanzionato dall'art. 143 ma da altre disposizioni. Tale errore di qualificazione rende il verbale nullo per mancanza di presupposti fattuali necessari all'applicazione della norma scelta, in violazione del principio di legalità sancito dall'art. 1 L. 689/1981.",
+        "norm_text_cited": ["art_143_cds", "art_1_l689"],
+        "facts_referenced": ["F1", "F3", "F2"],
+        "evidence_cited": ["DOC1", "DOC2"],
+        "precedents_addressed": [
+          {
+            "id": "cass_16515_2005",
+            "strategy": "limit_scope",
+            "reasoning": "L'orientamento di cui alla Cass. 16515/2005 deve essere limitato ai casi in cui la strada sia effettivamente a doppio senso e il conducente abbia violato il senso di marcia. Non può essere esteso a casi in cui la segnaletica (DOC2) e i fatti (F3) dimostrano inequivocabilmente l'esistenza di un senso unico. In tal caso, la norma del "contromano" è *inapplicabile* per difetto di presupposto fattuale, rendendo l'equiparazione giurisprudenziale irrilevante per la fattispecie concreta."
+          }
+        ],
+        "supports": null
+      },
+      {
+        "id": "ARG3",
+        "type": "derived",
+        "derived_from": "SEED_ARG4",
+        "claim": "Il silenzio del legislatore sulle modifiche al Codice della Strada conferma la volontà di non unificare le fattispecie.",
+        "legal_reasoning": "Le successive riforme del Codice della Strada hanno mantenuto una netta distinzione terminologica tra "contromano" e "senso vietato" (o violazione di divieti di transito). Se il legislatore avesse voluto equiparare le due condotte sotto la stessa sanzione, come suggerisce la giurisprudenza di Cassazione n. 16515/2005, avrebbe modificato esplicitamente il testo dell'art. 143 CdS per includere le violazioni di senso unico. L'assenza di tale modifica normativa, unita alla presenza di sanzioni specifiche per la violazione di divieti di accesso negli artt. 6 e 7 CdS, dimostra che la volontà del legislatore è stata quella di mantenere distinte le due fattispecie. L'interpretazione estensiva operata dalla giurisprudenza contrasta con il principio di legalità e con la chiara volontà del legislatore di non sanzionare il "senso vietato" con le pene severe previste per il "contromano".",
+        "norm_text_cited": ["art_143_cds", "art_6_cds", "art_7_cds"],
+        "facts_referenced": ["D1"],
+        "evidence_cited": ["DOC1"],
+        "precedents_addressed": [
+          {
+            "id": "cass_16515_2005",
+            "strategy": "criticize",
+            "reasoning": "La Cassazione n. 16515/2005 ha operato un'interpretazione che ignora il principio di tassatività e la sistematicità del Codice. Il fatto che il legislatore non abbia mai modificato l'art. 143 per includere il "senso vietato" nelle sanzioni da "contromano" conferma che tale equiparazione è un'interpretazione giurisprudenziale forzata, non un dettato normativo. Pertanto, l'orientamento della Cassazione deve essere considerato superato o comunque non applicabile in contrasto con la lettera della legge attuale."
+          }
+        ],
+        "supports": "ARG1"
+      }
+    ],
+    "requests": {
+      "primary": "Dichiarare l'annullamento del verbale n. XXX elevato ex art. 143 CdS per errata qualificazione giuridica e difetto di presupposti fattuali.",
+      "subordinate": "In via subordinata, riqualificare la violazione come violazione degli artt. 6 o 7 CdS (senso vietato), applicando le sanzioni in misura ridotta e senza decurtazione di punti."
+    }
+  },
+  "internal_analysis": {
+    "strength_self_assessments": {
+      "ARG1": 0.85,
+      "ARG2": 0.9,
+      "ARG3": 0.75
+    },
+    "key_vulnerabilities": [
+      "La giurisprudenza di Cassazione n. 16515/2005 è molto consolidata e i giudici di pace tendono a seguirla per evitare il rischio di revoca.",
+      "La distinzione tra "contromano" e "senso vietato" potrebbe essere considerata dal giudice come una mera sfumatura terminologica non rilevante ai fini della sanzione.",
+      "L'assenza di una norma specifica che punisca il "senso vietato" con una sanzione diversa potrebbe essere usata dall'avversario per sostenere che l'unica norma applicabile è quella del contromano."
+    ],
+    "strongest_point": "La contraddizione logica interna al verbale: applicare la norma sul "contromano" a una strada a senso unico è giuridicamente insostenibile se si rispetta il testo letterale della legge (art. 143 comma 11), poiché il "contromano" presuppone un doppio senso di marcia.",
+    "gaps": [
+      "Mancanza di una norma specifica nel fascicolo che sancisce esplicitamente la violazione di "senso vietato" con una sanzione diversa da quella del contromano (artt. 6-7 menzionano divieti ma non specificano la sanzione per il "senso vietato" in modo esaustivo rispetto all'art. 143)."
+    ]
+  }
+}

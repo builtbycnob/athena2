@@ -1,0 +1,73 @@
+--- CONTEXT ---
+finish_reason=stop
+
+--- RAW OUTPUT (6754 chars) ---
+{
+  "filed_brief": {
+    "arguments": [
+      {
+        "id": "ARG1",
+        "type": "new",
+        "derived_from": "SEED_ARG1",
+        "claim": "L'applicazione dell'art. 143 CdS è illegittima in quanto la fattispecie descritta nel verbale (circolazione in senso vietato su strada a senso unico) non corrisponde alla tipizzazione testuale del "contromano".",
+        "legal_reasoning": "Il testo dell'art. 143, comma 11, del D.Lgs. 285/1992 sanziona chi "circola contromano". Il termine "contromano" indica, per definizione letterale e comune, la circolazione in direzione opposta a quella del flusso di traffico su una strada a doppio senso di marcia. Nel caso di specie, i fatti indubitabili (F3) stabiliscono che la strada interessata era a "senso unico". La circolazione in direzione opposta su una strada a senso unico configura un "controsenso" o una violazione di divieto di transito, fattispecie diversa e non tipizzata dall'art. 143 comma 11, il quale richiede necessariamente l'esistenza di un doppio senso di circolazione per poter parlare di "contromano". Poiché il verbale (DOC1) qualifica il fatto ex art. 143, ma i fatti (F1, F3) dimostrano l'assenza della condizione essenziale di "doppio senso", la norma è inapplicabile ratione materiae.",
+        "norm_text_cited": ["art_143_cds", "art_1_l689"],
+        "facts_referenced": ["F1", "F3", "D1"],
+        "evidence_cited": ["DOC1", "DOC2"],
+        "precedents_addressed": [
+          {
+            "id": "cass_16515_2005",
+            "strategy": "criticize",
+            "reasoning": "L'orientamento della Cassazione n. 16515/2005, che equipara contromano e controsenso, deve essere disapplicato in quanto contrasta con il principio di legalità sancito dall'art. 1 della Legge 689/1981 e con la lettera chiara dell'art. 143 CdS. Tale giurisprudenza opera un'interpretazione estensiva che non trova riscontro nel testo normativo: il legislatore ha scelto termini specifici ("contromano") e non ha previsto l'equiparazione al "controsenso" in caso di senso unico. In caso di contrasto tra testo di legge e interpretazione giurisprudenziale, prevale il testo, rendendo l'applicazione della norma in questo caso un errore di diritto."
+          }
+        ],
+        "supports": "ARG2"
+      },
+      {
+        "id": "ARG2",
+        "type": "new",
+        "derived_from": "SEED_ARG2",
+        "claim": "Il verbale è affetto da vizio di inidoneità logica e formale per contraddizione interna tra la qualificazione giuridica e la descrizione fattuale.",
+        "legal_reasoning": "Il verbale (DOC1) contiene una contraddizione insanabile tra la constatazione del fatto e la norma applicata. La descrizione fattuale (DOC1, F3) attesta che la strada era a "senso unico". La norma applicata (art. 143 CdS) presuppone, per la sua stessa natura, la presenza di un doppio senso di circolazione per la violazione di "contromano". Applicare la sanzione per "contromano" su una strada a senso unico è un errore logico-giuridico che rende il verbale privo di fondamento normativo. La qualificazione giuridica errata non può essere sanata da presunzioni o interpretazioni estensive, ma deve portare all'annullamento della sanzione per difetto di tipicità della violazione contestata.",
+        "norm_text_cited": ["art_143_cds", "art_1_l689"],
+        "facts_referenced": ["F3", "D1"],
+        "evidence_cited": ["DOC1"],
+        "precedents_addressed": [],
+        "supports": null
+      },
+      {
+        "id": "ARG3",
+        "type": "new",
+        "derived_from": "SEED_ARG3",
+        "claim": "Viola il principio di legalità (art. 1 L. 689/1981) l'estensione della fattispecie "contromano" alla fattispecie "controsenso" su strada a senso unico.",
+        "legal_reasoning": "Ai sensi dell'art. 1, comma 2, della Legge 689/1981, le leggi che prevedono sanzioni amministrative si applicano "soltanto nei casi e per i tempi in esse considerati". Il legislatore ha previsto sanzioni specifiche per la violazione dell'art. 143 CdS, distinguendo tra "contromano" (comma 11) e altre violazioni dello stesso articolo (comma 13). Non vi è alcuna previsione normativa che estenda la fattispecie "contromano" alla circolazione in senso opposto su strade a senso unico. Tale estensione, se ammessa, costituirebbe un'analogia in malam partem, espressamente vietata dal principio di legalità. Poiché la fattispecie "controsenso" su strada a senso unico non è espressamente tipizzata dall'art. 143 comma 11, la sanzione inflitta è illegittima per mancanza di base normativa.",
+        "norm_text_cited": ["art_1_l689", "art_143_cds"],
+        "facts_referenced": ["D1"],
+        "evidence_cited": [],
+        "precedents_addressed": [],
+        "supports": null
+      }
+    ],
+    "requests": {
+      "primary": "Si richiede l'annullamento del verbale n. XXX elevato ex art. 143 CdS per errata qualificazione giuridica e difetto di tipicità della violazione, in quanto la strada era a senso unico e non a doppio senso.",
+      "subordinate": "In subordine, si chiede la riqualificazione della violazione ai sensi degli artt. 6 o 7 CdS (violazione di divieti di transito su strada a senso unico), con conseguente riduzione della sanzione alla forfettaria prevista per le violazioni di divieto di circolazione."
+    }
+  },
+  "internal_analysis": {
+    "strength_self_assessments": {
+      "ARG1": 0.85,
+      "ARG2": 0.75,
+      "ARG3": 0.9
+    },
+    "key_vulnerabilities": [
+      "La giurisprudenza di Cassazione (n. 16515/2005) è molto radicata e potrebbe essere considerata vincolante di fatto dal Giudice di Pace nonostante la nostra argomentazione testuale.",
+      "La distinzione tra "contromano" e "controsenso" potrebbe essere considerata una sottigliezza lessicale irrilevante rispetto alla sostanza del pericolo creato.",
+      "Il Giudice potrebbe applicare la sanzione ex art. 143 comma 13 (altre violazioni) invece di annullare il verbale, se ritiene che la violazione sia comunque sussistente ma mal qualificata."
+    ],
+    "strongest_point": "L'argomentazione basata sul principio di legalità (art. 1 L. 689/1981) e sulla lettera della legge è la più solida: il testo normativo non menziona il "controsenso" come "contromano", rendendo l'applicazione della norma un errore di diritto formale che non può essere sanato dall'interpretazione estensiva.",
+    "gaps": [
+      "Mancanza di specifica normativa locale (ordinanza del Sindaco) che regolamenti il senso unico della strada in questione per verificare se esista un divieto di transito specifico (art. 7 CdS).",
+      "Assenza di prove documentali specifiche (es. cartellonistica) che attestino inequivocabilmente la natura di "senso unico" della strada al momento del transito, oltre alla generica descrizione nel verbale."
+    ]
+  }
+}

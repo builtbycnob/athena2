@@ -8,12 +8,16 @@ from dataclasses import dataclass, field
 from mlx_lm import load, stream_generate
 from mlx_lm.sample_utils import make_sampler
 
+from langfuse import observe, Langfuse
+
 from athena.agents.json_repair import extract_json, RepairResult
 from athena.agents.errors import (
     LLMError, JSONTruncatedError, JSONMalformedError,
     NonJSONOutputError, classify_error,
 )
 
+
+langfuse = Langfuse()
 
 _MODEL = None
 _TOKENIZER = None
@@ -161,6 +165,7 @@ def parse_json_response(
         raise err
 
 
+@observe(as_type="generation")
 def invoke_llm(
     system_prompt: str,
     user_prompt: str,
@@ -184,6 +189,17 @@ def invoke_llm(
         if result.applied_fixes:
             fixes_str = ", ".join(result.applied_fixes)
             print(f"[LLM] JSON repaired: {fixes_str}", flush=True)
+        langfuse.update_current_generation(
+            model=_MODEL_PATH,
+            input={"system": system_prompt[:200], "user": user_prompt[:200]},
+            output=result.data,
+            usage_details={"input": prompt_tokens, "output": output_tokens},
+            metadata={
+                "temperature": temperature,
+                "finish_reason": finish_reason,
+                "applied_fixes": result.applied_fixes,
+            },
+        )
         return result.data
     except JSONTruncatedError:
         retry_max = min(max_tokens * 2, _CONTEXT_WINDOW - prompt_tokens)
@@ -209,6 +225,14 @@ def invoke_llm(
         except LLMError:
             _save_failure_artifact(raw2, context=f"Retry also failed. Original: {raw[:500]}")
             raise
-    except LLMError:
+    except LLMError as e:
+        langfuse.update_current_generation(
+            model=_MODEL_PATH,
+            input={"system": system_prompt[:200], "user": user_prompt[:200]},
+            output={"error": str(e)},
+            usage_details={"input": prompt_tokens, "output": output_tokens},
+            metadata={"temperature": temperature, "finish_reason": finish_reason},
+            level="ERROR",
+        )
         _save_failure_artifact(raw, context=f"finish_reason={finish_reason}")
         raise

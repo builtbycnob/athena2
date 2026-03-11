@@ -10,6 +10,8 @@ import sys
 import time
 from typing import Any
 
+from langfuse import observe
+
 from athena.simulation.graph import build_graph
 
 
@@ -18,6 +20,7 @@ def _log(msg: str) -> None:
     print(msg, flush=True)
 
 
+@observe(name="monte_carlo")
 def run_monte_carlo(case_data: dict, simulation_config: dict) -> list[dict]:
     """Execute all simulation combinations and collect results."""
     combinations = list(itertools.product(

@@ -7,8 +7,10 @@ build/
 .DS_Store
 .env
 .env.*
+!.env.example
 *.log
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
 cases/private/
+.worktrees/
