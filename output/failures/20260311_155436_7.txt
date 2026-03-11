@@ -1,0 +1,73 @@
+--- CONTEXT ---
+finish_reason=stop
+
+--- RAW OUTPUT (6673 chars) ---
+{
+  "filed_brief": {
+    "arguments": [
+      {
+        "id": "ARG1",
+        "type": "new",
+        "derived_from": "SEED_ARG1",
+        "claim": "Errata e illegittima applicazione dell'art. 143 CdS per violazione del principio di legalità e del testo normativo",
+        "legal_reasoning": "Il testo dell'art. 143, comma 11, del D.Lgs. 285/1992 sanziona specificamente chi 'circola contromano'. La fattispecie di specie, descritta nei fatti F1 e F3, riguarda un transito in 'senso unico' verso la direzione opposta a quella consentita, ovvero un 'controsenso', non un 'contromano'. La norma non contiene alcuna clausola di equiparazione tra i due concetti; l'equiparazione operata dalla giurisprudenza citata viola il principio di legalità sancito dall'art. 1 della L. 689/1981, il quale vieta l'applicazione di sanzioni in casi non espressamente considerati. Poiché la strada è a senso unico (F3), la circolazione avviene su una carreggiata destinata a un unico flusso, rendendo tecnicamente impossibile la configurazione del 'contromano' che presuppone l'esistenza di un flusso opposto su carreggiate separate o a doppio senso. L'applicazione dell'art. 143 in questo contesto è un'estensione analogica in malam partem illegittima.",
+        "norm_text_cited": ["art_143_cds", "art_1_l689"],
+        "facts_referenced": ["F1", "F3", "D1"],
+        "evidence_cited": ["DOC1", "DOC2"],
+        "precedents_addressed": [
+          {
+            "id": "cass_16515_2005",
+            "strategy": "criticize",
+            "reasoning": "La pronuncia Cass. 16515/2005, pur richiamata dal resistente, non può prevalere sul testo chiaro della legge. Tale giurisprudenza ha creato un'equiparazione di fatto che non trova riscontro nel dettato normativo dell'art. 143, commi 11-12, i quali richiedono la specifica circostanza del 'contromano'. In caso di contrasto tra testo di legge e interpretazione giurisprudenziale, deve prevalere il testo normativo. La Corte di Cassazione non può creare norme sanzionatorie attraverso l'interpretazione estensiva, violando l'art. 1 della L. 689/1981."
+          }
+        ],
+        "supports": "ARG2"
+      },
+      {
+        "id": "ARG2",
+        "type": "new",
+        "derived_from": "SEED_ARG2",
+        "claim": "Contraddizione interna e vizio di motivazione nel verbale",
+        "legal_reasoning": "Il verbale (DOC1) contiene una contraddizione insanabile: ammette il fatto che la strada fosse a senso unico (F3), ma applica la sanzione prevista per la circolazione contromano. La norma art. 143, comma 3, stabilisce che le disposizioni sulla posizione dei veicoli non si applicano (o si applicano diversamente) quando si circola su strade a senso unico. La qualificazione di 'contromano' è giuridicamente incompatibile con la presenza di un senso unico, in quanto il 'contromano' implica la circolazione contro un flusso opposto su una carreggiata bidirezionale o divisa in due carreggiate separate. Il verbale, riconoscendo il senso unico, ha implicitamente ammesso che la fattispecie 'contromano' non sussista, rendendo la sanzione illegittima per errore di fatto e di diritto.",
+        "norm_text_cited": ["art_143_cds"],
+        "facts_referenced": ["F1", "F3"],
+        "evidence_cited": ["DOC1", "DOC2"],
+        "precedents_addressed": [],
+        "supports": "ARG1"
+      },
+      {
+        "id": "ARG3",
+        "type": "new",
+        "derived_from": "SEED_ARG3",
+        "claim": "Inapplicabilità della sanzione per violazione del divieto di analogia in malam partem",
+        "legal_reasoning": "L'art. 1, comma 2, della Legge 689/1981 stabilisce tassativamente che le leggi che prevedono sanzioni si applicano 'soltanto nei casi e per i tempi in esse considerati'. Il legislatore non ha previsto l'estensione della sanzione per 'contromano' alla fattispecie di 'controsenso' in strada a senso unico. Tentare di colmare questa lacuna normativa mediante l'analogia o l'interpretazione estensiva della Cass. 16515/2005 è illegittimo in sede di sanzione amministrativa. La norma art. 143, commi 11 e 12, deve essere interpretata restrittivamente: se il legislatore avesse voluto sanzionare anche il 'controsenso' su senso unico con la stessa severità del 'contromano', lo avrebbe fatto esplicitamente, come ha fatto per le curve o le carreggiate separate. L'assenza di tale previsione esplicita impone l'annullamento della sanzione.",
+        "norm_text_cited": ["art_1_l689", "art_143_cds"],
+        "facts_referenced": ["D1"],
+        "evidence_cited": [],
+        "precedents_addressed": [
+          {
+            "id": "cass_16515_2005",
+            "strategy": "limit_scope",
+            "reasoning": "La giurisprudenza citata non può essere estesa a violare il principio di legalità. Il suo ambito di applicazione deve essere limitato ai casi in cui la fattispecie 'contromano' sia tecnicamente configurabile; nel caso di specie, la configurazione tecnica di 'senso unico' (F3) esclude a priori l'applicabilità della norma, indipendentemente dalle interpretazioni giurisprudenziali che tentano di uniformare le sanzioni."
+          }
+        ],
+        "supports": "ARG1"
+      }
+    ],
+    "requests": {
+      "primary": "Si richiede l'annullamento immediato del verbale n. XXX elevato ex art. 143 CdS per errata qualificazione giuridica e violazione del principio di legalità.",
+      "subordinate": "In via subordinata, in caso di rigetto dell'annullamento, si richiede la riqualificazione della sanzione ai sensi degli artt. 6 o 7 CdS, applicando la sanzione minima prevista per la violazione di divieti di circolazione su strada a senso unico."
+    }
+  },
+  "internal_analysis": {
+    "strength_self_assessments": {
+      "ARG1": 0.85,
+      "ARG2": 0.9,
+      "ARG3": 0.8
+    },
+    "key_vulnerabilities": ["La giurisprudenza di Cassazione è molto consolidata sull'equiparazione tra i due concetti, rendendo difficile per il GdP disattendere tale orientamento senza un forte motivato contrasto."],
+    "strongest_point": "La contraddizione interna del verbale che ammette il senso unico ma applica la norma sul contromano (ARG2) è un punto di forza tecnico inattaccabile, poiché la definizione giuridica di 'contromano' presuppone l'esistenza di un senso opposto."],
+    "gaps": ["Assenza di documentazione specifica che dimostri l'assenza di segnaletica verticale che potesse creare confusione sul senso di marcia."],
+    "strategy_note": "L'attacco frontale alla Cass. 16515/2005 è necessario ma rischioso; la strategia migliore è ancorare l'annullamento alla contraddizione interna del verbale (ARG2) e al principio di legalità (ARG3), lasciando la giurisprudenza come argomento secondario di supporto."
+  }
+}

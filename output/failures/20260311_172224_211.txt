@@ -1,0 +1,67 @@
+--- CONTEXT ---
+finish_reason=stop
+
+--- RAW OUTPUT (7488 chars) ---
+{
+  "filed_brief": {
+    "arguments": [
+      {
+        "id": "ARG1",
+        "type": "derived",
+        "derived_from": "SEED_ARG1",
+        "claim": "La sanzione per violazione dell'art. 143 CdS è illegittima in quanto la fattispecie descritta dal verbale (circolazione in senso unico) non integra l'ipotesi di "contromano" prevista dal comma 11.",
+        "legal_reasoning": "Il testo dell'art. 143, comma 11, del Codice della Strada sanziona chi "circola contromano", termine che la giurisprudenza ha storicamente collegato alla circolazione su strade a doppio senso di marcia in direzione opposta al flusso consentito. Il comma 12, che prevede pene più severe per curve e carreggiate divise, conferma che il legislatore distingue tra diverse modalità di violazione della direzione di marcia. Nel caso di specie, come documentato da DOC2, la strada in questione era a senso unico (F3). La circolazione in senso contrario su una strada a senso unico costituisce una violazione dell'obbligo di rispetto della direzione di marcia, ma non la fattispecie specifica del "contromano" inteso come circolazione su strada a doppio senso. Applicare la sanzione prevista dal comma 11 (€ 167-€ 665) a una violazione di senso unico appare un'eccessiva estensione del concetto, in contrasto con il principio di tassatività delle sanzioni amministrative.",
+        "norm_text_cited": ["art_143_cds", "art_1_l689"],
+        "facts_referenced": ["F1", "F3", "D1"],
+        "evidence_cited": ["DOC1", "DOC2"],
+        "precedents_addressed": [
+          {
+            "id": "cass_16515_2005",
+            "strategy": "distinguish",
+            "reasoning": "La pronuncia della Cassazione n. 16515/2005, seppur autorevole, è stata elaborata in un contesto fattuale specifico che non necessariamente copre la distinzione tra circolazione su strada a senso unico e circolazione su strada a doppio senso. La ratio della norma sanzionatoria del "contromano" è la pericolosità oggettiva della circolazione in senso opposto su strade dove il traffico è bidirezionale; tale pericolosità e la specifica fattispecie non ricorrono identicamente nel caso di una strada a senso unico, dove la violazione riguarda la direzione di marcia ma non la natura della carreggiata. Pertanto, la giurisprudenza citata non può essere applicata per analogia a una fattispecie diversa."
+          }
+        ],
+        "supports": "ARG2"
+      },
+      {
+        "id": "ARG2",
+        "type": "derived",
+        "derived_from": "SEED_ARG2",
+        "claim": "Il verbale presenta una contraddizione interna tra la descrizione del luogo (senso unico) e la norma applicata (contromano su doppio senso), rendendo la sanzione illegittima.",
+        "legal_reasoning": "Il verbale (DOC1) descrive il transito in una strada a senso unico (F3), come confermato dalla documentazione segnaletica (DOC2). Tuttavia, l'aggravante sanzionatoria è stata applicata in base all'art. 143, comma 11, che tipizza la violazione del "contromano". La nozione di "contromano" presuppone l'esistenza di un senso di marcia opposto a quello del trasgressore su una carreggiata a doppio senso; su una strada a senso unico, il veicolo non può "andare contromano" nel senso tecnico-giuridico della norma, ma semplicemente "viola la direzione di marcia". Tale errore di qualificazione giuridica, che trasforma una violazione di divieto di circolazione in una violazione di "contromano", viola il principio di legalità sancito dall'art. 1 L. 689/1981, il quale esige che la legge preveda tassativamente i casi di sanzione. La sanzione non può essere applicata in forza di un'interpretazione che non trova riscontro nel testo normativo per la fattispecie concreta.",
+        "norm_text_cited": ["art_143_cds", "art_1_l689"],
+        "facts_referenced": ["F1", "F3"],
+        "evidence_cited": ["DOC1", "DOC2"],
+        "precedents_addressed": [],
+        "supports": "ARG1"
+      },
+      {
+        "id": "ARG3",
+        "type": "new",
+        "derived_from": null,
+        "claim": "In via subordinata, la fattispecie va riqualificata sotto le norme relative ai divieti di circolazione nei centri abitati o fuori, con la conseguente riduzione della sanzione.",
+        "legal_reasoning": "Qualora il Giudice non dovesse accogliere l'annullamento, si chiede una riqualificazione della violazione. La condotta del trasgressore, consistente nel transito in senso opposto su una strada a senso unico, rientra pienamente nella fattispecie di "violazione di obblighi, divieti e limitazioni" disciplinata dall'art. 7, comma 14, del Codice della Strada (nei centri abitati) o dall'art. 6, comma 14 (fuori dai centri). Il testo dell'art. 143 comma 11 non si applica, ma la violazione è comunque sanzionabile, seppur con una sanzione amministrativa più lieve (€ 42-€ 173 per l'art. 7 c. 14, o € 87-€ 344 per l'art. 6 c. 14), che riflette meglio la minore pericolosità della violazione rispetto al "contromano" vero e proprio. Tale soluzione è proporzionata e rispetta la volontà del legislatore di distinguere le diverse gravità delle infrazioni.",
+        "norm_text_cited": ["art_7_cds", "art_6_cds"],
+        "facts_referenced": ["F1", "F3"],
+        "evidence_cited": ["DOC1"],
+        "precedents_addressed": [],
+        "supports": "ARG4"
+      }
+    ],
+    "requests": {
+      "primary": "Si chiede l'annullamento del verbale n. XXX per errata qualificazione giuridica, in quanto la fattispecie "contromano" non integra la violazione commessa su strada a senso unico.",
+      "subordinate": "In via subordinata, si chiede la riqualificazione della violazione ai sensi dell'art. 7, comma 14, c.d.s., con la conseguente riduzione della sanzione al minimo edittale previsto per la violazione di divieti di circolazione."
+    }
+  },
+  "internal_analysis": {
+    "strength_self_assessments": {
+      "ARG1": 0.75,
+      "ARG2": 0.8,
+      "ARG3": 0.65
+    },
+    "key_vulnerabilities": ["La giurisprudenza di Cassazione tende a equiparare i due concetti per semplicità applicativa, rendendo difficile distinguere la fattispecie senza un'analisi molto dettagliata del testo normativo.", "Il Giudice di Pace potrebbe preferire la sanzione più alta (contromano) per evitare di dover riqualificare la violazione, se ritiene che l'errore sia solo formale.", "La distinzione tra "senso unico" e "contromano" potrebbe essere considerata dal giudice come una sottigliezza tecnica non rilevante ai fini della sicurezza stradale."],
+    "strongest_point": "Il testo dell'art. 143 comma 11 parla esplicitamente di "contromano", mentre l'art. 7 comma 14 copre genericamente la violazione di divieti; la circostanza che la strada fosse a senso unico (F3) rende l'applicazione del comma 11 letteralmente imprecisa, violando il principio di legalità.",
+    "gaps": ["Mancanza di prove specifiche sulla segnaletica verticale che indicava esplicitamente il senso unico (es. foto della segnaletica specifica, non solo la descrizione generica), oltre alla DOC2 che è generica.", "Assenza di una sentenza della Cassazione che distingua esplicitamente tra "contromano" e "senso unico" a favore dell'opponente per rafforzare l'argomento ARG1."],
+    "strategy_notes": "L'approccio è difensivo ma propositivo: si attacca la qualificazione giuridica con rigore testuale, ma si offre al giudice una via d'uscita (la riqualificazione) che evita l'annullamento totale e riduce la sanzione. Questo mantiene un tono collaborativo, evitando di apparire come un mero contestatore delle sanzioni."
+  }
+}
