@@ -1,0 +1,54 @@
+DECISION TREE — Profilo probabile del giudice?
+=======================================================
+
+┌─ formalista_anti_cass
+│  ├─ aggressivo: successo 80% [38%-96%] ★ RACCOMANDATO
+│  │     A:20% R:60% X:20%
+│  ├─ prudente: successo 80% [38%-96%] ✗ DOMINATO
+│  │     A:0% R:80% X:20%
+│  ├─ tecnico: successo 60% [23%-88%]
+│  │     A:0% R:60% X:40%
+│
+┌─ formalista_pro_cass
+│  ├─ aggressivo: successo 0% [0%-49%]
+│  │     A:0% R:0% X:100%
+│  ├─ prudente: successo 20% [4%-62%] ★ RACCOMANDATO ✗ DOMINATO
+│  │     A:0% R:20% X:80%
+│  ├─ tecnico: successo 0% [0%-49%]
+│  │     A:0% R:0% X:100%
+│
+┌─ sostanzialista_anti_cass
+│  ├─ aggressivo: successo 25% [5%-70%]
+│  │     A:0% R:25% X:75%
+│  ├─ prudente: successo 50% [15%-85%] ★ RACCOMANDATO ✗ DOMINATO
+│  │     A:0% R:50% X:50%
+│  ├─ tecnico: successo 20% [4%-62%]
+│  │     A:0% R:20% X:80%
+│
+┌─ sostanzialista_pro_cass
+│  ├─ aggressivo: successo 0% [0%-49%]
+│  │     A:0% R:0% X:100%
+│  ├─ prudente: successo 40% [12%-77%] ★ RACCOMANDATO ✗ DOMINATO
+│  │     A:0% R:40% X:60%
+│  ├─ tecnico: successo 0% [0%-43%]
+│  │     A:0% R:0% X:100%
+│
+
+STRATEGIE DOMINATE
+------------------------------
+  ✗ prudente — dominato: per ogni profilo giudice esiste una strategia con probabilità di successo superiore.
+
+RANKING EFFICACIA ARGOMENTI
+------------------------------
+  1. ARG1: persuasività media 0.81 (±0.19), determinativo nel 85% dei casi
+     per profilo: formalista_anti_cass: 0.89, formalista_pro_cass: 0.84, sostanzialista_anti_cass: 0.87, sostanzialista_pro_cass: 0.65
+  2. RARG1: persuasività media 0.75 (±0.26), determinativo nel 80% dei casi
+     per profilo: formalista_anti_cass: 0.52, formalista_pro_cass: 0.87, sostanzialista_anti_cass: 0.78, sostanzialista_pro_cass: 0.85
+  3. ARG2: persuasività media 0.68 (±0.22), determinativo nel 18% dei casi
+     per profilo: formalista_anti_cass: 0.79, formalista_pro_cass: 0.70, sostanzialista_anti_cass: 0.77, sostanzialista_pro_cass: 0.47
+  4. ARG3: persuasività media 0.59 (±0.24), determinativo nel 21% dei casi
+     per profilo: formalista_anti_cass: 0.79, formalista_pro_cass: 0.51, sostanzialista_anti_cass: 0.67, sostanzialista_pro_cass: 0.41
+  5. ARG4: persuasività media 0.45 (±0.24), determinativo nel 0% dei casi
+     per profilo: formalista_anti_cass: 0.60, formalista_pro_cass: 0.50, sostanzialista_pro_cass: 0.33
+  6. RARG2: persuasività media 0.45 (±0.07), determinativo nel 0% dei casi
+     per profilo: formalista_anti_cass: 0.50, sostanzialista_anti_cass: 0.40
