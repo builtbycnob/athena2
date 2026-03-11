@@ -134,3 +134,6 @@ def main(argv: list[str] | None = None) -> None:
           f"{stats['avg_tok_s']:.1f} avg tok/s")
 
     print(f"[ATHENA] Done. {len(results)} runs, outputs in {args.output}/")
+
+    from athena.agents.llm import langfuse
+    langfuse.flush()
