@@ -5,8 +5,8 @@ from typing import Any
 class RunParams(BaseModel):
     run_id: str
     judge_profile: dict[str, Any]
-    appellant_profile: dict[str, Any]
-    temperature: dict[str, float]
+    party_profiles: dict[str, dict[str, Any]]  # party_id → profile
+    temperatures: dict[str, float]
     language: str
 
 

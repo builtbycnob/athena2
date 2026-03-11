@@ -13,8 +13,52 @@ import sys
 import yaml
 
 from athena.agents.llm import get_stats
-from athena.schemas.simulation import SimulationConfig
+from athena.schemas.simulation import SimulationConfig, migrate_simulation_v1
 from athena.simulation.orchestrator import run_monte_carlo
+
+
+def migrate_case_v1(case_data: dict) -> dict:
+    """Detect old-format case YAML and convert to N-party format.
+
+    Old format: seed_arguments.appellant/respondent, disputed facts with
+    appellant_position/respondent_position.
+    New format: seed_arguments.by_party, disputed facts with positions dict.
+    """
+    # Build role→id mapping once
+    party_id_by_role = {}
+    for p in case_data.get("parties", []):
+        party_id_by_role[p["role"]] = p["id"]
+
+    sa = case_data.get("seed_arguments", {})
+    # Detect old format: has 'appellant' key but not 'by_party'
+    if "by_party" not in sa and ("appellant" in sa or "respondent" in sa):
+        sa = dict(sa)  # copy to avoid mutating caller's dict
+        by_party = {}
+        if "appellant" in sa:
+            pid = party_id_by_role.get("appellant", "appellant")
+            by_party[pid] = sa.pop("appellant")
+        if "respondent" in sa:
+            pid = party_id_by_role.get("respondent", "respondent")
+            by_party[pid] = sa.pop("respondent")
+        sa["by_party"] = by_party
+        case_data["seed_arguments"] = sa
+
+    # Migrate disputed facts: appellant_position/respondent_position → positions dict
+    facts = case_data.get("facts", {})
+    for i, df in enumerate(facts.get("disputed", [])):
+        if "positions" not in df and ("appellant_position" in df or "respondent_position" in df):
+            df = dict(df)  # copy to avoid mutating caller's dict
+            positions = {}
+            if "appellant_position" in df:
+                pid = party_id_by_role.get("appellant", "appellant")
+                positions[pid] = df.pop("appellant_position")
+            if "respondent_position" in df:
+                pid = party_id_by_role.get("respondent", "respondent")
+                positions[pid] = df.pop("respondent_position")
+            df["positions"] = positions
+            facts["disputed"][i] = df
+
+    return case_data
 from athena.simulation.aggregator import aggregate_results
 from athena.output.table import format_probability_table
 from athena.output.decision_tree import generate_decision_tree
@@ -67,6 +111,8 @@ def main(argv: list[str] | None = None) -> None:
         jur = case_data.get("jurisdiction")
         if isinstance(jur, dict):
             case_data["key_precedents"] = jur.get("key_precedents", [])
+    # Migrate v1 case format (hardcoded appellant/respondent) to v2 (N-party)
+    case_data = migrate_case_v1(case_data)
 
     print(f"[ATHENA] Loading simulation config: {args.simulation}")
     with open(args.simulation) as f:
@@ -74,13 +120,18 @@ def main(argv: list[str] | None = None) -> None:
 
     # YAML has a top-level 'simulation' key wrapper
     sim_data = sim_raw.get("simulation", sim_raw)
+    sim_data = migrate_simulation_v1(sim_data)
     sim_config = SimulationConfig(**sim_data)
     sim_config_dict = sim_config.model_dump()
 
     print(f"[ATHENA] Total runs planned: {sim_config.total_runs}")
+    party_counts = " x ".join(
+        f"{len(profiles)} {pid} profiles"
+        for pid, profiles in sim_config.party_profiles.items()
+    )
     print(
         f"[ATHENA] Combinations: {len(sim_config.judge_profiles)} judge profiles "
-        f"x {len(sim_config.appellant_profiles)} appellant profiles "
+        f"x {party_counts} "
         f"x {sim_config.runs_per_combination} runs"
     )
 

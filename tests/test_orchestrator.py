@@ -43,7 +43,7 @@ class TestGetConcurrency:
 
 
 class TestRunOne:
-    """Test _run_one exception handling."""
+    """Test _run_one with new signature."""
 
     def test_returns_ok_on_success(self):
         mock_graph = MagicMock()
@@ -56,10 +56,17 @@ class TestRunOne:
             "judge_validation": None,
             "error": None,
         }
-        result = _run_one(
-            mock_graph, {}, {"id": "judge1"}, {"id": "app1"},
-            0, {"appellant": 0.5}, "it", 1, 1,
-        )
+        run_params = {
+            "run_id": "judge1__app1__000",
+            "judge_profile": {"id": "judge1"},
+            "party_profiles": {
+                "opponente": {"id": "app1", "role_type": "advocate"},
+            },
+            "appellant_profile": {"id": "app1"},
+            "temperatures": {"appellant": 0.5},
+            "language": "it",
+        }
+        result = _run_one(mock_graph, {}, run_params, 1, 1)
         assert result["status"] == "ok"
         assert result["run_id"] == "judge1__app1__000"
         assert "result" in result
@@ -67,20 +74,28 @@ class TestRunOne:
     def test_returns_fail_on_error_state(self):
         mock_graph = MagicMock()
         mock_graph.invoke.return_value = {"error": "JSON parse failed"}
-        result = _run_one(
-            mock_graph, {}, {"id": "j"}, {"id": "a"},
-            0, {}, "it", 1, 1,
-        )
+        run_params = {
+            "run_id": "j__a__000",
+            "judge_profile": {"id": "j"},
+            "party_profiles": {},
+            "temperatures": {},
+            "language": "it",
+        }
+        result = _run_one(mock_graph, {}, run_params, 1, 1)
         assert result["status"] == "fail"
         assert "JSON parse" in result["error"]
 
     def test_returns_exception_on_raise(self):
         mock_graph = MagicMock()
         mock_graph.invoke.side_effect = RuntimeError("boom")
-        result = _run_one(
-            mock_graph, {}, {"id": "j"}, {"id": "a"},
-            0, {}, "it", 1, 1,
-        )
+        run_params = {
+            "run_id": "j__a__000",
+            "judge_profile": {"id": "j"},
+            "party_profiles": {},
+            "temperatures": {},
+            "language": "it",
+        }
+        result = _run_one(mock_graph, {}, run_params, 1, 1)
         assert result["status"] == "exception"
         assert "boom" in result["error"]
 
@@ -103,10 +118,17 @@ class TestParallelRuns:
         mock_build.return_value = mock_graph
 
         sim_config = {
-            "judge_profiles": [{"id": "j1"}, {"id": "j2"}],
-            "appellant_profiles": [{"id": "a1"}],
+            "judge_profiles": [
+                {"id": "j1", "party_id": "judge", "role_type": "adjudicator", "parameters": {}},
+                {"id": "j2", "party_id": "judge", "role_type": "adjudicator", "parameters": {}},
+            ],
+            "party_profiles": {
+                "opponente": [
+                    {"id": "a1", "party_id": "opponente", "role_type": "advocate", "parameters": {}},
+                ],
+            },
             "runs_per_combination": 2,
-            "temperature": {"appellant": 0.5, "respondent": 0.3, "judge": 0.2},
+            "temperatures": {"appellant": 0.5, "respondent": 0.3, "judge": 0.2},
             "language": "it",
         }
 
@@ -140,10 +162,16 @@ class TestParallelRuns:
         mock_build.return_value = mock_graph
 
         sim_config = {
-            "judge_profiles": [{"id": "j1"}],
-            "appellant_profiles": [{"id": "a1"}],
+            "judge_profiles": [
+                {"id": "j1", "party_id": "judge", "role_type": "adjudicator", "parameters": {}},
+            ],
+            "party_profiles": {
+                "opponente": [
+                    {"id": "a1", "party_id": "opponente", "role_type": "advocate", "parameters": {}},
+                ],
+            },
             "runs_per_combination": 4,
-            "temperature": {},
+            "temperatures": {},
             "language": "it",
         }
 

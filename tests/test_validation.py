@@ -102,3 +102,38 @@ class TestValidateJudge:
         )
         assert result.valid is False
         assert any("non valutati" in e.lower() or "not evaluated" in e.lower() for e in result.errors)
+
+    def test_respondent_ids_accepted_with_both_legacy_briefs(
+        self, sample_case_data, sample_appellant_brief, sample_respondent_brief
+    ):
+        """Judge citing respondent's RARG1 should not be flagged as phantom ID."""
+        judge_output = {
+            "preliminary_objections_ruling": [],
+            "case_reaches_merits": True,
+            "argument_evaluation": [
+                {"argument_id": "ARG1", "party": "appellant", "persuasiveness": 0.7,
+                 "strengths": "Forte", "weaknesses": "Debole", "determinative": True},
+                {"argument_id": "RARG1", "party": "respondent", "persuasiveness": 0.5,
+                 "strengths": "Ok", "weaknesses": "Debole", "determinative": False},
+            ],
+            "precedent_analysis": {"cass_16515_2005": {"followed": False, "distinguished": True, "reasoning": "Test."}},
+            "verdict": {
+                "qualification_correct": False,
+                "qualification_reasoning": "Errata.",
+                "if_incorrect": {"consequence": "reclassification", "consequence_reasoning": "R.",
+                                 "applied_norm": "artt. 6-7 CdS", "sanction_determined": 87, "points_deducted": 0},
+                "costs_ruling": "a carico del Comune",
+            },
+            "reasoning": "Motivazione.",
+            "gaps": [],
+        }
+        case = CaseFile(**sample_case_data)
+        result = validate_agent_output(
+            output=judge_output,
+            agent_role="judge",
+            case=case,
+            appellant_brief=sample_appellant_brief,
+            respondent_brief=sample_respondent_brief,
+        )
+        assert result.valid is True
+        assert len(result.errors) == 0

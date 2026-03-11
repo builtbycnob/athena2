@@ -1,10 +1,12 @@
 # src/athena/agents/prompts.py
 import json
 
-
-def _format_context_block(label: str, data) -> str:
-    """Format a context block for injection into prompts."""
-    return f"\n## {label}\n```json\n{json.dumps(data, indent=2, ensure_ascii=False)}\n```\n"
+from athena.agents.prompt_registry import (
+    PromptTemplate,
+    register_prompt,
+    build_party_prompt as _registry_build,
+    _format_context_block,
+)
 
 
 def build_appellant_prompt(context: dict) -> tuple[str, str]:
@@ -12,7 +14,7 @@ def build_appellant_prompt(context: dict) -> tuple[str, str]:
     Returns (system_prompt, user_prompt).
     """
     system = APPELLANT_SYSTEM_PROMPT.replace(
-        "{advocacy_style}", context["advocacy_style"]
+        "{advocacy_style}", context.get("advocacy_style", "")
     )
     user_parts = [
         "Di seguito il fascicolo del caso su cui devi lavorare.",
@@ -295,3 +297,41 @@ La Cassazione è autorevole ma NON vincolante. Puoi discostarti motivando adegua
 - NON produrre probabilità — tu decidi.
 - qualification_correct e if_incorrect sono DUE questioni distinte.
 - Rispondi ESCLUSIVAMENTE con il JSON richiesto, senza testo aggiuntivo."""
+
+
+# --- Register templates in the prompt registry ---
+register_prompt("appellant_it", PromptTemplate(
+    role_type="advocate",
+    system_template=APPELLANT_SYSTEM_PROMPT,
+    output_format="",
+    constraints="",
+    user_preamble="Di seguito il fascicolo del caso su cui devi lavorare.",
+    user_closing="\nProduci la tua memoria difensiva in formato JSON come specificato nelle istruzioni.",
+    context_blocks=["Fatti", "Prove", "Testi normativi", "Precedenti",
+                     "Seed arguments", "Obiettivi della tua parte", "Stakes",
+                     "Regole procedurali"],
+))
+
+register_prompt("respondent_it", PromptTemplate(
+    role_type="advocate",
+    system_template=RESPONDENT_SYSTEM_PROMPT,
+    output_format="",
+    constraints="",
+    user_preamble="Di seguito il fascicolo del caso e la memoria dell'opponente.",
+    user_closing="\nProduci la tua memoria di costituzione in formato JSON come specificato nelle istruzioni.",
+    context_blocks=["Fatti", "Prove", "Testi normativi", "Precedenti",
+                     "Seed arguments difensivi", "Obiettivi della tua parte", "Stakes",
+                     "Regole procedurali", "Memoria dell'opponente (depositata)"],
+))
+
+register_prompt("judge_it", PromptTemplate(
+    role_type="adjudicator",
+    system_template=JUDGE_SYSTEM_PROMPT,
+    output_format="",
+    constraints="",
+    user_preamble="Di seguito il fascicolo completo e le memorie delle parti.",
+    user_closing="\nProduci la tua sentenza in formato JSON come specificato nelle istruzioni.",
+    context_blocks=["Fatti", "Prove", "Testi normativi", "Precedenti", "Stakes",
+                     "Regole procedurali", "Memoria dell'opponente (depositata)",
+                     "Memoria del Comune (depositata)"],
+))

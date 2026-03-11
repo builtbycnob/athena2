@@ -380,6 +380,10 @@ JUDGE_SCHEMA = {
 }
 
 AGENT_SCHEMAS: dict[str, dict] = {
+    "advocate_filing": APPELLANT_SCHEMA,
+    "advocate_response": RESPONDENT_SCHEMA,
+    "adjudicator": JUDGE_SCHEMA,
+    # Backward-compatible aliases
     "appellant": APPELLANT_SCHEMA,
     "respondent": RESPONDENT_SCHEMA,
     "judge": JUDGE_SCHEMA,
