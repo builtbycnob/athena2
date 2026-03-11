@@ -128,8 +128,11 @@ def repair_truncated_json(text: str) -> str | None:
 
 
 def _clean(s: str) -> str:
-    """Remove control chars and fix invalid escape sequences."""
+    """Remove control chars, normalize curly quotes, fix invalid escape sequences."""
     s = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', ' ', s)
+    # Normalize curly/smart quotes to straight quotes (common in Italian LLM output)
+    s = s.replace('\u201c', '"').replace('\u201d', '"')  # " "
+    s = s.replace('\u2018', "'").replace('\u2019', "'")  # ' '
     s = re.sub(r'\\([^"\\/bfnrtu])', r'\1', s)
     return s
 
@@ -256,8 +259,13 @@ def _fix_embedded_quotes(text: str) -> str:
                             in_string = False
                             result.append(ch)
                             i += 1
-                    elif k < len(text) and text[k] in '{[0123456789tfn-':
+                    elif k < len(text) and text[k] in '{[0123456789-':
                         # Comma then value/object/array — real terminator
+                        in_string = False
+                        result.append(ch)
+                        i += 1
+                    elif k < len(text) and text[k:k+4] in ('true', 'fals', 'null'):
+                        # Comma then JSON literal — real terminator
                         in_string = False
                         result.append(ch)
                         i += 1
