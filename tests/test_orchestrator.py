@@ -1,0 +1,154 @@
+# tests/test_orchestrator.py
+"""Tests for the Monte Carlo orchestrator with parallel execution."""
+
+import os
+from unittest.mock import patch, MagicMock
+
+import pytest
+
+from athena.simulation.orchestrator import _get_concurrency, _run_one, run_monte_carlo
+
+
+class TestGetConcurrency:
+    """Test concurrency env var parsing."""
+
+    def test_default_is_4(self):
+        with patch.dict(os.environ, {}, clear=True):
+            os.environ.pop("ATHENA_CONCURRENCY", None)
+            assert _get_concurrency() == 4
+
+    def test_valid_value(self):
+        with patch.dict(os.environ, {"ATHENA_CONCURRENCY": "8"}):
+            assert _get_concurrency() == 8
+
+    def test_zero_returns_default(self):
+        with patch.dict(os.environ, {"ATHENA_CONCURRENCY": "0"}):
+            assert _get_concurrency() == 4
+
+    def test_negative_returns_default(self):
+        with patch.dict(os.environ, {"ATHENA_CONCURRENCY": "-1"}):
+            assert _get_concurrency() == 4
+
+    def test_non_numeric_returns_default(self):
+        with patch.dict(os.environ, {"ATHENA_CONCURRENCY": "abc"}):
+            assert _get_concurrency() == 4
+
+    def test_empty_returns_default(self):
+        with patch.dict(os.environ, {"ATHENA_CONCURRENCY": ""}):
+            assert _get_concurrency() == 4
+
+    def test_one_is_valid(self):
+        with patch.dict(os.environ, {"ATHENA_CONCURRENCY": "1"}):
+            assert _get_concurrency() == 1
+
+
+class TestRunOne:
+    """Test _run_one exception handling."""
+
+    def test_returns_ok_on_success(self):
+        mock_graph = MagicMock()
+        mock_graph.invoke.return_value = {
+            "judge_decision": {"verdict": "ok"},
+            "appellant_brief": {"text": "brief"},
+            "respondent_brief": {"text": "resp"},
+            "appellant_validation": None,
+            "respondent_validation": None,
+            "judge_validation": None,
+            "error": None,
+        }
+        result = _run_one(
+            mock_graph, {}, {"id": "judge1"}, {"id": "app1"},
+            0, {"appellant": 0.5}, "it", 1, 1,
+        )
+        assert result["status"] == "ok"
+        assert result["run_id"] == "judge1__app1__000"
+        assert "result" in result
+
+    def test_returns_fail_on_error_state(self):
+        mock_graph = MagicMock()
+        mock_graph.invoke.return_value = {"error": "JSON parse failed"}
+        result = _run_one(
+            mock_graph, {}, {"id": "j"}, {"id": "a"},
+            0, {}, "it", 1, 1,
+        )
+        assert result["status"] == "fail"
+        assert "JSON parse" in result["error"]
+
+    def test_returns_exception_on_raise(self):
+        mock_graph = MagicMock()
+        mock_graph.invoke.side_effect = RuntimeError("boom")
+        result = _run_one(
+            mock_graph, {}, {"id": "j"}, {"id": "a"},
+            0, {}, "it", 1, 1,
+        )
+        assert result["status"] == "exception"
+        assert "boom" in result["error"]
+
+
+class TestParallelRuns:
+    """Test parallel orchestrator execution."""
+
+    @patch("athena.simulation.orchestrator.build_graph")
+    def test_parallel_runs_all_complete(self, mock_build):
+        mock_graph = MagicMock()
+        mock_graph.invoke.return_value = {
+            "judge_decision": {"verdict": "ok"},
+            "appellant_brief": {"text": "b"},
+            "respondent_brief": {"text": "r"},
+            "appellant_validation": None,
+            "respondent_validation": None,
+            "judge_validation": None,
+            "error": None,
+        }
+        mock_build.return_value = mock_graph
+
+        sim_config = {
+            "judge_profiles": [{"id": "j1"}, {"id": "j2"}],
+            "appellant_profiles": [{"id": "a1"}],
+            "runs_per_combination": 2,
+            "temperature": {"appellant": 0.5, "respondent": 0.3, "judge": 0.2},
+            "language": "it",
+        }
+
+        with patch.dict(os.environ, {"ATHENA_CONCURRENCY": "4"}):
+            results = run_monte_carlo({}, sim_config)
+
+        assert len(results) == 4  # 2 judges × 1 appellant × 2 runs
+        assert mock_graph.invoke.call_count == 4
+        run_ids = {r["run_id"] for r in results}
+        assert "j1__a1__000" in run_ids
+        assert "j2__a1__001" in run_ids
+
+    @patch("athena.simulation.orchestrator.build_graph")
+    def test_mixed_success_and_failure(self, mock_build):
+        """Some runs succeed, some fail — all are collected."""
+        call_count = 0
+
+        def invoke_side_effect(state):
+            nonlocal call_count
+            call_count += 1
+            if call_count % 2 == 0:
+                return {**state, "error": "simulated failure"}
+            return {
+                **state,
+                "judge_decision": {"verdict": "ok"},
+                "error": None,
+            }
+
+        mock_graph = MagicMock()
+        mock_graph.invoke.side_effect = invoke_side_effect
+        mock_build.return_value = mock_graph
+
+        sim_config = {
+            "judge_profiles": [{"id": "j1"}],
+            "appellant_profiles": [{"id": "a1"}],
+            "runs_per_combination": 4,
+            "temperature": {},
+            "language": "it",
+        }
+
+        with patch.dict(os.environ, {"ATHENA_CONCURRENCY": "2"}):
+            results = run_monte_carlo({}, sim_config)
+
+        # Some succeed, some fail — but total invoke calls = 4
+        assert mock_graph.invoke.call_count == 4

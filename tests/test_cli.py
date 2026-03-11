@@ -30,6 +30,14 @@ class TestParseArgs:
         with pytest.raises(SystemExit):
             _parse_args(["run", "--case", "c.yaml"])
 
+    def test_concurrency_flag(self):
+        args = _parse_args(["run", "--case", "c.yaml", "--simulation", "s.yaml", "--output", "out/", "--concurrency", "2"])
+        assert args.concurrency == 2
+
+    def test_concurrency_flag_default_none(self):
+        args = _parse_args(["run", "--case", "c.yaml", "--simulation", "s.yaml", "--output", "out/"])
+        assert args.concurrency is None
+
 
 class TestMainPipeline:
     """Test the full pipeline with mocked orchestrator and LLM."""

@@ -18,8 +18,9 @@ def parse_log(path: str) -> dict:
         lines = f.readlines()
 
     total_runs = 0
+    concurrency = 1
     runs: list[dict] = []
-    current_run = None
+    active_runs: dict[str, dict] = {}
     llm_calls = 0
     llm_tokens = 0
     llm_time = 0.0
@@ -30,62 +31,94 @@ def parse_log(path: str) -> dict:
     cached_tokens = 0
 
     for line in lines:
-        # Total runs
-        m = re.search(r"Starting (\d+) runs", line)
+        # Total runs + concurrency
+        m = re.search(r"Starting (\d+) runs(?: \(concurrency=(\d+)\))?", line)
         if m:
             total_runs = int(m.group(1))
+            if m.group(2):
+                concurrency = int(m.group(2))
 
         # New run start
         m = re.search(r"\[MC\] Run (\d+)/(\d+): (.+)", line)
         if m:
-            current_run = {
+            run_info = {
                 "n": int(m.group(1)),
                 "id": m.group(3),
                 "agents": {},
                 "status": "running",
                 "time": None,
             }
+            active_runs[m.group(3)] = run_info
 
-        # Agent done
+        # Agent done — match to any active run by run_id prefix in the tag
         m = re.search(r"\[(.+?)\]\s+(Appellant|Respondent|Judge): done \((\d+\.\d+)s, valid=(\w+)\)", line)
         if m:
             agent = m.group(2).lower()
-            if current_run:
-                current_run["agents"][agent] = {
-                    "time": float(m.group(3)),
-                    "valid": m.group(4) == "True",
-                }
+            tag = m.group(1)
+            for rid, rinfo in active_runs.items():
+                if tag in rid or rid in tag:
+                    rinfo["agents"][agent] = {
+                        "time": float(m.group(3)),
+                        "valid": m.group(4) == "True",
+                    }
+                    break
 
         # Agent failed
         m = re.search(r"\[(.+?)\]\s+(Appellant|Respondent|Judge): FAILED", line)
-        if m and current_run:
-            current_run["agents"][m.group(2).lower()] = {"failed": True}
+        if m:
+            tag = m.group(1)
+            for rid, rinfo in active_runs.items():
+                if tag in rid or rid in tag:
+                    rinfo["agents"][m.group(2).lower()] = {"failed": True}
+                    break
 
-        # Run OK
-        m = re.search(r"\[MC\]\s+OK \((\d+\.\d+)s\) — (\d+)/(\d+)", line)
-        if m and current_run:
-            current_run["status"] = "ok"
-            current_run["time"] = float(m.group(1))
-            runs.append(current_run)
-            current_run = None
+        # Run OK — new format: OK (Xs) — run_id
+        m = re.search(r"\[MC\]\s+OK \((\d+\.\d+)s\) — (.+)", line)
+        if m:
+            run_id = m.group(2).strip()
+            rinfo = active_runs.pop(run_id, None)
+            if rinfo is None:
+                # Fallback: legacy format "OK (Xs) — N/M succeeded so far"
+                rinfo = next(iter(active_runs.values()), None)
+                if rinfo:
+                    active_runs.pop(rinfo["id"], None)
+            if rinfo:
+                rinfo["status"] = "ok"
+                rinfo["time"] = float(m.group(1))
+                runs.append(rinfo)
 
         # Run FAIL
         m = re.search(r"\[MC\]\s+FAIL \((\d+\.\d+)s\): (.+)", line)
-        if m and current_run:
-            current_run["status"] = "fail"
-            current_run["time"] = float(m.group(1))
-            current_run["error"] = m.group(2)
-            runs.append(current_run)
-            current_run = None
+        if m:
+            elapsed = float(m.group(1))
+            error = m.group(2)
+            # Find the active run that failed (match by most recent start)
+            rinfo = None
+            for rid, ri in list(active_runs.items()):
+                rinfo = ri
+                active_runs.pop(rid, None)
+                break
+            if rinfo:
+                rinfo["status"] = "fail"
+                rinfo["time"] = elapsed
+                rinfo["error"] = error
+                runs.append(rinfo)
 
         # Run EXCEPTION
         m = re.search(r"\[MC\]\s+EXCEPTION \((\d+\.\d+)s\): (.+)", line)
-        if m and current_run:
-            current_run["status"] = "exception"
-            current_run["time"] = float(m.group(1))
-            current_run["error"] = m.group(2)
-            runs.append(current_run)
-            current_run = None
+        if m:
+            elapsed = float(m.group(1))
+            error = m.group(2)
+            rinfo = None
+            for rid, ri in list(active_runs.items()):
+                rinfo = ri
+                active_runs.pop(rid, None)
+                break
+            if rinfo:
+                rinfo["status"] = "exception"
+                rinfo["time"] = elapsed
+                rinfo["error"] = error
+                runs.append(rinfo)
 
         # LLM call
         m = re.search(r"\[LLM\] Call #(\d+): (\d+) prompt → (\d+) output tok, (\d+\.\d+)s \((\d+\.\d+) tok/s\)", line)
@@ -127,11 +160,12 @@ def parse_log(path: str) -> dict:
 
     return {
         "total_runs": total_runs,
+        "concurrency": concurrency,
         "completed": completed,
         "succeeded": succeeded,
         "failed": failed,
         "runs": runs,
-        "current_run": current_run,
+        "active_runs": active_runs,
         "llm_calls": llm_calls,
         "llm_tokens": llm_tokens,
         "llm_time": llm_time,
@@ -145,33 +179,34 @@ def parse_log(path: str) -> dict:
 def format_report(data: dict) -> str:
     lines = []
     total = data["total_runs"] or 60
+    concurrency = data.get("concurrency", 1)
     completed = data["completed"]
     succeeded = data["succeeded"]
     failed = data["failed"]
     remaining = total - completed
-    in_progress = 1 if data["current_run"] else 0
+    in_progress = len(data.get("active_runs", {}))
 
     # Progress bar
     pct = completed / total * 100 if total > 0 else 0
     bar_len = 40
     filled = int(bar_len * completed / total) if total > 0 else 0
     bar = "█" * filled + "░" * (bar_len - filled)
-    lines.append(f"\n  ATHENA Simulation Monitor")
+    lines.append(f"\n  ATHENA Simulation Monitor (concurrency={concurrency})")
     lines.append(f"  {'─' * 45}")
     lines.append(f"  [{bar}] {pct:.0f}%")
-    lines.append(f"  {completed}/{total} completed | {succeeded} ok | {failed} fail | {remaining} remaining")
+    lines.append(f"  {completed}/{total} completed | {succeeded} ok | {failed} fail | {in_progress} active | {remaining} remaining")
 
     # Timing
     ok_runs = [r for r in data["runs"] if r["status"] == "ok" and r["time"]]
     if ok_runs:
         avg_time = sum(r["time"] for r in ok_runs) / len(ok_runs)
-        eta_s = avg_time * remaining
+        eta_s = avg_time * remaining / concurrency
         eta_min = eta_s / 60
         total_elapsed = sum(r["time"] for r in data["runs"] if r["time"])
         lines.append(f"")
         lines.append(f"  Avg run time:  {avg_time:.0f}s")
         lines.append(f"  Elapsed:       {total_elapsed/60:.1f} min")
-        lines.append(f"  ETA:           {eta_min:.0f} min ({remaining} runs × {avg_time:.0f}s)")
+        lines.append(f"  ETA:           {eta_min:.0f} min ({remaining} runs × {avg_time:.0f}s / {concurrency} workers)")
 
     # LLM stats
     if data["llm_calls"] > 0:
@@ -204,16 +239,15 @@ def format_report(data: dict) -> str:
             for a in data["failure_artifacts"][-3:]:
                 lines.append(f"      {a}")
 
-    # Current run
-    if data["current_run"]:
-        cr = data["current_run"]
-        agents_done = list(cr["agents"].keys())
+    # Active runs
+    active = data.get("active_runs", {})
+    if active:
         lines.append(f"")
-        lines.append(f"  Now: Run {cr['n']}/{total} — {cr['id']}")
-        if agents_done:
-            lines.append(f"       Agents done: {', '.join(agents_done)}")
-        else:
-            lines.append(f"       Starting...")
+        lines.append(f"  Active runs ({len(active)}):")
+        for rid, cr in list(active.items())[:8]:
+            agents_done = list(cr["agents"].keys())
+            status = f"agents: {', '.join(agents_done)}" if agents_done else "starting..."
+            lines.append(f"    Run {cr['n']}/{total} — {cr['id']} ({status})")
 
     # Failed runs summary
     failed_runs = [r for r in data["runs"] if r["status"] in ("fail", "exception")]

@@ -38,6 +38,10 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     run_parser.add_argument(
         "--output", required=True, help="Output directory for results"
     )
+    run_parser.add_argument(
+        "--concurrency", type=int, default=None,
+        help="Concurrent simulation runs (default: $ATHENA_CONCURRENCY or 4)",
+    )
 
     return parser.parse_args(argv)
 
@@ -79,6 +83,10 @@ def main(argv: list[str] | None = None) -> None:
         f"x {len(sim_config.appellant_profiles)} appellant profiles "
         f"x {sim_config.runs_per_combination} runs"
     )
+
+    # --- Concurrency ---
+    if args.concurrency is not None:
+        os.environ["ATHENA_CONCURRENCY"] = str(args.concurrency)
 
     # --- Run simulations ---
     print("[ATHENA] Starting Monte Carlo simulation...")
@@ -128,10 +136,12 @@ def main(argv: list[str] | None = None) -> None:
 
     # --- LLM stats ---
     stats = get_stats()
+    from athena.simulation.orchestrator import _get_concurrency
     print(f"[ATHENA] LLM stats: {stats['calls']} calls, "
           f"{stats['total_tokens']} tokens, "
           f"{stats['total_time']:.0f}s total, "
-          f"{stats['avg_tok_s']:.1f} avg tok/s")
+          f"{stats['avg_tok_s']:.1f} avg tok/s, "
+          f"concurrency={_get_concurrency()}")
 
     print(f"[ATHENA] Done. {len(results)} runs, outputs in {args.output}/")
 

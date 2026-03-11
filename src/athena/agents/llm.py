@@ -3,6 +3,7 @@
 
 import json
 import os
+import threading
 import time
 from dataclasses import dataclass, field
 
@@ -17,6 +18,8 @@ from athena.agents.errors import (
 
 
 langfuse = Langfuse()
+
+_lock = threading.Lock()
 
 _MODEL = None
 _TOKENIZER = None
@@ -56,7 +59,11 @@ class GenerationResult:
 
 def _ensure_model():
     global _MODEL, _TOKENIZER, _stream_generate, _make_sampler
-    if _MODEL is None:
+    if _MODEL is not None:
+        return
+    with _lock:
+        if _MODEL is not None:
+            return
         from mlx_lm import load, stream_generate
         from mlx_lm.sample_utils import make_sampler
         _stream_generate = stream_generate
@@ -103,19 +110,20 @@ def _call_model_mlx(
     elapsed = time.time() - t0
     tok_s = output_tokens / elapsed if elapsed > 0 else 0
 
-    _stats["calls"] += 1
-    _stats["total_tokens"] += output_tokens
-    _stats["total_time"] += elapsed
-
-    if finish_reason == "length":
-        _stats["truncations"] += 1
+    with _lock:
+        _stats["calls"] += 1
+        _stats["total_tokens"] += output_tokens
+        _stats["total_time"] += elapsed
+        if finish_reason == "length":
+            _stats["truncations"] += 1
+        call_num = _stats["calls"]
 
     budget_pct = output_tokens / max_tokens * 100 if max_tokens > 0 else 0
     truncation_flag = " TRUNCATED" if finish_reason == "length" else ""
     budget_warn = f" ⚠ {budget_pct:.0f}% of budget used" if budget_pct > 90 else ""
 
     print(
-        f"[LLM] Call #{_stats['calls']}: "
+        f"[LLM] Call #{call_num}: "
         f"{prompt_tokens} prompt → {output_tokens} output tok, "
         f"{elapsed:.1f}s ({tok_s:.1f} tok/s), "
         f"temp={temperature}{truncation_flag}{budget_warn}",
@@ -132,24 +140,27 @@ def _ensure_omlx() -> httpx.Client:
     global _OMLX_CLIENT
     if _OMLX_CLIENT is not None:
         return _OMLX_CLIENT
+    with _lock:
+        if _OMLX_CLIENT is not None:
+            return _OMLX_CLIENT
 
-    client = httpx.Client(base_url=_OMLX_BASE_URL, timeout=_OMLX_TIMEOUT)
-    deadline = time.time() + 30.0
-    while True:
-        try:
-            resp = client.get("/v1/models")
-            resp.raise_for_status()
-            models = [m["id"] for m in resp.json().get("data", [])]
-            print(f"[LLM] oMLX connected: {_OMLX_BASE_URL} — models: {models}", flush=True)
-            _OMLX_CLIENT = client
-            return client
-        except (httpx.ConnectError, httpx.ReadTimeout):
-            if time.time() >= deadline:
-                client.close()
-                raise ConnectionError(
-                    f"oMLX server unreachable at {_OMLX_BASE_URL} after 30s"
-                )
-            time.sleep(2)
+        client = httpx.Client(base_url=_OMLX_BASE_URL, timeout=_OMLX_TIMEOUT)
+        deadline = time.time() + 30.0
+        while True:
+            try:
+                resp = client.get("/v1/models")
+                resp.raise_for_status()
+                models = [m["id"] for m in resp.json().get("data", [])]
+                print(f"[LLM] oMLX connected: {_OMLX_BASE_URL} — models: {models}", flush=True)
+                _OMLX_CLIENT = client
+                return client
+            except (httpx.ConnectError, httpx.ReadTimeout):
+                if time.time() >= deadline:
+                    client.close()
+                    raise ConnectionError(
+                        f"oMLX server unreachable at {_OMLX_BASE_URL} after 30s"
+                    )
+                time.sleep(2)
 
 
 def _call_model_omlx(
@@ -204,14 +215,15 @@ def _call_model_omlx(
     elapsed = time.time() - t0
     tok_s = output_tokens / elapsed if elapsed > 0 else 0
 
-    _stats["calls"] += 1
-    _stats["total_tokens"] += output_tokens
-    _stats["total_time"] += elapsed
-    _stats["cached_tokens"] += cached_tokens
-    _stats["ttft_total"] += ttft
-
-    if finish_reason == "length":
-        _stats["truncations"] += 1
+    with _lock:
+        _stats["calls"] += 1
+        _stats["total_tokens"] += output_tokens
+        _stats["total_time"] += elapsed
+        _stats["cached_tokens"] += cached_tokens
+        _stats["ttft_total"] += ttft
+        if finish_reason == "length":
+            _stats["truncations"] += 1
+        call_num = _stats["calls"]
 
     budget_pct = output_tokens / max_tokens * 100 if max_tokens > 0 else 0
     truncation_flag = " TRUNCATED" if finish_reason == "length" else ""
@@ -219,7 +231,7 @@ def _call_model_omlx(
     cached_flag = f", cached={cached_tokens}" if cached_tokens > 0 else ""
 
     print(
-        f"[LLM] Call #{_stats['calls']}: "
+        f"[LLM] Call #{call_num}: "
         f"{prompt_tokens} prompt → {output_tokens} output tok, "
         f"{elapsed:.1f}s ({tok_s:.1f} tok/s), "
         f"temp={temperature}{cached_flag}{truncation_flag}{budget_warn}",
@@ -250,7 +262,8 @@ def _save_failure_artifact(raw: str, context: str = "") -> None:
     """Save failed LLM output to disk for offline debugging."""
     os.makedirs(_FAILURE_DIR, exist_ok=True)
     ts = time.strftime("%Y%m%d_%H%M%S")
-    path = os.path.join(_FAILURE_DIR, f"{ts}_{_stats['calls']}.txt")
+    tid = threading.get_ident() % 10000
+    path = os.path.join(_FAILURE_DIR, f"{ts}_{_stats['calls']}_{tid}.txt")
     with open(path, "w") as f:
         if context:
             f.write(f"--- CONTEXT ---\n{context}\n\n")
@@ -260,18 +273,33 @@ def _save_failure_artifact(raw: str, context: str = "") -> None:
 
 def get_stats() -> dict:
     """Return cumulative LLM call statistics."""
-    avg_ttft = (_stats["ttft_total"] / _stats["calls"]
-                if _stats["calls"] > 0 else 0)
-    cache_hit_pct = (_stats["cached_tokens"] / _stats["total_tokens"] * 100
-                     if _stats["total_tokens"] > 0 else 0)
+    with _lock:
+        snapshot = dict(_stats)
+        snapshot["repair_types"] = dict(_stats["repair_types"])
+    avg_ttft = (snapshot["ttft_total"] / snapshot["calls"]
+                if snapshot["calls"] > 0 else 0)
+    cache_hit_pct = (snapshot["cached_tokens"] / snapshot["total_tokens"] * 100
+                     if snapshot["total_tokens"] > 0 else 0)
     return {
-        **_stats,
-        "avg_tok_s": _stats["total_tokens"] / _stats["total_time"]
-        if _stats["total_time"] > 0 else 0,
+        **snapshot,
+        "avg_tok_s": snapshot["total_tokens"] / snapshot["total_time"]
+        if snapshot["total_time"] > 0 else 0,
         "avg_ttft": avg_ttft,
         "cache_hit_pct": cache_hit_pct,
         "backend": _BACKEND,
     }
+
+
+def reset_stats() -> None:
+    """Reset all cumulative stats. Useful for testing."""
+    with _lock:
+        for k in _stats:
+            if isinstance(_stats[k], dict):
+                _stats[k] = {}
+            elif isinstance(_stats[k], float):
+                _stats[k] = 0.0
+            else:
+                _stats[k] = 0
 
 
 def parse_json_response(
@@ -288,10 +316,11 @@ def parse_json_response(
 
     if repair_result.applied_fixes:
         real_fixes = [f for f in repair_result.applied_fixes if f != "none_succeeded"]
-        for fix in real_fixes:
-            _stats["repair_types"][fix] = _stats["repair_types"].get(fix, 0) + 1
         if real_fixes:
-            _stats["repairs"] += 1
+            with _lock:
+                for fix in real_fixes:
+                    _stats["repair_types"][fix] = _stats["repair_types"].get(fix, 0) + 1
+                _stats["repairs"] += 1
 
     try:
         data = json.loads(repair_result.text)
@@ -349,7 +378,8 @@ def invoke_llm(
         return result.data
     except JSONTruncatedError:
         retry_max = min(max_tokens * 2, _CONTEXT_WINDOW - prompt_tokens)
-        _stats["retries"] += 1
+        with _lock:
+            _stats["retries"] += 1
         print(
             f"[LLM] Truncated at {output_tokens} tok, retrying with {retry_max} max_tokens",
             flush=True,

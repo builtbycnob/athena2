@@ -1,9 +1,10 @@
 # tests/test_llm.py
+import threading
 import pytest
 import json
 import httpx
 from unittest.mock import patch, MagicMock
-from athena.agents.llm import invoke_llm, parse_json_response, GenerationResult
+from athena.agents.llm import invoke_llm, parse_json_response, GenerationResult, reset_stats
 from athena.agents.errors import JSONTruncatedError, JSONMalformedError, NonJSONOutputError
 import athena.agents.llm as llm_mod
 
@@ -246,3 +247,79 @@ class TestBackendDispatch:
                 llm_mod._call_model("s", "u", 0.5)
         finally:
             llm_mod._BACKEND = old
+
+
+class TestThreadSafety:
+    """Test thread-safety of stats and singleton init."""
+
+    def test_concurrent_stats_updates(self):
+        """N threads × M increments, verify total = N×M."""
+        reset_stats()
+        n_threads = 8
+        n_increments = 100
+        barrier = threading.Barrier(n_threads)
+
+        def worker():
+            barrier.wait()
+            for _ in range(n_increments):
+                with llm_mod._lock:
+                    llm_mod._stats["calls"] += 1
+                    llm_mod._stats["total_tokens"] += 10
+
+        threads = [threading.Thread(target=worker) for _ in range(n_threads)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        assert llm_mod._stats["calls"] == n_threads * n_increments
+        assert llm_mod._stats["total_tokens"] == n_threads * n_increments * 10
+        reset_stats()
+
+    @patch("athena.agents.llm.httpx.Client")
+    def test_concurrent_ensure_omlx(self, MockClient):
+        """5 threads race _ensure_omlx(), verify single Client created."""
+        mock_client = MagicMock()
+        resp = MagicMock()
+        resp.json.return_value = {"data": [{"id": "test-model"}]}
+        resp.raise_for_status = MagicMock()
+        mock_client.get.return_value = resp
+        MockClient.return_value = mock_client
+
+        llm_mod._OMLX_CLIENT = None
+        barrier = threading.Barrier(5)
+        results = []
+
+        def worker():
+            barrier.wait()
+            client = llm_mod._ensure_omlx()
+            results.append(client)
+
+        threads = [threading.Thread(target=worker) for _ in range(5)]
+        try:
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+
+            # All threads should get the same client instance
+            assert all(r is results[0] for r in results)
+            # httpx.Client() should only be called once
+            assert MockClient.call_count == 1
+        finally:
+            llm_mod._OMLX_CLIENT = None
+
+
+class TestResetStats:
+    """Test reset_stats function."""
+
+    def test_reset_clears_all(self):
+        llm_mod._stats["calls"] = 42
+        llm_mod._stats["total_tokens"] = 1000
+        llm_mod._stats["total_time"] = 5.0
+        llm_mod._stats["repair_types"] = {"foo": 3}
+        reset_stats()
+        assert llm_mod._stats["calls"] == 0
+        assert llm_mod._stats["total_tokens"] == 0
+        assert llm_mod._stats["total_time"] == 0.0
+        assert llm_mod._stats["repair_types"] == {}
