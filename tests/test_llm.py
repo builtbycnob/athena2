@@ -1,9 +1,11 @@
 # tests/test_llm.py
 import pytest
 import json
+import httpx
 from unittest.mock import patch, MagicMock
 from athena.agents.llm import invoke_llm, parse_json_response, GenerationResult
 from athena.agents.errors import JSONTruncatedError, JSONMalformedError, NonJSONOutputError
+import athena.agents.llm as llm_mod
 
 
 class TestParseJsonResponseWithRepair:
@@ -87,3 +89,160 @@ class TestInvokeLLMRefactored:
             assert "not json at all" in content
         finally:
             llm_mod._FAILURE_DIR = old_dir
+
+
+def _make_omlx_response(content='{"ok": true}', finish_reason="stop",
+                         prompt_tokens=100, completion_tokens=50, cached_tokens=0):
+    """Helper to build a mock oMLX JSON response."""
+    return {
+        "choices": [{"message": {"content": content}, "finish_reason": finish_reason}],
+        "usage": {
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "cached_tokens": cached_tokens,
+        },
+    }
+
+
+class TestOmlxBackend:
+    """Tests for the oMLX HTTP backend."""
+
+    @patch("athena.agents.llm._OMLX_CLIENT")
+    def test_successful_call(self, _):
+        mock_client = MagicMock()
+        resp = MagicMock()
+        resp.json.return_value = _make_omlx_response('{"result": 42}', cached_tokens=80)
+        resp.raise_for_status = MagicMock()
+        mock_client.post.return_value = resp
+
+        llm_mod._OMLX_CLIENT = mock_client
+        old_calls = llm_mod._stats["calls"]
+        try:
+            text, fr, pt, ot = llm_mod._call_model_omlx("sys", "usr", 0.5)
+            assert text == '{"result": 42}'
+            assert fr == "stop"
+            assert pt == 100
+            assert ot == 50
+        finally:
+            llm_mod._OMLX_CLIENT = None
+            llm_mod._stats["calls"] = old_calls
+
+    @patch("athena.agents.llm._OMLX_CLIENT")
+    def test_connection_retry(self, _):
+        mock_client = MagicMock()
+        resp = MagicMock()
+        resp.json.return_value = _make_omlx_response()
+        resp.raise_for_status = MagicMock()
+        mock_client.post.side_effect = [httpx.ConnectError("refused"), resp]
+
+        llm_mod._OMLX_CLIENT = mock_client
+        old_calls = llm_mod._stats["calls"]
+        try:
+            text, fr, pt, ot = llm_mod._call_model_omlx("sys", "usr", 0.5)
+            assert text == '{"ok": true}'
+            assert mock_client.post.call_count == 2
+        finally:
+            llm_mod._OMLX_CLIENT = None
+            llm_mod._stats["calls"] = old_calls
+
+    @patch("athena.agents.llm._call_model")
+    def test_truncation_retry_via_http(self, mock_call):
+        """finish_reason=length from oMLX triggers the same retry logic."""
+        mock_call.side_effect = [
+            ("broken {{{ not json at all", "length", 100, 16384),
+            ('{"key": "value"}', "stop", 100, 200),
+        ]
+        result = invoke_llm("system", "user", temperature=0.5)
+        assert result == {"key": "value"}
+        assert mock_call.call_count == 2
+
+    @patch("athena.agents.llm._OMLX_CLIENT")
+    def test_cached_tokens_in_stats(self, _):
+        mock_client = MagicMock()
+        resp = MagicMock()
+        resp.json.return_value = _make_omlx_response(cached_tokens=500)
+        resp.raise_for_status = MagicMock()
+        mock_client.post.return_value = resp
+
+        llm_mod._OMLX_CLIENT = mock_client
+        old_cached = llm_mod._stats["cached_tokens"]
+        old_calls = llm_mod._stats["calls"]
+        try:
+            llm_mod._call_model_omlx("sys", "usr", 0.5)
+            llm_mod._call_model_omlx("sys", "usr", 0.5)
+            assert llm_mod._stats["cached_tokens"] - old_cached == 1000
+        finally:
+            llm_mod._OMLX_CLIENT = None
+            llm_mod._stats["cached_tokens"] = old_cached
+            llm_mod._stats["calls"] = old_calls
+
+
+class TestHealthCheck:
+    """Tests for _ensure_omlx health check."""
+
+    @patch("athena.agents.llm.httpx.Client")
+    def test_health_check_succeeds(self, MockClient):
+        mock_client = MagicMock()
+        resp = MagicMock()
+        resp.json.return_value = {"data": [{"id": "test-model"}]}
+        resp.raise_for_status = MagicMock()
+        mock_client.get.return_value = resp
+        MockClient.return_value = mock_client
+
+        llm_mod._OMLX_CLIENT = None
+        try:
+            client = llm_mod._ensure_omlx()
+            assert client is mock_client
+            mock_client.get.assert_called_once_with("/v1/models")
+        finally:
+            llm_mod._OMLX_CLIENT = None
+
+    @patch("athena.agents.llm.time.sleep")
+    @patch("athena.agents.llm.httpx.Client")
+    def test_health_check_timeout(self, MockClient, mock_sleep):
+        mock_client = MagicMock()
+        mock_client.get.side_effect = httpx.ConnectError("refused")
+        MockClient.return_value = mock_client
+
+        # Make time.time() advance past the 30s deadline
+        times = [0.0, 0.0, 31.0]
+        with patch("athena.agents.llm.time.time", side_effect=times):
+            llm_mod._OMLX_CLIENT = None
+            try:
+                with pytest.raises(ConnectionError, match="unreachable"):
+                    llm_mod._ensure_omlx()
+            finally:
+                llm_mod._OMLX_CLIENT = None
+
+
+class TestBackendDispatch:
+    """Tests for the _call_model dispatcher."""
+
+    @patch("athena.agents.llm._call_model_omlx", return_value=("t", "stop", 1, 1))
+    def test_omlx_dispatch(self, mock_omlx):
+        old = llm_mod._BACKEND
+        llm_mod._BACKEND = "omlx"
+        try:
+            llm_mod._call_model("s", "u", 0.5)
+            mock_omlx.assert_called_once_with("s", "u", 0.5, llm_mod._DEFAULT_MAX_TOKENS)
+        finally:
+            llm_mod._BACKEND = old
+
+    @patch("athena.agents.llm._call_model_mlx", return_value=("t", "stop", 1, 1))
+    def test_mlx_dispatch(self, mock_mlx):
+        old = llm_mod._BACKEND
+        llm_mod._BACKEND = "mlx"
+        try:
+            llm_mod._call_model("s", "u", 0.5)
+            mock_mlx.assert_called_once_with("s", "u", 0.5, llm_mod._DEFAULT_MAX_TOKENS)
+        finally:
+            llm_mod._BACKEND = old
+
+    def test_invalid_backend_raises(self):
+        old = llm_mod._BACKEND
+        llm_mod._BACKEND = "foo"
+        try:
+            with pytest.raises(ValueError, match="Unknown ATHENA_BACKEND"):
+                llm_mod._call_model("s", "u", 0.5)
+        finally:
+            llm_mod._BACKEND = old

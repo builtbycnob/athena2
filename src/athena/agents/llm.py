@@ -1,13 +1,12 @@
 # src/athena/agents/llm.py
-"""LLM integration layer with stream_generate, JSON repair, and retry."""
+"""LLM integration layer with oMLX/MLX backends, JSON repair, and retry."""
 
 import json
 import os
 import time
 from dataclasses import dataclass, field
-from mlx_lm import load, stream_generate
-from mlx_lm.sample_utils import make_sampler
 
+import httpx
 from langfuse import observe, Langfuse
 
 from athena.agents.json_repair import extract_json, RepairResult
@@ -26,10 +25,22 @@ _CONTEXT_WINDOW = 262144
 _DEFAULT_MAX_TOKENS = 16384
 _FAILURE_DIR = "output/failures"
 
+# --- Backend configuration ---
+_BACKEND = os.environ.get("ATHENA_BACKEND", "omlx")  # "omlx" | "mlx"
+_OMLX_BASE_URL = os.environ.get("OMLX_BASE_URL", "http://localhost:8000")
+_OMLX_MODEL = os.environ.get("OMLX_MODEL", _MODEL_PATH)
+_OMLX_TIMEOUT = 300.0
+_OMLX_CLIENT: httpx.Client | None = None
+
+# Lazy-loaded mlx_lm references (set by _ensure_model)
+_stream_generate = None
+_make_sampler = None
+
 _stats = {
     "calls": 0, "total_tokens": 0, "total_time": 0.0,
     "repairs": 0, "truncations": 0, "retries": 0,
     "repair_types": {},
+    "cached_tokens": 0, "ttft_total": 0.0,
 }
 
 
@@ -41,16 +52,22 @@ class GenerationResult:
     was_truncated: bool = False
 
 
+# --- MLX in-process backend ---
+
 def _ensure_model():
-    global _MODEL, _TOKENIZER
+    global _MODEL, _TOKENIZER, _stream_generate, _make_sampler
     if _MODEL is None:
+        from mlx_lm import load, stream_generate
+        from mlx_lm.sample_utils import make_sampler
+        _stream_generate = stream_generate
+        _make_sampler = make_sampler
         print(f"[LLM] Loading model: {_MODEL_PATH}", flush=True)
         t0 = time.time()
         _MODEL, _TOKENIZER = load(_MODEL_PATH)
         print(f"[LLM] Model loaded in {time.time()-t0:.1f}s", flush=True)
 
 
-def _call_model(
+def _call_model_mlx(
     system_prompt: str,
     user_prompt: str,
     temperature: float,
@@ -67,7 +84,7 @@ def _call_model(
         enable_thinking=False,
     )
 
-    sampler = make_sampler(temp=temperature)
+    sampler = _make_sampler(temp=temperature)
     t0 = time.time()
 
     text = ""
@@ -75,7 +92,7 @@ def _call_model(
     prompt_tokens = 0
     output_tokens = 0
 
-    for response in stream_generate(
+    for response in _stream_generate(
         _MODEL, _TOKENIZER, prompt=prompt, sampler=sampler, max_tokens=max_tokens,
     ):
         text += response.text
@@ -108,6 +125,127 @@ def _call_model(
     return text, finish_reason, prompt_tokens, output_tokens
 
 
+# --- oMLX HTTP backend ---
+
+def _ensure_omlx() -> httpx.Client:
+    """Ensure oMLX server is reachable. Returns httpx.Client singleton."""
+    global _OMLX_CLIENT
+    if _OMLX_CLIENT is not None:
+        return _OMLX_CLIENT
+
+    client = httpx.Client(base_url=_OMLX_BASE_URL, timeout=_OMLX_TIMEOUT)
+    deadline = time.time() + 30.0
+    while True:
+        try:
+            resp = client.get("/v1/models")
+            resp.raise_for_status()
+            models = [m["id"] for m in resp.json().get("data", [])]
+            print(f"[LLM] oMLX connected: {_OMLX_BASE_URL} — models: {models}", flush=True)
+            _OMLX_CLIENT = client
+            return client
+        except (httpx.ConnectError, httpx.ReadTimeout):
+            if time.time() >= deadline:
+                client.close()
+                raise ConnectionError(
+                    f"oMLX server unreachable at {_OMLX_BASE_URL} after 30s"
+                )
+            time.sleep(2)
+
+
+def _call_model_omlx(
+    system_prompt: str,
+    user_prompt: str,
+    temperature: float,
+    max_tokens: int = _DEFAULT_MAX_TOKENS,
+) -> tuple[str, str, int, int]:
+    """Call oMLX via OpenAI-compatible HTTP API. Returns (text, finish_reason, prompt_tokens, output_tokens)."""
+    client = _ensure_omlx()
+    payload = {
+        "model": _OMLX_MODEL,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "chat_template_kwargs": {"enable_thinking": False},
+    }
+
+    backoff = [1, 3, 10]
+    last_err = None
+    t0 = time.time()
+
+    for attempt, delay in enumerate(backoff):
+        try:
+            resp = client.post("/v1/chat/completions", json=payload)
+            resp.raise_for_status()
+            break
+        except (httpx.ConnectError, httpx.ReadTimeout) as e:
+            last_err = e
+            if attempt < len(backoff) - 1:
+                print(f"[LLM] oMLX retry {attempt+1}: {e}", flush=True)
+                time.sleep(delay)
+            else:
+                raise
+    else:
+        raise last_err  # pragma: no cover
+
+    ttft = time.time() - t0
+    body = resp.json()
+    choice = body["choices"][0]
+    usage = body.get("usage", {})
+
+    text = choice["message"]["content"]
+    finish_reason = choice.get("finish_reason", "stop")
+    prompt_tokens = usage.get("prompt_tokens", 0)
+    output_tokens = usage.get("completion_tokens", 0)
+    cached_tokens = usage.get("cached_tokens", 0)
+
+    elapsed = time.time() - t0
+    tok_s = output_tokens / elapsed if elapsed > 0 else 0
+
+    _stats["calls"] += 1
+    _stats["total_tokens"] += output_tokens
+    _stats["total_time"] += elapsed
+    _stats["cached_tokens"] += cached_tokens
+    _stats["ttft_total"] += ttft
+
+    if finish_reason == "length":
+        _stats["truncations"] += 1
+
+    budget_pct = output_tokens / max_tokens * 100 if max_tokens > 0 else 0
+    truncation_flag = " TRUNCATED" if finish_reason == "length" else ""
+    budget_warn = f" ⚠ {budget_pct:.0f}% of budget used" if budget_pct > 90 else ""
+    cached_flag = f", cached={cached_tokens}" if cached_tokens > 0 else ""
+
+    print(
+        f"[LLM] Call #{_stats['calls']}: "
+        f"{prompt_tokens} prompt → {output_tokens} output tok, "
+        f"{elapsed:.1f}s ({tok_s:.1f} tok/s), "
+        f"temp={temperature}{cached_flag}{truncation_flag}{budget_warn}",
+        flush=True,
+    )
+
+    return text, finish_reason, prompt_tokens, output_tokens
+
+
+# --- Dispatcher ---
+
+def _call_model(
+    system_prompt: str,
+    user_prompt: str,
+    temperature: float,
+    max_tokens: int = _DEFAULT_MAX_TOKENS,
+) -> tuple[str, str, int, int]:
+    """Dispatch to oMLX or MLX backend. Returns (text, finish_reason, prompt_tokens, output_tokens)."""
+    if _BACKEND == "omlx":
+        return _call_model_omlx(system_prompt, user_prompt, temperature, max_tokens)
+    elif _BACKEND == "mlx":
+        return _call_model_mlx(system_prompt, user_prompt, temperature, max_tokens)
+    else:
+        raise ValueError(f"Unknown ATHENA_BACKEND: {_BACKEND!r}")
+
+
 def _save_failure_artifact(raw: str, context: str = "") -> None:
     """Save failed LLM output to disk for offline debugging."""
     os.makedirs(_FAILURE_DIR, exist_ok=True)
@@ -122,10 +260,17 @@ def _save_failure_artifact(raw: str, context: str = "") -> None:
 
 def get_stats() -> dict:
     """Return cumulative LLM call statistics."""
+    avg_ttft = (_stats["ttft_total"] / _stats["calls"]
+                if _stats["calls"] > 0 else 0)
+    cache_hit_pct = (_stats["cached_tokens"] / _stats["total_tokens"] * 100
+                     if _stats["total_tokens"] > 0 else 0)
     return {
         **_stats,
         "avg_tok_s": _stats["total_tokens"] / _stats["total_time"]
         if _stats["total_time"] > 0 else 0,
+        "avg_ttft": avg_ttft,
+        "cache_hit_pct": cache_hit_pct,
+        "backend": _BACKEND,
     }
 
 
@@ -175,7 +320,7 @@ def invoke_llm(
     """Invoke LLM and return parsed JSON dict.
 
     Pipeline:
-    1. Call model via stream_generate
+    1. Call model via oMLX or MLX backend
     2. Extract + repair JSON
     3. If truncated and unrepairable: retry with 2x budget + conciseness hint
     4. If still fails: save artifact and raise classified error
@@ -198,6 +343,7 @@ def invoke_llm(
                 "temperature": temperature,
                 "finish_reason": finish_reason,
                 "applied_fixes": result.applied_fixes,
+                "backend": _BACKEND,
             },
         )
         return result.data

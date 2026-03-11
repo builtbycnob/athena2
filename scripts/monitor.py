@@ -27,6 +27,7 @@ def parse_log(path: str) -> dict:
     repairs = []
     truncations = 0
     failure_artifacts = []
+    cached_tokens = 0
 
     for line in lines:
         # Total runs
@@ -95,6 +96,11 @@ def parse_log(path: str) -> dict:
             # Detect retries: multiple LLM calls without an agent "done" between them
             # (simplified: count LLM calls vs completed agents)
 
+        # LLM cached tokens (oMLX prefix sharing)
+        m = re.search(r"cached=(\d+)", line)
+        if m:
+            cached_tokens += int(m.group(1))
+
         # LLM repair
         m = re.search(r"\[LLM\] JSON repaired: (.+)", line)
         if m:
@@ -132,6 +138,7 @@ def parse_log(path: str) -> dict:
         "repairs": repairs,
         "truncations": truncations,
         "failure_artifacts": failure_artifacts,
+        "cached_tokens": cached_tokens,
     }
 
 
@@ -174,6 +181,9 @@ def format_report(data: dict) -> str:
         lines.append(f"  LLM calls:     {data['llm_calls']} ({calls_per_run:.1f}/run)")
         lines.append(f"  Total tokens:  {data['llm_tokens']:,}")
         lines.append(f"  Avg speed:     {avg_tok_s:.1f} tok/s")
+        if data["cached_tokens"] > 0:
+            cache_pct = data["cached_tokens"] / data["llm_tokens"] * 100 if data["llm_tokens"] > 0 else 0
+            lines.append(f"  Cached tokens: {data['cached_tokens']:,} ({cache_pct:.0f}% prefix hit)")
 
     # Repair stats
     if data["repairs"] or data["truncations"] or data["failure_artifacts"]:
