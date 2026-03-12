@@ -53,8 +53,8 @@ def _ensure_driver():
             cfg["uri"],
             auth=(cfg["user"], cfg["password"]),
         )
-        # Verify connectivity with timeout
-        _driver.verify_connectivity(timeout=5)
+        # Verify connectivity
+        _driver.verify_connectivity()
 
         # Run schema migration
         _ensure_schema(_driver, cfg["database"])
