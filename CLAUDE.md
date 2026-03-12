@@ -88,12 +88,10 @@ v0.7 on `feat/v0.7-knowledge-graph`, fully validated. Pending merge to main.
 - 268 tests green. KG not yet tested with real Neo4j.
 
 **Immediate next steps**:
-1. Merge to main (carries v0.5+v0.6+v0.7+json_repair)
-2. Smoke test with Neo4j (KG pipeline)
-3. Clean up stale feature branches
-4. Wire generic graph (`build_graph_from_phases` → replace legacy, v0.5.1)
+1. Smoke test with Neo4j (KG pipeline)
+2. v0.8 meta-agents (red teamer, game theorist agent)
 
-**Roadmap**: v0.5.1 wire generic graph → v0.8 meta-agents (red teamer, game theorist agent) → v0.9 temporal KG + IRAC → v1.0 multi-jurisdiction → v1.1 sparring mode → v1.2 cross-case intelligence
+**Roadmap**: v0.8 meta-agents (red teamer, game theorist agent) → v0.9 temporal KG + IRAC → v1.0 multi-jurisdiction → v1.1 sparring mode → v1.2 cross-case intelligence
 
 ## Key Risks & Open Questions
 
@@ -102,7 +100,7 @@ v0.7 on `feat/v0.7-knowledge-graph`, fully validated. Pending merge to main.
 - Validation: need past cases with known outcomes as test set
 - NOT legal advice — strategic analysis tool, decisions remain human
 - Confidentiality: another reason for local-only inference
-- N-party generic graph (`build_graph_from_phases`) is scaffolding — not yet wired to production orchestrator (v0.5.1)
+- Generic graph (`build_graph_from_phases`) is the production path — new agents are added as Phase entries
 - Knowledge graph requires Neo4j CE — optional, graceful degradation when unavailable
 
 ## Related Work
