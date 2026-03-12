@@ -10,9 +10,6 @@ from typing import TypedDict, Annotated
 from athena.simulation.context import (
     build_party_context,
     build_adjudicator_context,
-    build_context_appellant,
-    build_context_respondent,
-    build_context_judge,
     _sanitize_brief,
 )
 from athena.simulation.validation import validate_agent_output
@@ -109,8 +106,11 @@ def _run_agent_with_retry(
 
 # --- Generic node functions ---
 
+@observe(name="party_agent")
 def _node_party(state: GraphState, *, config: AgentConfig) -> dict:
     """Generic node for any advocate party agent."""
+    if state.get("error"):
+        return {}
     run_id = state["params"].get("run_id", "?")
     _log(f"[{run_id}]   {config.party_id}: generating...")
     t0 = time.time()
@@ -161,6 +161,7 @@ def _node_party(state: GraphState, *, config: AgentConfig) -> dict:
         return {"error": f"{config.party_id} failed: {e}"}
 
 
+@observe(name="adjudicator_agent")
 def _node_adjudicator(state: GraphState, *, config: AgentConfig) -> dict:
     """Node for judge/arbitrator."""
     if state.get("error"):
@@ -310,141 +311,49 @@ def build_bilateral_phases(case_data: dict, run_params: dict) -> list[Phase]:
     ]
 
 
-# --- Legacy API ---
-
-# Legacy GraphState keys for backward compatibility with orchestrator
-class _LegacyGraphState(TypedDict):
-    case: dict
-    params: dict
-    appellant_brief: dict | None
-    appellant_validation: dict | None
-    respondent_brief: dict | None
-    respondent_validation: dict | None
-    judge_decision: dict | None
-    judge_validation: dict | None
-    error: str | None
-
-
-@observe(name="appellant")
-def _node_appellant(state: _LegacyGraphState) -> dict:
-    run_id = state["params"].get("run_id", "?")
-    _log(f"[{run_id}]   Appellant: generating...")
-    t0 = time.time()
-    ctx = build_context_appellant(state["case"], state["params"])
-    system, user = build_appellant_prompt(ctx)
-    temp = _get_legacy_temp(state, "appellant")
-    try:
-        case = CaseFile(**state["case"])
-        output, val = _run_agent_with_retry(
-            system, user, temp,
-            lambda o: validate_agent_output(o, "appellant", case),
-            json_schema=AGENT_SCHEMAS["appellant"],
-            max_tokens=_MAX_TOKENS["appellant"],
-        )
-        _log(f"[{run_id}]   Appellant: done ({time.time()-t0:.1f}s, valid={val['valid']})")
-        return {"appellant_brief": output, "appellant_validation": val}
-    except Exception as e:
-        _log(f"[{run_id}]   Appellant: FAILED ({time.time()-t0:.1f}s) — {e}")
-        return {"error": f"Appellant failed: {e}"}
-
-
-@observe(name="respondent")
-def _node_respondent(state: _LegacyGraphState) -> dict:
-    if state.get("error"):
-        return {}
-    run_id = state["params"].get("run_id", "?")
-    _log(f"[{run_id}]   Respondent: generating...")
-    t0 = time.time()
-    ctx = build_context_respondent(
-        state["case"], state["params"], state["appellant_brief"]
-    )
-    system, user = build_respondent_prompt(ctx)
-    temp = _get_legacy_temp(state, "respondent")
-    try:
-        case = CaseFile(**state["case"])
-        output, val = _run_agent_with_retry(
-            system, user, temp,
-            lambda o: validate_agent_output(
-                o, "respondent", case, appellant_brief=state["appellant_brief"]
-            ),
-            json_schema=AGENT_SCHEMAS["respondent"],
-            max_tokens=_MAX_TOKENS["respondent"],
-        )
-        _log(f"[{run_id}]   Respondent: done ({time.time()-t0:.1f}s, valid={val['valid']})")
-        return {"respondent_brief": output, "respondent_validation": val}
-    except Exception as e:
-        _log(f"[{run_id}]   Respondent: FAILED ({time.time()-t0:.1f}s) — {e}")
-        return {"error": f"Respondent failed: {e}"}
-
-
-@observe(name="judge")
-def _node_judge(state: _LegacyGraphState) -> dict:
-    if state.get("error"):
-        return {}
-    run_id = state["params"].get("run_id", "?")
-    _log(f"[{run_id}]   Judge: generating...")
-    t0 = time.time()
-    ctx = build_context_judge(
-        state["case"],
-        state["params"],
-        state["appellant_brief"],
-        state["respondent_brief"],
-    )
-    system, user = build_judge_prompt(ctx)
-    temp = _get_legacy_temp(state, "judge")
-    try:
-        case = CaseFile(**state["case"])
-        output, val = _run_agent_with_retry(
-            system, user, temp,
-            lambda o: validate_agent_output(
-                o, "judge", case,
-                appellant_brief=state["appellant_brief"],
-                respondent_brief=state["respondent_brief"],
-            ),
-            json_schema=AGENT_SCHEMAS["judge"],
-            max_tokens=_MAX_TOKENS["judge"],
-        )
-        _log(f"[{run_id}]   Judge: done ({time.time()-t0:.1f}s, valid={val['valid']})")
-        return {"judge_decision": output, "judge_validation": val}
-    except Exception as e:
-        _log(f"[{run_id}]   Judge: FAILED ({time.time()-t0:.1f}s) — {e}")
-        return {"error": f"Judge failed: {e}"}
-
-
-def _get_legacy_temp(state: _LegacyGraphState, role: str) -> float:
-    """Get temperature from either new or old params format."""
-    params = state["params"]
-    temps = params.get("temperatures", params.get("temperature", {}))
-    return temps.get(role, 0.5)
-
-
-def build_graph():
-    """Build the legacy bilateral graph (backward compat)."""
-    graph = StateGraph(_LegacyGraphState)
-    graph.add_node("appellant", _node_appellant)
-    graph.add_node("respondent", _node_respondent)
-    graph.add_node("judge", _node_judge)
-
-    graph.set_entry_point("appellant")
-    graph.add_edge("appellant", "respondent")
-    graph.add_edge("respondent", "judge")
-    graph.add_edge("judge", END)
-
-    return graph.compile()
-
 
 def run_single(case_data: dict, run_params: dict) -> dict:
-    """Run a single simulation and return results (legacy API)."""
-    graph = build_graph()
-    initial_state: _LegacyGraphState = {
+    """Run a single simulation and return results.
+
+    Returns a dict with legacy-compatible keys:
+        appellant_brief, respondent_brief, judge_decision,
+        appellant_validation, respondent_validation, judge_validation,
+        error.
+    """
+    phases = build_bilateral_phases(case_data, run_params)
+    graph = build_graph_from_phases(phases)
+    initial_state: GraphState = {
         "case": case_data,
         "params": run_params,
-        "appellant_brief": None,
-        "appellant_validation": None,
-        "respondent_brief": None,
-        "respondent_validation": None,
-        "judge_decision": None,
-        "judge_validation": None,
+        "briefs": {},
+        "validations": {},
+        "decision": None,
+        "decision_validation": None,
         "error": None,
     }
-    return graph.invoke(initial_state)
+    final = graph.invoke(initial_state)
+
+    # Map GraphState to legacy-compatible result dict
+    briefs = final.get("briefs", {})
+    validations = final.get("validations", {})
+
+    appellant_id = next(
+        (p["id"] for p in case_data.get("parties", []) if p["role"] == "appellant"),
+        "opponente",
+    )
+    respondent_id = next(
+        (p["id"] for p in case_data.get("parties", []) if p["role"] == "respondent"),
+        "comune_milano",
+    )
+
+    return {
+        "case": case_data,
+        "params": run_params,
+        "appellant_brief": briefs.get(appellant_id),
+        "appellant_validation": validations.get(appellant_id),
+        "respondent_brief": briefs.get(respondent_id),
+        "respondent_validation": validations.get(respondent_id),
+        "judge_decision": final.get("decision"),
+        "judge_validation": final.get("decision_validation"),
+        "error": final.get("error"),
+    }

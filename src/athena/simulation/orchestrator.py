@@ -15,7 +15,7 @@ from typing import Any
 
 from langfuse import observe
 
-from athena.simulation.graph import build_graph
+from athena.simulation.graph import build_graph_from_phases, build_bilateral_phases
 
 
 _DEFAULT_CONCURRENCY = 4
@@ -97,13 +97,10 @@ def _run_one(
     initial_state = {
         "case": case_data,
         "params": run_params,
-        "appellant_brief": None,
-        "appellant_validation": None,
-        "respondent_brief": None,
-        "respondent_validation": None,
-        "judge_decision": None,
-        "judge_validation": None,
-        "retry_count": 0,
+        "briefs": {},
+        "validations": {},
+        "decision": None,
+        "decision_validation": None,
         "error": None,
     }
 
@@ -127,6 +124,20 @@ def _run_one(
         if appellant_profile_id == "unknown":
             appellant_profile_id = run_params.get("appellant_profile", {}).get("id", "unknown")
 
+        # Map GraphState to downstream-compatible result dict
+        briefs = final_state.get("briefs", {})
+        validations = final_state.get("validations", {})
+
+        # Find party IDs by role from case_data
+        appellant_id = next(
+            (p["id"] for p in case_data.get("parties", []) if p["role"] == "appellant"),
+            "opponente",
+        )
+        respondent_id = next(
+            (p["id"] for p in case_data.get("parties", []) if p["role"] == "respondent"),
+            "comune_milano",
+        )
+
         result = {
             "run_id": run_id,
             "judge_profile": judge_profile_id,
@@ -135,13 +146,13 @@ def _run_one(
                 pid: prof.get("id", pid)
                 for pid, prof in run_params.get("party_profiles", {}).items()
             },
-            "appellant_brief": final_state.get("appellant_brief"),
-            "respondent_brief": final_state.get("respondent_brief"),
-            "judge_decision": final_state["judge_decision"],
+            "appellant_brief": briefs.get(appellant_id),
+            "respondent_brief": briefs.get(respondent_id),
+            "judge_decision": final_state.get("decision"),
             "validation_warnings": {
-                "appellant": (final_state.get("appellant_validation") or {}).get("warnings", []),
-                "respondent": (final_state.get("respondent_validation") or {}).get("warnings", []),
-                "judge": (final_state.get("judge_validation") or {}).get("warnings", []),
+                "appellant": (validations.get(appellant_id) or {}).get("warnings", []),
+                "respondent": (validations.get(respondent_id) or {}).get("warnings", []),
+                "judge": (final_state.get("decision_validation") or {}).get("warnings", []),
             },
         }
 
@@ -193,7 +204,11 @@ def run_monte_carlo(case_data: dict, simulation_config: dict) -> list[dict]:
     total = len(all_combos)
     results: list[dict] = []
     failed: list[dict] = []
-    graph = build_graph()
+    # Build generic graph from phases — graph topology is the same for all
+    # bilateral runs (temperatures/profiles come from state["params"])
+    template_params = all_combos[0] if all_combos else {}
+    phases = build_bilateral_phases(case_data, template_params)
+    graph = build_graph_from_phases(phases)
     sim_start = time.time()
     concurrency = _get_concurrency()
 
