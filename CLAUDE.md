@@ -77,22 +77,23 @@ Optional Neo4j-backed knowledge graph (`--kg` flag / `ATHENA_KG_ENABLED=1`):
 - **Context enrichment**: pre-simulation queries — seed arg ranking by judge, best precedent strategy, expected counters (`context_enrichment.py`)
 - **Post-analysis**: argument trajectories cross-judge, determinative argument identification (`post_analysis.py`)
 - **CLI**: `athena run --kg`, `athena kg-status`
-- **Graceful degradation**: KG off by default, all 266 tests pass without Neo4j, import failures → warning + continue
+- **Graceful degradation**: KG off by default, all 268 tests pass without Neo4j, import failures → warning + continue
 - **Dependencies**: `graphiti-core>=0.5`, `neo4j>=5.0` as optional `[kg]` group
 
 ## Current Phase
 
-v0.7 implemented (knowledge graph layer) on `feat/v0.7-knowledge-graph`, uncommitted.
-All feature branches (v0.5 N-party, v0.6 game theory, v0.7 KG) pending merge to main.
-266 tests green, all mocked — no smoke test with real LLM yet.
+v0.7 on `feat/v0.7-knowledge-graph`, fully validated. Pending merge to main.
+- Monte Carlo run-v07-002: **60/60 OK**, 1833s (30.5 min), 210.7 eff tok/s
+- oMLX optimized: continuous batching fixed, hot cache enabled, concurrency=8 (-33% wall clock vs run-001)
+- 268 tests green. KG not yet tested with real Neo4j.
 
 **Immediate next steps**:
-1. Commit v0.7, merge to main (carries v0.5+v0.6+v0.7)
-2. Smoke test with real oMLX (core pipeline)
-3. Smoke test with real oMLX + Neo4j (KG pipeline)
+1. Merge to main (carries v0.5+v0.6+v0.7+json_repair)
+2. Smoke test with Neo4j (KG pipeline)
+3. Clean up stale feature branches
 4. Wire generic graph (`build_graph_from_phases` → replace legacy, v0.5.1)
 
-**Roadmap**: v0.8 meta-agents (red teamer, game theorist agent) → v0.9 temporal KG + IRAC → v1.0 multi-jurisdiction → v1.1 sparring mode → v1.2 cross-case intelligence
+**Roadmap**: v0.5.1 wire generic graph → v0.8 meta-agents (red teamer, game theorist agent) → v0.9 temporal KG + IRAC → v1.0 multi-jurisdiction → v1.1 sparring mode → v1.2 cross-case intelligence
 
 ## Key Risks & Open Questions
 
