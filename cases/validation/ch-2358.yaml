@@ -1,0 +1,163 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione dell'esistenza di un debito bancario e validità di
+      un riconoscimento di debito firmato, in relazione a presunte violazioni di accordi
+      sulla cessione di diritti di regresso e svincolo di garanti.
+  evidence:
+  - id: DOC1
+    type: estratto_bancario_firmato
+    description: Estratto bancario del 2 giugno 2006 firmato da A.A._ con cui si riconosce
+      debitore del saldo indicato.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F3
+  - id: DOC2
+    type: precetto_esecutivo
+    description: Precetto esecutivo notificato il 22 marzo 2006 per fr. 353'461.15
+      oltre interessi.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F2
+  facts:
+    undisputed:
+    - id: F1
+      description: Il 10 marzo 2003 la B._SA ha concesso all'avvocato A.A._ un credito
+        in conto corrente di fr. 400'000.--.
+      evidence:
+      - DOC1
+    - id: F2
+      description: Il 13 febbraio 2006 la banca ha definitivamente disdetto il contratto
+        e il 22 marzo 2006 ha notificato un precetto esecutivo per fr. 353'461.15
+        oltre interessi.
+      evidence:
+      - DOC2
+    - id: F3
+      description: Il 23 febbraio 2007 l'opposizione al precetto è stata rigettata
+        in via provvisoria in considerazione della firma apposta da A.A._ sull'estratto
+        bancario del 2 giugno 2006 con cui si è riconosciuto debitore.
+      evidence:
+      - DOC1
+    - id: F4
+      description: Il 19 febbraio 2008 il Pretore del Distretto di Lugano ha respinto
+        l'azione di accertamento dell'inesistenza del debito basandosi sul riconoscimento
+        di debito del 2 giugno 2006.
+      evidence: []
+    - id: F5
+      description: Il 19 febbraio 2009 la II Camera civile del Tribunale d'appello
+        del Cantone Ticino ha respinto l'impugnativa presentata da A.A._.
+      evidence: []
+    disputed:
+    - id: D1
+      description: L'esistenza di un accordo in base al quale la B._SA avrebbe ceduto
+        ad A.A._ i diritti di regresso contro D.A._ ed E._ in cambio del subentro
+        personale nel debito della società C._SA, e la successiva violazione di tale
+        accordo da parte della banca che ha svincolato i co-avallanti.
+      depends_on_facts:
+      - F1
+      - F3
+      positions:
+        ricorrente: A.A._ sostiene di essere subentrato nel debito dietro promessa
+          di cessione dei diritti di regresso, promessa non mantenuta dalla banca
+          che ha svincolato i garanti, rendendo il debito inesistente o contestabile.
+        controparte: La B._SA invoca il riconoscimento di debito del 2 giugno 2006
+          come prova definitiva dell'obbligazione, negando l'esistenza o l'efficacia
+          dell'accordo sulla cessione dei diritti di regresso.
+  legal_texts: []
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: Accertamento dell'inesistenza del debito e annullamento dell'esecuzione.
+        direction: principale
+        references_facts:
+        - F1
+        - D1
+      - id: SEED_ARG2
+        claim: Annullamento della sentenza d'appello e rinvio degli atti per nuovo
+          giudizio con assunzione di testimoni e richiamo dell'originale della cambiale.
+        direction: subordinata
+        references_facts:
+        - D1
+      controparte:
+      - id: SEED_RARG1
+        claim: Respingimento del ricorso basato sul riconoscimento di debito contenuto
+          nell'estratto bancario del 2 giugno 2006.
+        direction: difensiva
+        references_facts:
+        - F3
+  timeline:
+  - date: '2003-03-10'
+    event: Concessione del credito in conto corrente da parte di B._SA ad A.A._
+  - date: '2006-02-13'
+    event: Disdetta definitiva del contratto da parte della banca
+  - date: '2006-03-22'
+    event: Notifica del precetto esecutivo
+  - date: '2006-06-02'
+    event: Firma dell'estratto bancario con riconoscimento di debito
+  - date: '2007-02-23'
+    event: Rigetto in via provvisoria dell'opposizione al precetto
+  - date: '2007-03-20'
+    event: Azione di accertamento dell'inesistenza del debito adita la Pretura di
+      Lugano
+  - date: '2008-02-19'
+    event: Respinta della petizione da parte del Pretore
+  - date: '2009-02-19'
+    event: Respinta dell'impugnativa da parte del Tribunale d'appello del Cantone
+      Ticino
+  - date: '2009-04-02'
+    event: Ricorso al Tribunale Federale
+  - date: '2009-05-05'
+    event: Concessione dell'effetto sospensivo al gravame
+  id: ch-2358

@@ -22,18 +22,56 @@ def wilson_ci(successes: int, n: int, z: float = 1.96) -> tuple[float, float]:
     return (max(0, centre - margin), min(1, centre + margin))
 
 
-def aggregate_results(results: list[dict], total_expected: int = 60) -> dict:
+def _detect_outcome_extractor(results: list[dict]):
+    """Auto-detect the outcome extractor from verdict shape."""
+    if not results:
+        return _it_outcome_extractor
+    first_verdict = results[0].get("judge_decision", {}).get("verdict", {})
+    if "appeal_outcome" in first_verdict:
+        return _ch_outcome_extractor
+    return _it_outcome_extractor
+
+
+def _it_outcome_extractor(verdict: dict) -> str:
+    """Italian verdict → outcome string."""
+    if verdict.get("qualification_correct"):
+        return "rejection"
+    if_incorrect = verdict.get("if_incorrect") or {}
+    consequence = if_incorrect.get("consequence", "annulment")
+    if consequence == "reclassification":
+        return "reclassification"
+    return "annulment"
+
+
+def _ch_outcome_extractor(verdict: dict) -> str:
+    """Swiss verdict → outcome string."""
+    outcome = verdict.get("appeal_outcome", "dismissed")
+    if outcome == "dismissed":
+        return "rejection"
+    return "annulment"
+
+
+def aggregate_results(
+    results: list[dict],
+    total_expected: int = 60,
+    outcome_extractor=None,
+) -> dict:
     """Aggregate Monte Carlo run results with confidence intervals.
 
     Args:
         results: List of result dicts from successful runs, each containing
             run_id, judge_profile, appellant_profile, and judge_decision.
         total_expected: Total number of runs expected (used to compute failed_runs).
+        outcome_extractor: Optional callable(verdict) → outcome string.
+            Auto-detected from verdict shape if not provided.
 
     Returns:
         Dict with keys: probability_table, argument_effectiveness,
         precedent_analysis, total_runs, failed_runs, dominated_strategies.
     """
+    if outcome_extractor is None:
+        outcome_extractor = _detect_outcome_extractor(results)
+
     by_combination: dict[tuple[str, str], list[dict]] = defaultdict(list)
     by_style: dict[str, list[dict]] = defaultdict(list)
 
@@ -51,19 +89,14 @@ def aggregate_results(results: list[dict], total_expected: int = 60) -> dict:
         decisions = [r["judge_decision"]["verdict"] for r in runs]
         n = len(decisions)
 
-        n_rejection = sum(
-            1 for d in decisions if d["qualification_correct"]
-        )
-        n_annulment = sum(
-            1 for d in decisions
-            if not d["qualification_correct"]
-            and d.get("if_incorrect", {}).get("consequence") == "annulment"
-        )
-        n_reclassification = sum(
-            1 for d in decisions
-            if not d["qualification_correct"]
-            and d.get("if_incorrect", {}).get("consequence") == "reclassification"
-        )
+        # Count outcomes using the extractor
+        outcome_counts: dict[str, int] = defaultdict(int)
+        for d in decisions:
+            outcome_counts[outcome_extractor(d)] += 1
+
+        n_rejection = outcome_counts.get("rejection", 0)
+        n_annulment = outcome_counts.get("annulment", 0)
+        n_reclassification = outcome_counts.get("reclassification", 0)
 
         ci_low, ci_high = wilson_ci(n_rejection, n)
 

@@ -1,0 +1,197 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione del credito residuo dovuto ai costruttori/progettisti,
+      validità del prezzo fisso, ammontare delle opere supplementari e ripartizione
+      delle spese processuali tra azione principale e riconvenzionale.
+  evidence:
+  - id: DOC1
+    type: contratto_scritto
+    description: Contratto del 3 settembre 2001 tra D._ e A._ SA/B._ con preventivo
+      generale allegato.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F1
+  - id: DOC2
+    type: sentenza
+    description: Sentenza del Pretore di Bellinzona del 13 novembre 2009.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F4
+  - id: DOC3
+    type: sentenza
+    description: Sentenza della II Camera civile del Tribunale di appello del Cantone
+      Ticino del 23 dicembre 2011.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F5
+  facts:
+    undisputed:
+    - id: F1
+      description: Il 3 settembre 2001, D._ ha affidato ad A._ SA e B._ (poi subentrato
+        C._) la realizzazione di un edificio artigianale a X._ con contratto che prevedeva
+        un prezzo netto di fr. 845'300.-- secondo il preventivo generale di agosto
+        2001.
+      evidence:
+      - DOC1
+    - id: F2
+      description: Nel novembre 2002 i lavori sono stati interrotti e successivamente
+        terminati da un'altra impresa.
+      evidence: []
+    - id: F3
+      description: Il 13 novembre 2003, A._ SA, B._ e C._ hanno convenuto D._ innanzi
+        al Pretore di Bellinzona per il pagamento di fr. 457'560.80 (poi aumentato
+        a fr. 479'271.--).
+      evidence: []
+    - id: F4
+      description: Con sentenza del 13 novembre 2009, il Pretore ha respinto integralmente
+        la petizione principale e parzialmente accolto la domanda riconvenzionale,
+        condannando gli attori a versare fr. 88'935.40.
+      evidence: []
+    - id: F5
+      description: Con sentenza del 23 dicembre 2011, la II Camera civile del Tribunale
+        di appello del Cantone Ticino ha riformato la sentenza di primo grado, stralciando
+        la domanda riconvenzionale e confermando la decisione sull'azione principale
+        basata su una mercede globale di fr. 888'001.35 da cui dedurre fr. 953'936.75.
+      evidence: []
+    disputed:
+    - id: D1
+      description: Esistenza e ammontare di un prezzo fisso concordato dalle parti.
+      depends_on_facts:
+      - F1
+      positions:
+        ricorrente: Le parti non hanno concordato un prezzo fisso.
+        controparte: Il prezzo era fisso come specificato nel contratto del 3 settembre
+          2001.
+    - id: D2
+      description: Ammontare delle opere supplementari riconosciute dal convenuto.
+      depends_on_facts:
+      - F5
+      positions:
+        ricorrente: Le opere supplementari non ammontavano a fr. 10'000.-- ma a fr.
+          87'551.90 (incluso un sovrapprezzo di fr. 77'551.90 non validamente ritrattato).
+        controparte: Le opere supplementari riconosciute ammontano a fr. 10'000.--.
+    - id: D3
+      description: Ammontare delle deduzioni per lavori eseguiti solo parzialmente.
+      depends_on_facts:
+      - F5
+      positions:
+        ricorrente: Non contestano specificamente l'importo di fr. 34'700.-- in questa
+          fase, ma contestano la logica delle deduzioni cantonali.
+        controparte: L'importo da dedurre per i lavori parzialmente eseguiti non è
+          fr. 34'700.-- ma fr. 57'700.--.
+  legal_texts: []
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: Le parti non hanno concordato un prezzo fisso, ma un prezzo a misura.
+        direction: appello
+        references_facts:
+        - F1
+        - D1
+      - id: SEED_ARG2
+        claim: Il convenuto non ha validamente ritrattato l'ammissione processuale
+          di un sovrapprezzo di fr. 77'551.90, quindi le opere supplementari sono
+          superiori a fr. 10'000.--.
+        direction: appello
+        references_facts:
+        - F5
+        - D2
+      - id: SEED_ARG3
+        claim: I giudici cantonali hanno violato il diritto federale nelle deduzioni
+          relative ai costi di ultimazione, difetti e acconti versati.
+        direction: appello
+        references_facts:
+        - F5
+      - id: SEED_ARG4
+        claim: La ripartizione delle spese e l'attribuzione di ripetibili per l'azione
+          riconvenzionale sono errate.
+        direction: appello
+        references_facts:
+        - F5
+      controparte:
+      - id: SEED_RARG1
+        claim: L'importo da dedurre per i lavori parzialmente eseguiti è fr. 57'700.--
+          e non fr. 34'700.-- come stabilito dal tribunale cantonale.
+        direction: respingere_appello
+        references_facts:
+        - F5
+        - D3
+      - id: SEED_RARG2
+        claim: Il prezzo era fisso e le opere supplementari riconosciute sono limitate
+          a fr. 10'000.--.
+        direction: respingere_appello
+        references_facts:
+        - F1
+        - D2
+  timeline:
+  - date: '2001-09-03'
+    event: Firma del contratto di costruzione tra D._ e A._ SA/B._
+  - date: 2002-11
+    event: Interruzione dei lavori
+  - date: '2003-11-13'
+    event: Presentazione della petizione al Pretore di Bellinzona
+  - date: '2009-11-13'
+    event: Sentenza del Pretore di Bellinzona
+  - date: '2011-12-23'
+    event: Sentenza della II Camera civile del Tribunale di appello del Cantone Ticino
+  - date: '2012-02-03'
+    event: Presentazione del ricorso in materia civile al Tribunale Federale
+  - date: '2012-03-14'
+    event: Conferimento dell'effetto sospensivo al ricorso
+  - date: '2012-04-11'
+    event: Risposta di D._ al ricorso
+  id: ch-3408

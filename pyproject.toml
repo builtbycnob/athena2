@@ -24,6 +24,10 @@ dev = [
 kg = [
     "graphiti-core>=0.5",
     "neo4j>=5.0",
+    "sentence-transformers>=3.0.0",
+]
+validation = [
+    "datasets>=2.0,<3.0",
 ]
 
 [project.scripts]

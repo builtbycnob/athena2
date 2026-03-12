@@ -1,0 +1,146 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione della legittimazione passiva della convenuta (responsabilità
+      personale vs rappresentanza societaria) e della competenza territoriale del
+      giudice svizzero in una controversia contrattuale internazionale.
+  evidence:
+  - id: DOC1
+    type: contratto
+    description: Documentazione relativa agli ordini di stampa del 2001 e alla stipula
+      dei contratti.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - D1
+  facts:
+    undisputed:
+    - id: F1
+      description: Il 7 febbraio 2003 la società tedesca X._ ha convenuto A._ dinanzi
+        al Pretore della Giurisdizione di Locarno-Città con un'azione volta al pagamento
+        di fr. 176'136.--, oltre interessi, a titolo di mercede per la ristampa di
+        un libro e la stampa di due calendari dell'avvento, quest'ultimi ordinati
+        nel 2001.
+      evidence: []
+    - id: F2
+      description: La procedura è stata limitata all'esame delle eccezioni di legittimazione
+        passiva e competenza territoriale, entrambe rigettate con sentenza del 9 ottobre
+        2003.
+      evidence: []
+    - id: F3
+      description: L'appello introdotto dalla soccombente è stato respinto il 9 dicembre
+        2004 dalla II Camera civile del Tribunale d'appello del Cantone Ticino.
+      evidence: []
+    disputed:
+    - id: D1
+      description: Se la convenuta A._ abbia concluso i contratti quale rappresentante
+        della società a garanzia limitata Y._ o a titolo personale.
+      depends_on_facts:
+      - F1
+      positions:
+        ricorrente: La convenuta sostiene di aver agito come rappresentante della
+          società Y._ e non a titolo personale, contestando la propria legittimazione
+          passiva.
+        controparte: L'attrice sostiene che la convenuta non ha dimostrato di aver
+          agito come rappresentante, assumendo quindi la responsabilità personale.
+    - id: D2
+      description: Se esista una valida clausola di proroga di giurisdizione che escluda
+        la competenza del Pretore di Locarno.
+      depends_on_facts:
+      - F1
+      positions:
+        ricorrente: La convenuta sostiene l'esistenza di una clausola di proroga di
+          giurisdizione che avrebbe dovuto escludere la competenza del giudice adito.
+        controparte: L'attrice sostiene l'assenza di una valida clausola di proroga
+          di giurisdizione conforme all'art. 17 CL.
+  legal_texts:
+  - id: norm_1
+    norm: art. 17 CL
+    text: '[Testo da fedlex.admin.ch: art. 17 CL]'
+  - id: norm_2
+    norm: art. 2 CL
+    text: '[Testo da fedlex.admin.ch: art. 2 CL]'
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: Carenza di legittimazione passiva della convenuta
+        direction: accoglimento appello
+        references_facts:
+        - F1
+        - D1
+      - id: SEED_ARG2
+        claim: Incompetenza territoriale del Pretore di Locarno
+        direction: accoglimento appello
+        references_facts:
+        - F1
+        - D2
+      controparte:
+      - id: SEED_RARG1
+        claim: Legittimazione passiva della convenuta e competenza territoriale del
+          Pretore di Locarno
+        direction: rigetto ricorso
+        references_facts:
+        - F1
+        - F3
+  timeline:
+  - date: '2003-02-07'
+    event: Azione intentata da X._ contro A._ dinanzi al Pretore di Locarno-Città
+  - date: '2003-10-09'
+    event: Sentenza del Pretore che rigetta le eccezioni di legittimazione e competenza
+  - date: '2004-12-09'
+    event: Sentenza della II Camera civile del Tribunale d'appello del Ticino che
+      respinge l'appello
+  - date: '2005-02-18'
+    event: Risposta della controparte al ricorso per riforma dinanzi al Tribunale
+      federale
+  id: ch-1272

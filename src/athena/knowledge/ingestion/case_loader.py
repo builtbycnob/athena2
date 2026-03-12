@@ -6,6 +6,7 @@ SeedArgument) and structural edges. Idempotent via MERGE on unique IDs.
 """
 
 from athena.knowledge.config import get_session
+from athena.knowledge.embedder import embed_text, is_embedder_available
 from athena.knowledge.ontology import (
     CaseNode,
     PartyNode,
@@ -181,12 +182,15 @@ def ingest_case(case_data: dict) -> dict:
                 legal_text_id=lt["id"],
                 norm=lt["norm"],
                 text=lt["text"],
+                valid_from=lt.get("valid_from"),
+                valid_until=lt.get("valid_until"),
+                superseded_by=lt.get("superseded_by"),
             )
             session.run(
                 "MERGE (l:LegalTextNode {legal_text_id: $lid}) "
                 "SET l += $props",
                 lid=ln.legal_text_id,
-                props=ln.model_dump(),
+                props=ln.model_dump(exclude={"text_embedding"}),
             )
             session.run(
                 "MATCH (c:CaseNode {case_id: $case_id}), "
@@ -197,6 +201,27 @@ def ingest_case(case_data: dict) -> dict:
             )
             counts["nodes"] += 1
             counts["edges"] += 1
+
+            # Embedding (separate SET to avoid 768 floats in model_dump)
+            if is_embedder_available():
+                emb = embed_text(ln.text)
+                if emb:
+                    session.run(
+                        "MATCH (l:LegalTextNode {legal_text_id: $lid}) "
+                        "SET l.text_embedding = $emb",
+                        lid=ln.legal_text_id, emb=emb,
+                    )
+
+        # 6b. SUPERSEDES edges (second pass, after all LegalTextNodes exist)
+        for lt in case_data.get("legal_texts", []):
+            if lt.get("superseded_by"):
+                session.run(
+                    "MATCH (l_new:LegalTextNode {legal_text_id: $new_id}), "
+                    "(l_old:LegalTextNode {legal_text_id: $old_id}) "
+                    "MERGE (l_new)-[:SUPERSEDES]->(l_old)",
+                    new_id=lt["superseded_by"], old_id=lt["id"],
+                )
+                counts["edges"] += 1
 
         # 7. PrecedentNodes
         for prec in case_data.get("key_precedents", []):
@@ -238,7 +263,7 @@ def ingest_case(case_data: dict) -> dict:
                     "MERGE (sa:SeedArgumentNode {seed_arg_id: $said}) "
                     "SET sa += $props",
                     said=san.seed_arg_id,
-                    props=san.model_dump(),
+                    props=san.model_dump(exclude={"claim_embedding"}),
                 )
                 session.run(
                     "MATCH (c:CaseNode {case_id: $case_id}), "
@@ -260,5 +285,15 @@ def ingest_case(case_data: dict) -> dict:
                         fid=fact_id,
                     )
                     counts["edges"] += 1
+
+                # Embedding
+                if is_embedder_available():
+                    emb = embed_text(san.claim)
+                    if emb:
+                        session.run(
+                            "MATCH (sa:SeedArgumentNode {seed_arg_id: $said}) "
+                            "SET sa.claim_embedding = $emb",
+                            said=san.seed_arg_id, emb=emb,
+                        )
 
     return counts

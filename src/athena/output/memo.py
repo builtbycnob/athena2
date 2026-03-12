@@ -29,11 +29,13 @@ argomenti determinativi, traiettorie cross-profilo (se dati KG disponibili)
 (se dati disponibili)
 8. POSIZIONE NEGOZIALE — interpretazione game theory, raccomandazione transazione \
 (se dati disponibili)
-9. RISCHI E CAVEAT — limiti simulazione, fattori non modellati, gaps
+9. ANALISI IRAC — decomposizione Issue/Rule/Application/Conclusion per seed argument \
+(se dati disponibili)
+10. RISCHI E CAVEAT — limiti simulazione, fattori non modellati, gaps
 
 Vincoli: scrivi per un avvocato, usa i numeri ma spiega cosa significano, \
-non mascherare incertezza. 1500-2500 parole. Se le sezioni KG, Red Team o \
-Game Theorist non hanno dati, omettile.
+non mascherare incertezza. 1500-2500 parole. Se le sezioni KG, Red Team, \
+Game Theorist o IRAC non hanno dati, omettile.
 
 NOTA: I confidence intervals sono ampi (N={n_per_cell} per cella). Segnala esplicitamente \
 dove i dati sono insufficienti per una raccomandazione forte vs dove il segnale \
@@ -43,7 +45,7 @@ dove i dati sono insufficienti per una raccomandazione forte vs dove il segnale 
 
 def _build_user_prompt(
     aggregated: dict, case_data: dict, game_analysis=None, kg_insights=None,
-    red_team_output=None, game_theorist_output=None,
+    red_team_output=None, game_theorist_output=None, irac_output=None,
 ) -> str:
     """Build the user prompt with all aggregated data for the synthesizer."""
     sections = []
@@ -100,7 +102,7 @@ def _build_user_prompt(
             )
         if resp_batna:
             sections.append(
-                f"- BATNA comune: {resp_batna.expected_value:.2f} EUR "
+                f"- BATNA controparte: {resp_batna.expected_value:.2f} EUR "
                 f"[{resp_batna.expected_value_range[0]:.2f}, {resp_batna.expected_value_range[1]:.2f}]"
             )
         s = game_analysis.settlement
@@ -153,6 +155,11 @@ def _build_user_prompt(
         sections.append("\n## Interpretazione Strategica (Game Theorist)")
         sections.append(f"```json\n{json.dumps(game_theorist_output, indent=2, ensure_ascii=False)}\n```")
 
+    # IRAC analysis
+    if irac_output is not None and irac_output.get("irac_analyses"):
+        sections.append("\n## Analisi IRAC")
+        sections.append(f"```json\n{json.dumps(irac_output, indent=2, ensure_ascii=False)}\n```")
+
     # Run stats
     sections.append(f"\n## Statistiche simulazione")
     sections.append(f"Run totali: {aggregated.get('total_runs', 0)}")
@@ -163,7 +170,7 @@ def _build_user_prompt(
 
 def generate_strategic_memo(
     aggregated: dict, case_data: dict, game_analysis=None, kg_insights=None,
-    red_team_output=None, game_theorist_output=None,
+    red_team_output=None, game_theorist_output=None, irac_output=None,
 ) -> str:
     """Generate a strategic memo using the Synthesizer LLM.
 
@@ -192,6 +199,7 @@ def generate_strategic_memo(
     user_prompt = _build_user_prompt(
         aggregated, case_data, game_analysis=game_analysis, kg_insights=kg_insights,
         red_team_output=red_team_output, game_theorist_output=game_theorist_output,
+        irac_output=irac_output,
     )
 
     text, _, _, _ = _call_model(system_prompt, user_prompt, temperature=0.4)

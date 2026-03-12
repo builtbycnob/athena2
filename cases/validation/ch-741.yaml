@@ -1,0 +1,149 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione della validità di due riconoscimenti di debito tra
+      privato e professionista e della necessità di un nuovo processo per acquisizione
+      di prove supplementari.
+  evidence:
+  - id: DOC1
+    type: riconoscimento_di_debito
+    description: Riconoscimento di debito sottoscritto il 17 dicembre 1991 da A.,
+      in cui si impegna a versare CHF 150'000.-- entro fine luglio 1992.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F1
+  - id: DOC2
+    type: riconoscimento_di_debito
+    description: Lettera del 12 dicembre 1996 in cui A. si impegna a versare CHF 20'000.--
+      prima di Natale e altri CHF 20'000.-- mensili fino all'estinzione di circa CHF
+      150'000.--
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F1
+  facts:
+    undisputed:
+    - id: F1
+      description: L'ingegnere B. ha presentato petizione il 7 marzo 2001 chiedendo
+        la condanna dell'avvocato A. al pagamento di CHF 150'000.-- più interessi.
+      evidence:
+      - DOC1
+      - DOC2
+    - id: F2
+      description: Il Pretore ha accolto la petizione con sentenza del 30 luglio 2002,
+        modificando la data di decorrenza degli interessi.
+      evidence: []
+    - id: F3
+      description: Il Tribunale d'appello ticinese ha respinto l'appello di A. il
+        11 agosto 2003.
+      evidence: []
+    disputed:
+    - id: D1
+      description: Validità e natura dei due riconoscimenti di debito come prova sufficiente
+        ai sensi dell'art. 17 CO.
+      depends_on_facts:
+      - F1
+      positions:
+        ricorrente: I documenti non costituiscono un sufficiente riconoscimento di
+          debito; la causa dell'obbligazione è nulla a causa di un credito vantato
+          dall'attore contro una società immobiliare fallita.
+        controparte: I documenti costituiscono un sufficiente riconoscimento di debito
+          ai sensi dell'art. 17 CO.
+    - id: D2
+      description: Necessità di assumere nuove prove (audizione teste C. e interrogatorio
+        formale dell'attore).
+      depends_on_facts:
+      - F1
+      - D1
+      positions:
+        ricorrente: La causa deve essere rimandata per completamento dell'istruttoria.
+        controparte: Il ricorso deve essere respinto; non vi è necessità di nuove
+          prove.
+  legal_texts:
+  - id: norm_1
+    norm: art. 17 CO
+    text: '[Testo da fedlex.admin.ch: art. 17 CO]'
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: I riconoscimenti di debito sono nulli o insufficienti a costituire
+          prova dell'obbligazione.
+        direction: annullare la sentenza pretorile e rimandare la causa
+        references_facts:
+        - F1
+        - D1
+        - D2
+      controparte:
+      - id: SEED_RARG1
+        claim: I documenti costituiscono prova sufficiente ai sensi dell'art. 17 CO
+          e la nullità della causa non è provata.
+        direction: reiezione del ricorso
+        references_facts:
+        - F1
+  timeline:
+  - date: '2001-03-07'
+    event: Petizione di B. al Pretore di Mendrisio-Nord
+  - date: '1991-12-17'
+    event: Firma del primo riconoscimento di debito
+  - date: '1996-12-12'
+    event: Firma del secondo riconoscimento di debito
+  - date: '2002-07-30'
+    event: Sentenza del Pretore che accoglie la petizione
+  - date: '2003-08-11'
+    event: Sentenza del Tribunale d'appello ticinese che respinge l'appello
+  - date: '2003-09-17'
+    event: Ricorso per riforma di A. al Tribunale federale
+  - date: '2003-11-21'
+    event: Risposta di B. al ricorso federale
+  id: ch-741

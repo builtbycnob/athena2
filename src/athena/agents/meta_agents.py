@@ -8,8 +8,10 @@ producing structured output via invoke_llm (JSON repair + retry + Langfuse).
 import json
 
 from athena.agents.llm import invoke_llm
-from athena.agents.meta_prompts import RED_TEAM_SYSTEM_PROMPT, GAME_THEORIST_SYSTEM_PROMPT
-from athena.schemas.meta_output import RED_TEAM_SCHEMA, GAME_THEORIST_SCHEMA
+from athena.agents.meta_prompts import (
+    RED_TEAM_SYSTEM_PROMPT, GAME_THEORIST_SYSTEM_PROMPT, IRAC_SYSTEM_PROMPT,
+)
+from athena.schemas.meta_output import RED_TEAM_SCHEMA, GAME_THEORIST_SCHEMA, IRAC_SCHEMA
 
 
 def _format_probability_summary(aggregated: dict) -> str:
@@ -159,3 +161,103 @@ def run_game_theorist(
     system = GAME_THEORIST_SYSTEM_PROMPT.format(n_runs=aggregated.get("total_runs", 0))
     user = _build_game_theorist_user_prompt(aggregated, case_data, game_analysis)
     return invoke_llm(system, user, temperature=0.3, max_tokens=4096, json_schema=GAME_THEORIST_SCHEMA)
+
+
+# --- IRAC Extraction ---
+
+def _deduplicate_arguments_by_seed(results: list[dict], case_data: dict) -> dict:
+    """Group arguments by seed_arg_id, deduplicate for IRAC.
+
+    Returns: {seed_arg_id: {claim: str, variants: list[str]}}
+    Only arguments type="derived" (not "new").
+    Cap at 5 variants per seed to avoid context window overflow.
+    """
+    grouped: dict[str, dict] = {}
+
+    # Get seed argument claims for reference
+    seed_claims = {}
+    seed_args = case_data.get("seed_arguments", {}).get("by_party", {})
+    for party_args in seed_args.values():
+        for sa in party_args:
+            seed_claims[sa["id"]] = sa["claim"]
+
+    for result in results:
+        # Process appellant arguments
+        for brief_key in ("appellant_brief", "respondent_brief"):
+            brief = result.get(brief_key, {})
+            if not brief:
+                continue
+            filed = brief.get("filed_brief", brief)
+            arguments = filed.get("arguments", [])
+            # respondent has affirmative_defenses instead of arguments
+            if not arguments:
+                arguments = filed.get("affirmative_defenses", [])
+
+            for arg in arguments:
+                if arg.get("type") != "derived":
+                    continue
+                seed_id = arg.get("derived_from")
+                if not seed_id:
+                    continue
+
+                reasoning = arg.get("legal_reasoning", "")
+                if not reasoning:
+                    continue
+
+                if seed_id not in grouped:
+                    grouped[seed_id] = {
+                        "claim": seed_claims.get(seed_id, arg.get("claim", "")),
+                        "variants": [],
+                    }
+
+                # Cap at 5 variants per seed
+                if len(grouped[seed_id]["variants"]) < 5:
+                    # Avoid exact duplicates
+                    if reasoning not in grouped[seed_id]["variants"]:
+                        grouped[seed_id]["variants"].append(reasoning)
+
+    return grouped
+
+
+def _build_irac_user_prompt(deduped_args: dict, case_data: dict) -> str:
+    """Build user prompt with case context + grouped arguments."""
+    sections = []
+
+    # Case info
+    case_info = case_data.get("case", case_data)
+    sections.append("## Caso")
+    sections.append(f"ID: {case_info.get('case_id', '')}")
+
+    # Legal texts
+    legal_texts = case_data.get("legal_texts", [])
+    if legal_texts:
+        sections.append("\n## Testi normativi")
+        for lt in legal_texts:
+            sections.append(f"### {lt['norm']}")
+            sections.append(lt["text"][:500])  # Truncate for context window
+
+    # Arguments grouped by seed
+    sections.append("\n## Argomenti da analizzare")
+    for seed_id, data in deduped_args.items():
+        sections.append(f"\n### {seed_id}: {data['claim']}")
+        sections.append("Varianti di legal_reasoning prodotte nelle simulazioni:")
+        for i, variant in enumerate(data["variants"], 1):
+            sections.append(f"\n**Variante {i}:**")
+            sections.append(variant)
+
+    return "\n".join(sections)
+
+
+def run_irac_extraction(results: list[dict], case_data: dict) -> dict:
+    """IRAC decomposition of seed arguments. Returns structured output dict.
+
+    Input is `results` (raw list), NOT `aggregated` — needs legal_reasoning text.
+    """
+    deduped = _deduplicate_arguments_by_seed(results, case_data)
+    if not deduped:
+        return {"irac_analyses": []}
+
+    n_runs = len(results)
+    system = IRAC_SYSTEM_PROMPT.format(n_runs=n_runs)
+    user = _build_irac_user_prompt(deduped, case_data)
+    return invoke_llm(system, user, temperature=0.3, max_tokens=6144, json_schema=IRAC_SCHEMA)

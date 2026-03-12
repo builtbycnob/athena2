@@ -1,0 +1,32 @@
+# simulations/validation-full.yaml — Full validation: 2 judges × 2 styles × 5 runs = 20 runs
+# ~600s per case, used for Phase 2 statistical validation
+simulation:
+  case_ref: "validation"
+  language: "it"
+
+  judge_profiles:
+    - id: "formalista_neutro"
+      jurisprudential_orientation: "neutral"
+      formalism: "high"
+
+    - id: "sostanzialista"
+      jurisprudential_orientation: "substance_over_form"
+      formalism: "low"
+
+  appellant_profiles:
+    - id: "tecnico"
+      style: |
+        Concentrati sui vizi giuridici della decisione impugnata e sulla lettera
+        della legge. Argomentazione analitica e testuale.
+
+    - id: "pragmatico"
+      style: |
+        Bilancia argomenti tecnici e considerazioni pratiche.
+        Enfatizza le conseguenze concrete della decisione.
+
+  temperature:
+    appellant: 0.5
+    respondent: 0.4
+    judge: 0.3
+
+  runs_per_combination: 5

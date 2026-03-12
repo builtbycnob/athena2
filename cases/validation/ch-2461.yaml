@@ -1,0 +1,240 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: La questione centrale riguarda la responsabilità della banca per
+      negligenza nella gestione di conti di una fondazione, il conflitto d'interessi
+      tra la fondazione e il suo organo, e la possibilità per la banca di opporre
+      la buona fede per rifiutare il risarcimento di importi indebitamente prelevati.
+  evidence:
+  - id: DOC1
+    type: atto_pubblico
+    description: Documentazione relativa ai bilanci della fondazione, al procedimento
+      penale contro C._, alla sentenza del Tribunale d'appello del 10 aprile 2008
+      e agli atti di costituzione della fondazione.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F1
+    - F2
+    - F3
+    - F4
+    - F5
+    - F6
+    - F7
+    - F8
+    - F9
+    - F10
+  facts:
+    undisputed:
+    - id: F1
+      description: La fondazione B. è una fondazione del diritto del Liechtenstein
+        costituita nel 1978 da un industriale italiano per regolare la sua successione.
+      evidence:
+      - DOC1
+    - id: F2
+      description: I beni della fondazione B. sono stati depositati su conti presso
+        la A._SA, con il consiglio di fondazione presieduto da C._, dotato di facoltà
+        di firma individuale.
+      evidence:
+      - DOC1
+    - id: F3
+      description: Alla morte del beneficiario originario, la fondazione è passata
+        a uno dei suoi figli, regolarmente indicato quale avente diritto economico.
+      evidence:
+      - DOC1
+    - id: F4
+      description: Nei primi del 1998, il beneficiario economico ha scoperto una posizione
+        negativa superiore ai due milioni di franchi nel bilancio 1997 della fondazione.
+      evidence:
+      - DOC1
+    - id: F5
+      description: Il presidente del consiglio di fondazione C._ ha confessato di
+        aver indebitamente prelevato liquidità per interesse personale, promettendo
+        la restituzione tramite un'eredità imminente.
+      evidence:
+      - DOC1
+    - id: F6
+      description: C._ ha ottenuto l'addebito di GB£ 150'000.-- sul conto della fondazione,
+        destinati all'avvocato del fratello defunto.
+      evidence:
+      - DOC1
+    - id: F7
+      description: È stato avviato un procedimento penale contro C._, non ancora concluso
+        a causa della sua età avanzata e precario stato di salute.
+      evidence:
+      - DOC1
+    - id: F8
+      description: Il 9 maggio 2001 la fondazione B. ha convenuto la A._SA dinanzi
+        al Tribunale d'appello del Cantone Ticino per ottenere il pagamento di fr.
+        1'869'130.80, oltre interessi, e la restituzione di GB£ 150'000.--.
+      evidence:
+      - DOC1
+    - id: F9
+      description: Con sentenza del 10 aprile 2008, il Tribunale d'appello ha accolto
+        la petizione limitatamente a fr. 1'425'978.15, oltre interessi, negando alla
+        banca la buona fede e respingendo la domanda sui GB£ 150'000.--.
+      evidence:
+      - DOC1
+    - id: F10
+      description: Il 15 maggio 2008 la A._SA ha proposto ricorso al Tribunale federale
+        chiedendo la reiezione integrale della petizione.
+      evidence:
+      - DOC1
+    disputed:
+    - id: D1
+      description: Se la banca A._SA abbia agito con negligenza omettendo di individuare
+        il conflitto d'interessi e informare la fondazione, e se la banca possa opporre
+        la buona fede.
+      depends_on_facts:
+      - F2
+      - F5
+      - F6
+      - F9
+      positions:
+        ricorrente: La banca ha agito correttamente e non ha commesso negligenza;
+          non era tenuta a sospettare il conflitto d'interessi o a informare la fondazione.
+        controparte: La banca ha fatto prova di grande negligenza omettendo d'individuare
+          il conflitto d'interessi evidente tra la fondazione e il suo organo (C._)
+          e d'informare la fondazione.
+    - id: D2
+      description: Se la fondazione debba sopportare le conseguenze della propria
+        fiducia cieca in C._, riducendo il risarcimento dovuto dalla banca.
+      depends_on_facts:
+      - F9
+      positions:
+        ricorrente: La fondazione non deve sopportare alcuna conseguenza della propria
+          fiducia, poiché la banca era a conoscenza del conflitto e della negligenza.
+        controparte: La fondazione è tenuta a sopportare qualche conseguenza della
+          fiducia riposta in C._, giustificando la riduzione del risarcimento.
+    - id: D3
+      description: Se la somma di GB£ 150'000.-- debba essere restituita alla fondazione.
+      depends_on_facts:
+      - F6
+      - F9
+      positions:
+        ricorrente: La somma non deve essere restituita poiché l'operazione era legittima
+          o la banca non è responsabile.
+        controparte: La somma deve essere restituita in quanto prelevata indebitamente
+          da C._ con la complicità della negligenza bancaria.
+  legal_texts: []
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: La banca non ha commesso negligenza e non era tenuta a scoprire il
+          conflitto d'interessi tra la fondazione e il suo organo.
+        direction: rejection
+        references_facts:
+        - F2
+        - F5
+        - F9
+      - id: SEED_ARG2
+        claim: La banca deve poter opporre la buona fede per rifiutare il pagamento
+          degli importi sottratti.
+        direction: rejection
+        references_facts:
+        - F9
+        - D1
+      - id: SEED_ARG3
+        claim: La fondazione non ha diritto alla restituzione dei GB£ 150'000.-- né
+          al rimborso parziale dei fr. 1'425'978.15.
+        direction: rejection
+        references_facts:
+        - F6
+        - F9
+        - D2
+        - D3
+      controparte:
+      - id: SEED_RARG1
+        claim: La banca ha agito con grave negligenza omettendo di rilevare il conflitto
+          d'interessi evidente e di informare la fondazione.
+        direction: support
+        references_facts:
+        - F2
+        - F5
+        - F6
+        - F9
+      - id: SEED_RARG2
+        claim: La banca non può opporre la buona fede poiché sapeva che i prelevamenti
+          beneficiavano l'organo (C._).
+        direction: support
+        references_facts:
+        - F9
+        - D1
+      - id: SEED_RARG3
+        claim: La fondazione ha diritto al risarcimento parziale dei fr. 1'425'978.15
+          e alla restituzione dei GB£ 150'000.--.
+        direction: support
+        references_facts:
+        - F6
+        - F9
+        - D3
+  timeline:
+  - date: '1978'
+    event: Costituzione della fondazione B. da parte di un industriale italiano.
+  - date: '1997'
+    event: Pubblicazione del bilancio della fondazione con posizione negativa superiore
+      ai due milioni di franchi.
+  - date: '1998'
+    event: Scoperta della posizione negativa e confessione di C._; addebito di GB£
+      150'000.--.
+  - date: '2001-05-09'
+    event: La fondazione B. convene la A._SA dinanzi al Tribunale d'appello del Cantone
+      Ticino.
+  - date: '2008-04-10'
+    event: Sentenza del Tribunale d'appello del Cantone Ticino che accoglie parzialmente
+      la petizione.
+  - date: '2008-05-15'
+    event: La A._SA propone ricorso al Tribunale federale.
+  - date: '2008-06-26'
+    event: Risposta della fondazione B. al ricorso.
+  id: ch-2461

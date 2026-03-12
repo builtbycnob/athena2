@@ -77,6 +77,7 @@ def _ensure_schema(driver, database: str) -> None:
         ("judge_decision_run_unique", "JudgeDecisionNode", "run_id"),
         ("batna_key_unique", "BATNANode", "key"),
         ("settlement_key_unique", "SettlementNode", "key"),
+        ("irac_id_unique", "IracNode", "irac_id"),
     ]
     with driver.session(database=database) as session:
         for name, label, prop in constraints:
@@ -84,6 +85,23 @@ def _ensure_schema(driver, database: str) -> None:
                 f"CREATE CONSTRAINT {name} IF NOT EXISTS "
                 f"FOR (n:{label}) REQUIRE n.{prop} IS UNIQUE"
             )
+
+        # Vector indexes for semantic search (Neo4j CE >= 5.11)
+        vector_indexes = [
+            ("argument_claim_embedding", "ArgumentNode", "claim_embedding"),
+            ("seed_arg_claim_embedding", "SeedArgumentNode", "claim_embedding"),
+            ("legal_text_embedding", "LegalTextNode", "text_embedding"),
+        ]
+        for idx_name, label, prop in vector_indexes:
+            try:
+                session.run(
+                    f"CREATE VECTOR INDEX {idx_name} IF NOT EXISTS "
+                    f"FOR (n:{label}) ON (n.{prop}) "
+                    f"OPTIONS {{indexConfig: {{`vector.dimensions`: 768, "
+                    f"`vector.similarity_function`: 'cosine'}}}}"
+                )
+            except Exception:
+                pass  # Neo4j CE may not support vector indexes
 
 
 def get_session():

@@ -94,5 +94,8 @@ _LABEL_TO_KEY = {
     "Regole procedurali": "procedural_rules",
     "Memoria dell'opponente (depositata)": "appellant_brief",
     "Memoria del Comune (depositata)": "respondent_brief",
+    # Swiss labels
+    "Memoria del ricorrente (depositata)": "appellant_brief",
+    "Memoria della controparte (depositata)": "respondent_brief",
     "Insight dal Knowledge Graph": "kg_insights",
 }

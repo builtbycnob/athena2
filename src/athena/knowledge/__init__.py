@@ -57,3 +57,19 @@ def get_post_analysis(case_id: str) -> dict | None:
         return None
     from athena.knowledge.queries.post_analysis import get_post_analysis as _get
     return _get(case_id)
+
+
+def search_arguments(query_text: str, limit: int = 10) -> list[dict]:
+    """Semantic search over arguments. Empty list if KG disabled."""
+    if not is_kg_enabled():
+        return []
+    from athena.knowledge.queries.semantic_search import search_similar_arguments
+    return search_similar_arguments(query_text, limit)
+
+
+def store_irac(case_id: str, irac_output: dict) -> dict:
+    """Store IRAC analyses. No-op if KG disabled."""
+    if not is_kg_enabled():
+        return {"nodes": 0, "edges": 0}
+    from athena.knowledge.ingestion.stats_loader import store_irac as _store
+    return _store(case_id, irac_output)

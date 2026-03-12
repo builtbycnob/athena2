@@ -124,11 +124,11 @@ def _node_party(state: GraphState, *, config: AgentConfig) -> dict:
     # Build context
     ctx = build_party_context(state["case"], state["params"], config.party_id, prior_briefs)
 
-    # Legacy prompt support: inject advocacy_style for appellant_it prompt
+    # Inject advocacy_style for prompt template substitution
     if "advocacy_style" not in ctx and config.template_vars.get("advocacy_style"):
         ctx["advocacy_style"] = config.template_vars["advocacy_style"]
-    # Legacy: inject appellant_brief for respondent prompt
-    if config.prompt_key == "respondent_it" and prior_briefs:
+    # Inject appellant_brief for respondent prompts (both IT and CH)
+    if config.prompt_key in ("respondent_it", "respondent_ch") and prior_briefs:
         parties = state["case"].get("parties", [])
         appellant_id = next((p["id"] for p in parties if p["role"] == "appellant"), None)
         if appellant_id and appellant_id in prior_briefs:
@@ -175,9 +175,8 @@ def _node_adjudicator(state: GraphState, *, config: AgentConfig) -> dict:
                   if brief is not None}
     ctx = build_adjudicator_context(state["case"], state["params"], all_briefs)
 
-    # Legacy: also provide separate brief keys for judge_it prompt
-    if config.prompt_key == "judge_it":
-        # Find appellant and respondent briefs
+    # Provide separate brief keys for judge prompts (IT and CH)
+    if config.prompt_key in ("judge_it", "judge_ch"):
         parties = state["case"].get("parties", [])
         for p in parties:
             if p["role"] == "appellant" and p["id"] in all_briefs:
@@ -209,7 +208,7 @@ def _node_adjudicator(state: GraphState, *, config: AgentConfig) -> dict:
 
 
 def _get_prompt_for_config(config: AgentConfig, ctx: dict) -> tuple[str, str]:
-    """Get prompt for an agent config — uses legacy builders for known prompt keys."""
+    """Get prompt for an agent config — uses legacy builders for IT, registry for others."""
     if config.prompt_key == "appellant_it":
         return build_appellant_prompt(ctx)
     elif config.prompt_key == "respondent_it":
@@ -260,7 +259,11 @@ def build_graph_from_phases(phases: list[Phase]) -> object:
 
 
 def build_bilateral_phases(case_data: dict, run_params: dict) -> list[Phase]:
-    """Build phases for the standard bilateral case (backward compat)."""
+    """Build phases for the standard bilateral case (jurisdiction-aware)."""
+    from athena.jurisdiction import get_jurisdiction_for_case
+
+    jconfig = get_jurisdiction_for_case(case_data)
+
     # Find party IDs
     appellant_id = None
     respondent_id = None
@@ -271,7 +274,7 @@ def build_bilateral_phases(case_data: dict, run_params: dict) -> list[Phase]:
             respondent_id = p["id"]
 
     appellant_id = appellant_id or "opponente"
-    respondent_id = respondent_id or "comune_milano"
+    respondent_id = respondent_id or "controparte"
 
     # Get temperatures
     temps = run_params.get("temperatures", run_params.get("temperature", {}))
@@ -286,8 +289,8 @@ def build_bilateral_phases(case_data: dict, run_params: dict) -> list[Phase]:
         Phase("filing", [AgentConfig(
             party_id=appellant_id,
             role_type="advocate",
-            prompt_key="appellant_it",
-            schema_key="appellant",
+            prompt_key=jconfig.prompt_keys["appellant"],
+            schema_key=jconfig.schema_keys["appellant"],
             max_tokens=4096,
             temperature=temps.get("appellant", temps.get(appellant_id, 0.5)),
             template_vars={"advocacy_style": style},
@@ -295,16 +298,16 @@ def build_bilateral_phases(case_data: dict, run_params: dict) -> list[Phase]:
         Phase("response", [AgentConfig(
             party_id=respondent_id,
             role_type="advocate",
-            prompt_key="respondent_it",
-            schema_key="respondent",
+            prompt_key=jconfig.prompt_keys["respondent"],
+            schema_key=jconfig.schema_keys["respondent"],
             max_tokens=4096,
             temperature=temps.get("respondent", temps.get(respondent_id, 0.4)),
         )]),
         Phase("decision", [AgentConfig(
             party_id="judge",
             role_type="adjudicator",
-            prompt_key="judge_it",
-            schema_key="judge",
+            prompt_key=jconfig.prompt_keys["judge"],
+            schema_key=jconfig.schema_keys["judge"],
             max_tokens=6144,
             temperature=temps.get("judge", 0.3),
         )]),
@@ -343,7 +346,7 @@ def run_single(case_data: dict, run_params: dict) -> dict:
     )
     respondent_id = next(
         (p["id"] for p in case_data.get("parties", []) if p["role"] == "respondent"),
-        "comune_milano",
+        "controparte",
     )
 
     return {

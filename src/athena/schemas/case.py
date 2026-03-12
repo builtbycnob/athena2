@@ -86,6 +86,9 @@ class LegalText(BaseModel):
     id: str
     norm: str
     text: str
+    valid_from: str | None = None
+    valid_until: str | None = None
+    superseded_by: str | None = None
 
 
 class SeedArgument(BaseModel):

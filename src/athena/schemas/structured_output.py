@@ -379,7 +379,75 @@ JUDGE_SCHEMA = {
     "additionalProperties": False,
 }
 
-from athena.schemas.meta_output import RED_TEAM_SCHEMA, GAME_THEORIST_SCHEMA
+# --- Swiss Judge (Bundesgericht appeal) ---
+
+_CH_REMEDY = {
+    "type": "object",
+    "properties": {
+        "type": {
+            "type": "string",
+            "enum": ["confirm", "annul", "modify", "remand"],
+        },
+        "description": {"type": "string", "maxLength": 1500},
+        "amount_awarded": {"type": ["integer", "null"]},
+        "costs_appellant": {"type": "integer"},
+        "costs_respondent": {"type": "integer"},
+    },
+    "required": ["type", "description", "amount_awarded", "costs_appellant", "costs_respondent"],
+    "additionalProperties": False,
+}
+
+JUDGE_CH_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "preliminary_objections_ruling": {
+            "type": "array",
+            "items": _PRELIMINARY_OBJECTION_RULING,
+            "minItems": 0,
+            "maxItems": 5,
+        },
+        "case_reaches_merits": {"type": "boolean"},
+        "argument_evaluation": {
+            "type": "array",
+            "items": _ARGUMENT_EVALUATION,
+            "minItems": 1,
+            "maxItems": 15,
+        },
+        "precedent_analysis": {
+            "type": "object",
+            "additionalProperties": _PRECEDENT_ANALYSIS_ITEM,
+        },
+        "verdict": {
+            "type": "object",
+            "properties": {
+                "appeal_outcome": {
+                    "type": "string",
+                    "enum": ["dismissed", "upheld", "partially_upheld", "remanded"],
+                },
+                "outcome_reasoning": {"type": "string", "maxLength": 3000},
+                "remedy": _CH_REMEDY,
+                "costs_ruling": {"type": "string", "maxLength": 500},
+            },
+            "required": ["appeal_outcome", "outcome_reasoning", "remedy", "costs_ruling"],
+            "additionalProperties": False,
+        },
+        "reasoning": {"type": "string", "maxLength": 5000},
+        "gaps": {
+            "type": "array",
+            "items": {"type": "string", "maxLength": 500},
+            "minItems": 0,
+            "maxItems": 5,
+        },
+    },
+    "required": [
+        "preliminary_objections_ruling", "case_reaches_merits", "argument_evaluation",
+        "precedent_analysis", "verdict", "reasoning", "gaps",
+    ],
+    "additionalProperties": False,
+}
+
+
+from athena.schemas.meta_output import RED_TEAM_SCHEMA, GAME_THEORIST_SCHEMA, IRAC_SCHEMA
 
 AGENT_SCHEMAS: dict[str, dict] = {
     "advocate_filing": APPELLANT_SCHEMA,
@@ -389,7 +457,10 @@ AGENT_SCHEMAS: dict[str, dict] = {
     "appellant": APPELLANT_SCHEMA,
     "respondent": RESPONDENT_SCHEMA,
     "judge": JUDGE_SCHEMA,
+    # Swiss judge
+    "judge_ch": JUDGE_CH_SCHEMA,
     # Meta-agents
     "red_team": RED_TEAM_SCHEMA,
     "game_theorist": GAME_THEORIST_SCHEMA,
+    "irac": IRAC_SCHEMA,
 }

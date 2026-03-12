@@ -94,6 +94,26 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     # kg status subcommand
     sub.add_parser("kg-status", help="Show knowledge graph status (node/edge counts)")
 
+    # validation subcommands
+    fetch_parser = sub.add_parser("fetch-cases", help="Fetch validation cases from HuggingFace")
+    fetch_parser.add_argument(
+        "--legal-area", default="civil_law",
+        help="Legal area filter (civil_law, penal_law, public_law, social_law, or 'all')",
+    )
+    fetch_parser.add_argument("--n-rejection", type=int, default=5, help="Number of rejection cases")
+    fetch_parser.add_argument("--n-approval", type=int, default=5, help="Number of approval cases")
+    fetch_parser.add_argument("--min-year", type=int, default=2000, help="Minimum year")
+    fetch_parser.add_argument("--max-words", type=int, default=2000, help="Maximum words in text")
+    fetch_parser.add_argument("--cases-dir", default="cases/validation", help="Output directory for case YAML files")
+    fetch_parser.add_argument("--ground-truth-dir", default="ground_truth", help="Output directory for ground truth")
+    fetch_parser.add_argument("--no-llm", action="store_true", help="Skip LLM extraction (template-only)")
+    fetch_parser.add_argument("--seed", type=int, default=42, help="Random seed for sampling")
+
+    validate_parser = sub.add_parser("validate", help="Score ATHENA results against ground truth")
+    validate_parser.add_argument("--results-dir", required=True, help="Directory with ATHENA results")
+    validate_parser.add_argument("--ground-truth", default="ground_truth", help="Ground truth directory")
+    validate_parser.add_argument("--output", default=None, help="Output path for validation report")
+
     return parser.parse_args(argv)
 
 
@@ -113,6 +133,71 @@ def _kg_status() -> None:
             print(f"[KG] Status: ERROR — {status['error']}")
     except Exception as e:
         print(f"[KG] Cannot connect to Neo4j: {e}")
+
+
+def _fetch_cases(args) -> None:
+    """Fetch validation cases from HuggingFace and convert to ATHENA YAML."""
+    from athena.validation.dataset_fetcher import fetch_swiss_cases
+    from athena.validation.case_extractor import extract_and_save
+
+    legal_area = None if args.legal_area == "all" else args.legal_area
+    print(f"[VALIDATION] Fetching Swiss cases: {args.n_rejection} rejection + {args.n_approval} approval")
+    print(f"[VALIDATION] Filters: legal_area={legal_area}, min_year={args.min_year}, max_words={args.max_words}")
+
+    records = fetch_swiss_cases(
+        legal_area=legal_area,
+        min_year=args.min_year,
+        max_words=args.max_words,
+        n_rejection=args.n_rejection,
+        n_approval=args.n_approval,
+        seed=args.seed,
+    )
+    print(f"[VALIDATION] Fetched {len(records)} records")
+
+    use_llm = not args.no_llm
+    for i, record in enumerate(records):
+        label_str = "rejection" if record["label"] == 0 else "approval"
+        print(f"[VALIDATION] [{i+1}/{len(records)}] Converting {record['id']} ({label_str})...")
+        try:
+            yaml_path, gt_path = extract_and_save(
+                record, args.cases_dir, args.ground_truth_dir, use_llm=use_llm,
+            )
+            print(f"  → {yaml_path}")
+        except Exception as e:
+            print(f"  → FAILED: {e}")
+
+    print(f"[VALIDATION] Done. Cases in {args.cases_dir}/, ground truth in {args.ground_truth_dir}/")
+
+
+def _validate(args) -> None:
+    """Score ATHENA results against ground truth."""
+    from athena.validation.scorer import score_results
+
+    print(f"[VALIDATION] Scoring results in {args.results_dir} against {args.ground_truth}")
+    report = score_results(args.results_dir, args.ground_truth)
+
+    if report.n == 0:
+        print("[VALIDATION] No scored cases found. Check that result directories match ground truth case IDs.")
+        return
+
+    ci_low, ci_high = report.accuracy_ci
+    print(f"[VALIDATION] Cases scored: {report.n}")
+    print(f"[VALIDATION] Accuracy: {report.accuracy:.1%} [{ci_low:.1%}, {ci_high:.1%}]")
+    print(f"[VALIDATION] Log Loss: {report.log_loss:.3f}")
+    print(f"[VALIDATION] ECE: {report.ece:.3f}")
+
+    errors = report.error_analysis()
+    if errors:
+        print(f"[VALIDATION] Errors ({len(errors)}):")
+        for e in errors:
+            print(f"  {e['case_id']}: expected={e['expected']}, predicted={e['predicted']} "
+                  f"(p_rej={e['p_rejection']:.2f}, p_ann={e['p_annulment']:.2f})")
+
+    md = report.to_markdown()
+    output_path = args.output or os.path.join(args.results_dir, "validation_report.md")
+    with open(output_path, "w") as f:
+        f.write(md)
+    print(f"[VALIDATION] Report saved: {output_path}")
 
 
 def _init_kg(args) -> bool:
@@ -138,6 +223,14 @@ def main(argv: list[str] | None = None) -> None:
 
     if args.command == "kg-status":
         _kg_status()
+        return
+
+    if args.command == "fetch-cases":
+        _fetch_cases(args)
+        return
+
+    if args.command == "validate":
+        _validate(args)
         return
 
     if args.command != "run":
@@ -260,6 +353,23 @@ def main(argv: list[str] | None = None) -> None:
         except Exception as e:
             print(f"[ATHENA] Warning: game theorist analysis failed ({e})")
 
+    # --- IRAC extraction ---
+    irac_output = None
+    print("[ATHENA] Running IRAC extraction...")
+    try:
+        from athena.agents.meta_agents import run_irac_extraction
+        irac_output = run_irac_extraction(results, case_data)
+    except Exception as e:
+        print(f"[ATHENA] Warning: IRAC extraction failed ({e})")
+
+    # KG: store IRAC
+    if kg_active and irac_output and irac_output.get("irac_analyses"):
+        try:
+            from athena.knowledge import store_irac
+            store_irac(case_data["case_id"], irac_output)
+        except Exception:
+            pass
+
     # --- Generate outputs ---
     print("[ATHENA] Generating probability table...")
     table_md = format_probability_table(aggregated)
@@ -278,6 +388,7 @@ def main(argv: list[str] | None = None) -> None:
         memo_md = generate_strategic_memo(
             aggregated, case_data, game_analysis=game_analysis, kg_insights=kg_post,
             red_team_output=red_team_output, game_theorist_output=game_theorist_output,
+            irac_output=irac_output,
         )
     except Exception as e:
         memo_md = f"# Strategic Memo\n\nMemo generation failed: {e}\n"
@@ -308,6 +419,12 @@ def main(argv: list[str] | None = None) -> None:
         with open(gta_path, "w") as f:
             json.dump(game_theorist_output, f, indent=2, ensure_ascii=False)
         print(f"[ATHENA] Saved: {gta_path}")
+
+    if irac_output and irac_output.get("irac_analyses"):
+        irac_path = os.path.join(args.output, "irac_analysis.json")
+        with open(irac_path, "w") as f:
+            json.dump(irac_output, f, indent=2, ensure_ascii=False)
+        print(f"[ATHENA] Saved: {irac_path}")
 
     table_path = os.path.join(args.output, "probability_table.md")
     with open(table_path, "w") as f:

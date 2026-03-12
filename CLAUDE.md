@@ -77,32 +77,41 @@ Optional Neo4j-backed knowledge graph (`--kg` flag / `ATHENA_KG_ENABLED=1`):
 - **Ingestion**: case YAML → graph (`case_loader.py`), per-run results (`result_loader.py`), aggregated stats + game theory (`stats_loader.py`)
 - **Context enrichment**: pre-simulation queries — seed arg ranking by judge, best precedent strategy, expected counters (`context_enrichment.py`)
 - **Post-analysis**: argument trajectories cross-judge, determinative argument identification (`post_analysis.py`)
+- **Semantic search**: embedding-based retrieval on arguments, legal texts, seed arguments (`semantic_search.py`)
 - **CLI**: `athena run --kg`, `athena kg-status`
-- **Graceful degradation**: KG off by default, all 285 tests pass without Neo4j, import failures → warning + continue
-- **Dependencies**: `graphiti-core>=0.5`, `neo4j>=5.0` as optional `[kg]` group
+- **Graceful degradation**: KG off by default, all 309 tests pass without Neo4j, import failures → warning + continue
+- **Dependencies**: `graphiti-core>=0.5`, `neo4j>=5.0`, `sentence-transformers>=3.0.0` as optional `[kg]` group
 
-## Meta-Agents Layer (v0.8)
+## Meta-Agents Layer (v0.8 + v0.9)
 
 Post-processing agents that run AFTER aggregation + game theory, BEFORE memo:
 - **Red Teamer** (`run_red_team`): adversarial analysis from opponent's perspective, structured output via `RED_TEAM_SCHEMA`
 - **Game Theorist Agent** (`run_game_theorist`): interprets game theory computations for lawyers, structured output via `GAME_THEORIST_SCHEMA`
-- Both use `invoke_llm` (JSON repair + retry + Langfuse), temperature 0.6/0.3 respectively
-- CLI: try/except wrapper (pipeline continues if meta-agent fails), outputs `red_team.json` + `game_theorist_agent.json`
-- Memo: SYNTHESIZER_SYSTEM_PROMPT includes sections 7 (analisi avversariale) + 8 (posizione negoziale)
+- **IRAC Extractor** (`run_irac_extraction`): decomposes seed arguments into Issue/Rule/Application/Conclusion, structured output via `IRAC_SCHEMA`
+- All use `invoke_llm` (JSON repair + retry + Langfuse), temperature 0.6/0.3/0.3 respectively
+- CLI: try/except wrapper (pipeline continues if meta-agent fails), outputs `red_team.json` + `game_theorist_agent.json` + `irac_analysis.json`
+- Memo: SYNTHESIZER_SYSTEM_PROMPT includes sections 7 (analisi avversariale) + 8 (posizione negoziale) + 9 (analisi IRAC)
+
+## Temporal Norm Versioning (v0.9)
+
+- `LegalText` and `LegalTextNode` have `valid_from`, `valid_until`, `superseded_by` fields
+- `SUPERSEDES` edges between norm versions in KG
+- Backward-compatible: all fields optional with None defaults
 
 ## Current Phase
 
-v0.8 on main. All features merged and validated with unit tests.
+v0.9 on main — **fully validated** (unit tests + LLM smoke tests + KG smoke test).
 - Monte Carlo run-v07-002: **60/60 OK**, 1833s (30.5 min), 210.7 eff tok/s
 - oMLX optimized: continuous batching fixed, hot cache enabled, concurrency=8 (-33% wall clock vs run-001)
 - Neo4j smoke test complete (2026-03-12): KG pipeline validated end-to-end
-- 285 tests green (all mocked)
+- v0.9 LLM smoke tests: **smoke-v09-1** (186s, 75.9 tok/s) + **smoke-v09-2** (175s, 74.0 tok/s) — all outputs valid, 0 JSON repairs
+- 309 tests green (all mocked)
 
 **Immediate next steps**:
-1. v0.8 smoke test with real LLM (verify red_team.json + game_theorist_agent.json)
-2. v0.9 temporal KG + IRAC
+1. v1.0 multi-jurisdiction (jurisdiction registry, per-jurisdiction prompts + phase builders)
+2. v1.0 thin API layer (extract pipeline from cli.py → FastAPI endpoints)
 
-**Roadmap**: v0.9 temporal KG + IRAC → v1.0 multi-jurisdiction → v1.1 sparring mode → v1.2 cross-case intelligence
+**Roadmap**: v1.0 multi-jurisdiction + API → v1.1 sparring mode → v1.2 cross-case intelligence
 
 ## Key Risks & Open Questions
 

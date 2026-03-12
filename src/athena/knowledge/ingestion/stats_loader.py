@@ -162,3 +162,54 @@ def store_game_theory(case_id: str, game_analysis) -> dict:
             counts["edges"] += 1
 
     return counts
+
+
+def store_irac(case_id: str, irac_output: dict) -> dict:
+    """Store IRAC analyses as IracNodes linked to SeedArgumentNodes.
+
+    Args:
+        case_id: Case identifier.
+        irac_output: Dict with "irac_analyses" list from IRAC meta-agent.
+
+    Returns:
+        Summary dict with node/edge counts.
+    """
+    counts = {"nodes": 0, "edges": 0}
+    analyses = irac_output.get("irac_analyses", [])
+    if not analyses:
+        return counts
+
+    with get_session() as session:
+        for item in analyses:
+            seed_arg_id = item.get("seed_arg_id", "")
+            irac_id = f"{case_id}__{seed_arg_id}"
+
+            session.run(
+                "MERGE (i:IracNode {irac_id: $irac_id}) "
+                "SET i.seed_arg_id = $seed_arg_id, "
+                "i.case_id = $case_id, "
+                "i.issue = $issue, "
+                "i.rule = $rule, "
+                "i.application = $application, "
+                "i.conclusion = $conclusion",
+                irac_id=irac_id,
+                seed_arg_id=seed_arg_id,
+                case_id=case_id,
+                issue=item.get("issue", ""),
+                rule=item.get("rule", ""),
+                application=item.get("application", ""),
+                conclusion=item.get("conclusion", ""),
+            )
+            counts["nodes"] += 1
+
+            # HAS_IRAC edge: SeedArgumentNode → IracNode
+            session.run(
+                "MATCH (sa:SeedArgumentNode {seed_arg_id: $seed_arg_id}), "
+                "(i:IracNode {irac_id: $irac_id}) "
+                "MERGE (sa)-[:HAS_IRAC]->(i)",
+                seed_arg_id=seed_arg_id,
+                irac_id=irac_id,
+            )
+            counts["edges"] += 1
+
+    return counts

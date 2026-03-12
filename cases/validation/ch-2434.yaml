@@ -1,0 +1,199 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: &id001
+    - id: prec_1
+      citation: 4C.108/2004 del 29 agosto 2005
+      holding: La domanda di accertamento dell'inesistenza del debito è prematura
+        se non è ancora intervenuta l'alienazione dei pegni prevista nella convenzione.
+      weight: binding
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: *id001
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Accertamento dell'inesistenza del debito residuo dopo la vendita
+      degli immobili ipotecati e possibilità di sospendere la procedura di fallimento
+      in corso contro A._AG.
+  evidence:
+  - id: DOC1
+    type: contratto
+    description: Convenzione di risanamento stipulata il 24 febbraio 1998 tra A._AG,
+      C._S.p.A. e il consorzio delle banche.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F1
+    - F2
+  - id: DOC2
+    type: sentenza
+    description: Sentenza del Tribunale federale 4C.108/2004 del 29 agosto 2005 che
+      ha respinto l'aggravio contro la decisione di prematurità.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F3
+  - id: DOC3
+    type: atti_esecutivi
+    description: Attestato d'insufficienza di pegno, atto di vendita immobiliare e
+      comminatoria di fallimento.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F4
+    - F5
+  facts:
+    undisputed:
+    - id: F1
+      description: Il 24 febbraio 1998, A._AG e C._S.p.A. hanno stipulato una convenzione
+        con il consorzio delle banche creditrici, tra cui B._AG, per un'operazione
+        di risanamento. B._AG aveva concesso ad A._AG un mutuo ipotecario garantito
+        da una cartella ipotecaria (fr. 17'500'000.--) e un'ipoteca in secondo rango
+        (fr. 2'500'000.--).
+      evidence:
+      - DOC1
+    - id: F2
+      description: La convenzione prevedeva che C._S.p.A. pagasse fr. 5'000'000.--
+        in quattro rate e autorizzava le banche a vendere gli attivi entro il 31 marzo
+        2000; il diritto di realizzarli sarebbe decaduto il 31 dicembre 2000.
+      evidence:
+      - DOC1
+    - id: F3
+      description: Il 10 settembre 2001 A._AG ha promosso un'azione di accertamento
+        dell'inesistenza dei debiti verso B._AG, respinta il 24 novembre 2003 come
+        prematura, decisione confermata dal Tribunale federale il 29 agosto 2005.
+      evidence:
+      - DOC2
+    - id: F4
+      description: Gli immobili gravati da pegno sono stati realizzati il 15 giugno
+        2007 con un ricavo netto di fr. 9'862'133.65, generando un'insufficienza di
+        pegno per fr. 16'429'738.67 a favore di B._AG.
+      evidence:
+      - DOC3
+    - id: F5
+      description: Il 2 novembre 2007 è stata notificata a A._AG la comminatoria di
+        fallimento dall'Ufficio di esecuzione e fallimenti di Mendrisio.
+      evidence:
+      - DOC3
+    disputed:
+    - id: D1
+      description: Se l'azione di accertamento dell'inesistenza del debito proposta
+        da A._AG il 26 novembre 2007 sia ammissibile e fondata, nonostante la vendita
+        degli immobili e l'insufficienza di pegno, e se vi sia diritto alla sospensione
+        provvisoria dell'esecuzione.
+      depends_on_facts:
+      - F1
+      - F2
+      - F4
+      - F5
+      positions:
+        ricorrente: A._AG sostiene che la vendita degli immobili ha fatto venir meno
+          il motivo di prematurità della precedente causa, rendendo ora ammissibile
+          e fondata la domanda di accertamento dell'inesistenza del debito e la sospensione
+          dell'esecuzione.
+        controparte: B._AG sostiene che il ricorso è irricevibile o, in subordine,
+          va respinto, contestando l'inesistenza del debito e la necessità di sospendere
+          l'esecuzione.
+  legal_texts:
+  - id: norm_1
+    norm: art. 83 cpv. 2 LEF
+    text: '[Testo da fedlex.admin.ch: art. 83 cpv. 2 LEF]'
+  - id: norm_2
+    norm: art. 85a cpv. 1 LEF
+    text: '[Testo da fedlex.admin.ch: art. 85a cpv. 1 LEF]'
+  - id: norm_3
+    norm: art. 85a cpv. 2 n. 2 LEF
+    text: '[Testo da fedlex.admin.ch: art. 85a cpv. 2 n. 2 LEF]'
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: Accertamento dell'inesistenza del debito e annullamento dell'esecuzione
+        direction: pro
+        references_facts:
+        - F1
+        - F2
+        - F4
+        - F5
+      - id: SEED_ARG2
+        claim: Sospensione provvisoria dell'esecuzione ai sensi dell'art. 85a cpv.
+          2 n. 2 LEF
+        direction: pro
+        references_facts:
+        - F4
+        - F5
+        - D1
+      controparte:
+      - id: SEED_RARG1
+        claim: Irricevibilità del ricorso o respingimento nel merito
+        direction: contra
+        references_facts:
+        - F3
+        - F4
+  timeline:
+  - date: '1998-02-24'
+    event: Stipula della convenzione di risanamento tra A._AG, C._S.p.A. e il consorzio
+      delle banche.
+  - date: '2001-09-10'
+    event: A._AG promuove prima azione di accertamento dell'inesistenza del debito.
+  - date: '2003-11-24'
+    event: Prima azione respinta come prematura dal Tribunale commerciale del Canton
+      San Gallo.
+  - date: '2005-08-29'
+    event: Sentenza del Tribunale federale che conferma la prematurità dell'azione.
+  - date: '2007-06-15'
+    event: Realizzazione degli immobili gravati da pegno.
+  - date: '2007-11-02'
+    event: Notifica della comminatoria di fallimento a A._AG.
+  - date: '2007-11-26'
+    event: A._AG adisce la Pretura del Distretto di Lugano per accertamento inesistenza
+      debito e sospensione esecuzione.
+  - date: '2009-02-02'
+    event: Sentenza della II Camera civile del Tribunale di appello del Cantone Ticino
+      che respinge l'impugnativa contro il decreto pretorile.
+  - date: '2009-03-09'
+    event: A._AG insorge dinanzi al Tribunale federale.
+  id: ch-2434

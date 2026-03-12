@@ -17,6 +17,7 @@ from athena.knowledge.ontology import (
     BATNANode,
     SettlementNode,
     SensitivityNode,
+    IracNode,
 )
 
 
@@ -97,6 +98,22 @@ class TestLegalTextNode:
     def test_basic(self):
         node = LegalTextNode(legal_text_id="LT01", norm="art. 143 CdS", text="...")
         assert node.norm == "art. 143 CdS"
+
+    def test_temporal_defaults(self):
+        node = LegalTextNode(legal_text_id="LT01", norm="art. 143", text="...")
+        assert node.valid_from is None
+        assert node.valid_until is None
+        assert node.superseded_by is None
+
+    def test_with_temporal_data(self):
+        node = LegalTextNode(
+            legal_text_id="LT01", norm="art. 143", text="...",
+            valid_from="1992-04-30", valid_until="2024-01-01",
+            superseded_by="LT02",
+        )
+        assert node.valid_from == "1992-04-30"
+        assert node.valid_until == "2024-01-01"
+        assert node.superseded_by == "LT02"
 
 
 class TestPrecedentNode:
@@ -212,3 +229,42 @@ class TestSensitivityNode:
             parameter="litigation_cost", impact=500.0,
         )
         assert node.impact == 500.0
+
+
+class TestIracNode:
+    def test_basic(self):
+        node = IracNode(
+            irac_id="case1__SEED_ARG1",
+            seed_arg_id="SEED_ARG1",
+            case_id="case1",
+            issue="Is art. 143 applicable?",
+            rule="Art. 143 D.Lgs. 285/1992",
+            application="The road was one-way, not two-way",
+            conclusion="Art. 143 does not apply",
+        )
+        assert node.irac_id == "case1__SEED_ARG1"
+        assert node.issue == "Is art. 143 applicable?"
+
+    def test_roundtrip(self):
+        node = IracNode(
+            irac_id="c__s", seed_arg_id="s", case_id="c",
+            issue="I", rule="R", application="A", conclusion="C",
+        )
+        assert IracNode(**node.model_dump()) == node
+
+
+class TestLegalTextPydantic:
+    def test_backward_compat(self):
+        from athena.schemas.case import LegalText
+        lt = LegalText(id="lt1", norm="art. 1", text="testo")
+        assert lt.valid_from is None
+        assert lt.valid_until is None
+        assert lt.superseded_by is None
+
+    def test_with_temporal(self):
+        from athena.schemas.case import LegalText
+        lt = LegalText(
+            id="lt1", norm="art. 1", text="testo",
+            valid_from="1981-11-24",
+        )
+        assert lt.valid_from == "1981-11-24"

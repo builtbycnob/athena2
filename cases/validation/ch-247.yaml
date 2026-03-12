@@ -1,0 +1,174 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione della validità della disdetta del contratto di locazione
+      immobiliare trasferito in seguito a fallimento e vendita all'asta, e definizione
+      della durata residua del contratto.
+  evidence:
+  - id: DOC1
+    type: atto_pubblico
+    description: Documentazione relativa al contratto di locazione, agli atti di vendita
+      ai pubblici incanti, alla notifica della disdetta e alle sentenze dei gradi
+      di giudizio precedenti.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F1
+    - F2
+    - F3
+    - F4
+    - F5
+    - F6
+  facts:
+    undisputed:
+    - id: F1
+      description: Il 15 dicembre 1995 D. ha dato in locazione alla A. (ora in liquidazione)
+        il complesso alberghiero C., sito sulle part. n. 1449, 1450, 1451 e 1452 RFD
+        di X., con contratto a durata indeterminata, pigione di fr. 7'000.-- mensili
+        e partecipazione agli utili se il fatturato supera fr. 2'000'000.-- annui.
+      evidence:
+      - DOC1
+    - id: F2
+      description: A seguito del fallimento di D., il complesso è stato venduto ai
+        pubblici incanti il 7 aprile 2000 senza aggravio del contratto di locazione;
+        la B. si è aggiudicata le part. 1450, 1451 e 1452, mentre la part. 1449 è
+        stata acquistata da una banca.
+      evidence:
+      - DOC1
+    - id: F3
+      description: Il 14 settembre 2000 la B. ha notificato alla A. la disdetta del
+        contratto per le particelle da lei acquistate, con effetto al 29 marzo 2001.
+      evidence:
+      - DOC1
+    - id: F4
+      description: L'Ufficio di conciliazione di Massagno, il 14 dicembre 2000, ha
+        accertato la validità della disdetta e concesso una proroga unica e definitiva
+        sino al 29 settembre 2001.
+      evidence:
+      - DOC1
+    - id: F5
+      description: Con sentenza del 10 agosto 2001, il Pretore del Distretto di Lugano
+        ha confermato la validità della disdetta e concesso una proroga unica e definitiva
+        sino al 29 marzo 2002.
+      evidence:
+      - DOC1
+    - id: F6
+      description: Il 15 novembre 2001 la II Camera civile del Tribunale d'appello
+        del Cantone Ticino ha negato alla A. la protrazione del contratto di locazione.
+      evidence:
+      - DOC1
+    disputed:
+    - id: D1
+      description: Validità della disdetta notificata il 14 settembre 2000 dalla B.
+        alla A.
+      depends_on_facts:
+      - F1
+      - F2
+      - F3
+      positions:
+        ricorrente: La disdetta è nulla in quanto violata l'art. 271a cpv. 1 CO (e
+          art. 261 CO), dovendo essere annullata o prorogata sino al 31 dicembre 2005
+          (in via subordinata sino al 31 dicembre 2003).
+        controparte: La disdetta è valida; il ricorso deve essere dichiarato inammissibile
+          come abusivo o integralmente respinto.
+  legal_texts:
+  - id: norm_1
+    norm: art. 271a CO
+    text: '[Testo da fedlex.admin.ch: art. 271a CO]'
+  - id: norm_2
+    norm: art. 261 CO
+    text: '[Testo da fedlex.admin.ch: art. 261 CO]'
+  - id: norm_3
+    norm: art. 266a CO
+    text: '[Testo da fedlex.admin.ch: art. 266a CO]'
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: La disdetta è nulla per violazione dell'art. 271a cpv. 1 CO e dell'art.
+          261 CO; in via subordinata, il contratto deve essere prorogato sino al 31
+          dicembre 2003.
+        direction: annullamento_disdetta_e_proroga
+        references_facts:
+        - F1
+        - F2
+        - F3
+        - D1
+      controparte:
+      - id: SEED_RARG1
+        claim: Il ricorso è inammissibile in quanto abusivo; in via subordinata, la
+          disdetta è valida e il ricorso deve essere respinto integralmente.
+        direction: inammissibilita_o_respingimento
+        references_facts:
+        - F3
+        - F4
+        - F5
+        - F6
+  timeline:
+  - date: '1995-12-15'
+    event: Stipula del contratto di locazione tra D. e A.
+  - date: '2000-04-07'
+    event: Vendita ai pubblici incanti del complesso immobiliare senza aggravio del
+      contratto.
+  - date: '2000-09-14'
+    event: Notifica della disdetta da parte di B. ad A.
+  - date: '2000-12-14'
+    event: Sentenza dell'Ufficio di conciliazione di Massagno.
+  - date: '2001-08-10'
+    event: Sentenza del Pretore del Distretto di Lugano.
+  - date: '2001-11-15'
+    event: Sentenza della II Camera civile del Tribunale d'appello del Cantone Ticino.
+  - date: '2002-01-03'
+    event: Deposito del ricorso per riforma al Tribunale federale.
+  - date: '2002-04-19'
+    event: Risposta della B. al ricorso.
+  id: ch-247

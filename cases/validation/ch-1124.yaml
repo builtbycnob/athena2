@@ -1,0 +1,157 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione della responsabilità extracontrattuale della fiduciaria
+      A._ per la mancata verifica di una garanzia finanziaria, e quantificazione del
+      risarcimento dovuto all'investitore M._ dopo la rottura dell'operazione.
+  evidence:
+  - id: DOC1
+    type: contratto_di_mandato
+    description: Contratto di mandato stipulato il 21 gennaio 1997 tra M._ e A._,
+      e atto di cessione secondario relativo a una quota di titoli del Tesoro USA
+      fornito da C._.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F1
+    - F2
+  facts:
+    undisputed:
+    - id: F1
+      description: Il 21 gennaio 1997 M._ ha sottoscritto un contratto d'investimento
+        con C._, società panamense, versando US$ 300'000.-- presso la fiduciaria A._,
+        che ha stipulato un contratto di mandato per trasferire i fondi e ricevere
+        una garanzia (atto di cessione secondario su titoli del Tesoro USA).
+      evidence:
+      - DOC1
+    - id: F2
+      description: Dopo il versamento delle prime quattro rate mensili d'interessi
+        (US$ 78'000.--), l'operazione di investimento si è fermata e il capitale non
+        è stato restituito.
+      evidence: []
+    - id: F3
+      description: Il 28 giugno 1999 M._ ha adito il Tribunale d'appello del Cantone
+        Ticino contro A._ chiedendo il pagamento di US$ 330'000.--.
+      evidence: []
+    - id: F4
+      description: La sentenza del Tribunale d'appello del 31 agosto 2004 ha condannato
+        A._ al pagamento di US$ 180'000.-- (3/5 del capitale) più interessi al 5%
+        dal 5 dicembre 1997, basandosi su una responsabilità extracontrattuale.
+      evidence: []
+    disputed:
+    - id: D1
+      description: Se la mancata verifica della validità della garanzia fornita da
+        C._ costituisca una violazione contrattuale o un illecito extracontrattuale
+        da parte di A._, e se tale condotta giustifichi la responsabilità della fiduciaria.
+      depends_on_facts:
+      - F1
+      - F2
+      - F4
+      positions:
+        ricorrente: A._ sostiene di aver agito unicamente come collettore di fondi
+          e organizzatrice dell'operazione, senza alcun obbligo contrattuale o legale
+          di verificare la validità della garanzia fornita da C._.
+        controparte: M._ sostiene che A._, in qualità di fiduciaria e organizzatrice,
+          abbia violato i propri obblighi di diligenza (contrattuali ed extracontrattuali)
+          non verificando la validità della garanzia, la quale si è rivelata priva
+          di valore.
+  legal_texts:
+  - id: norm_1
+    norm: art. 41 CO
+    text: '[Testo da fedlex.admin.ch: art. 41 CO]'
+  - id: norm_2
+    norm: art. 44 CO
+    text: '[Testo da fedlex.admin.ch: art. 44 CO]'
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: La sentenza impugnata viola gli art. 41 e 44 CO in quanto A._ non aveva
+          alcun obbligo contrattuale di verificare la garanzia e non ha commesso un
+          illecito extracontrattuale.
+        direction: reiezione
+        references_facts:
+        - F1
+        - F2
+        - D1
+      - id: SEED_ARG2
+        claim: In via subordinata, la responsabilità di A._, se mai esistente, dovrebbe
+          essere limitata a US$ 12'000.--.
+        direction: riduzione
+        references_facts:
+        - F4
+        - D1
+      controparte:
+      - id: SEED_RARG1
+        claim: A._ ha violato i propri obblighi di cura e diligenza non verificando
+          la validità della garanzia, rendendola responsabile extracontrattualmente
+          per il danno subito da M._.
+        direction: mantenimento
+        references_facts:
+        - F1
+        - F2
+        - F4
+  timeline:
+  - date: '1997-01-21'
+    event: Sottoscrizione del contratto d'investimento e del contratto di mandato
+      tra M._ e A._.
+  - date: '1997-12-05'
+    event: Data di inizio decorrenza degli interessi (secondo sentenza cantonale).
+  - date: '1999-06-28'
+    event: M._ adisce il Tribunale d'appello del Cantone Ticino.
+  - date: '2004-08-31'
+    event: Sentenza del Tribunale d'appello del Cantone Ticino.
+  - date: '2004-10-01'
+    event: Ricorso per riforma di A._ dinanzi al Tribunale Federale.
+  - date: '2004-12-02'
+    event: Risposta di M._ al ricorso federale.
+  id: ch-1124

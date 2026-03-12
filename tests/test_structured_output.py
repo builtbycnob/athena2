@@ -9,13 +9,14 @@ from athena.schemas.structured_output import (
     APPELLANT_SCHEMA,
     RESPONDENT_SCHEMA,
     JUDGE_SCHEMA,
+    JUDGE_CH_SCHEMA,
 )
 
 
 class TestSchemasWellFormed:
     """Validate that each schema is valid JSON Schema."""
 
-    @pytest.mark.parametrize("name", ["appellant", "respondent", "judge"])
+    @pytest.mark.parametrize("name", ["appellant", "respondent", "judge", "judge_ch"])
     def test_schema_is_valid_json_schema(self, name):
         schema = AGENT_SCHEMAS[name]
         # jsonschema.validators.validator_for resolves the meta-schema
@@ -23,9 +24,9 @@ class TestSchemasWellFormed:
         validator_cls.check_schema(schema)
 
     def test_agent_schemas_has_expected_entries(self):
-        expected = {"appellant", "respondent", "judge",
+        expected = {"appellant", "respondent", "judge", "judge_ch",
                     "advocate_filing", "advocate_response", "adjudicator",
-                    "red_team", "game_theorist"}
+                    "red_team", "game_theorist", "irac"}
         assert set(AGENT_SCHEMAS.keys()) == expected
 
 

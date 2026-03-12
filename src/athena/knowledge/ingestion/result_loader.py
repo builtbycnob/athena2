@@ -6,6 +6,7 @@ No LLM calls needed — data is already structured.
 """
 
 from athena.knowledge.config import get_session
+from athena.knowledge.embedder import embed_text, is_embedder_available
 
 
 def store_run_result(case_id: str, result: dict) -> dict:
@@ -72,6 +73,18 @@ def store_run_result(case_id: str, result: dict) -> dict:
                     orig_id=arg["id"],
                 )
                 counts["nodes"] += 1
+
+                # Embedding
+                claim = arg.get("claim", "")
+                legal_reasoning = arg.get("legal_reasoning", "")
+                if is_embedder_available() and claim:
+                    emb = embed_text(f"{claim} {legal_reasoning}")
+                    if emb:
+                        session.run(
+                            "MATCH (a:ArgumentNode {argument_id: $aid}) "
+                            "SET a.claim_embedding = $emb",
+                            aid=arg_id, emb=emb,
+                        )
 
                 # PRODUCED_IN → SimRun
                 session.run(

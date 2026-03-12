@@ -1,0 +1,153 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione della responsabilità extracontrattuale della fiduciaria
+      A. per la mancata verifica della validità della garanzia, con conseguente riduzione
+      o conferma del risarcimento di US$ 90'000.-- (3/5 del capitale) con interessi.
+  evidence:
+  - id: DOC1
+    type: contratto_privato
+    description: Contratto d'investimento sottoscritto il 20 gennaio 1997 e contratto
+      di mandato tra B. e A.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F1
+    - F2
+  - id: DOC2
+    type: atto_pubblico
+    description: Atto di cessione secondario relativo a una quota di titoli del Tesoro
+      USA, rivelatosi privo di valore.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F3
+  facts:
+    undisputed:
+    - id: F1
+      description: Il 20 gennaio 1997 B. ha sottoscritto un contratto d'investimento
+        con C., società panamense, versando US$ 150'000.-- presso la fiduciaria A.
+        a Lugano, la quale ha stipulato un contratto di mandato per trasferire i fondi
+        a C. e ricevere la garanzia.
+      evidence:
+      - DOC1
+    - id: F2
+      description: Dopo il versamento delle prime quattro rate mensili d'interessi
+        (US$ 42'000.--), l'operazione si è fermata senza restituzione del capitale.
+      evidence: []
+    - id: F3
+      description: La garanzia fornita da C. (atto di cessione secondario su titoli
+        del Tesoro USA) si è rivelata priva di valore.
+      evidence: []
+    disputed:
+    - id: D1
+      description: Se la fiduciaria A. abbia violato un obbligo contrattuale o extracontrattuale
+        non verificando la validità della garanzia fornita da C.
+      depends_on_facts:
+      - F1
+      - F3
+      positions:
+        ricorrente: A. non ha alcun obbligo di controllo sulle garanzie fornite, avendo
+          agito unicamente come collettore di fondi; la mancata verifica non costituisce
+          violazione contrattuale né extracontrattuale.
+        controparte: Nonostante l'assenza di un obbligo contrattuale esplicito, la
+          mancata verifica della garanzia, unita ad altre circostanze, ha generato
+          una responsabilità extracontrattuale per negligenza.
+  legal_texts:
+  - id: norm_1
+    norm: art. 41 CO
+    text: '[Testo da fedlex.admin.ch: art. 41 CO]'
+  - id: norm_2
+    norm: art. 44 CO
+    text: '[Testo da fedlex.admin.ch: art. 44 CO]'
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: La Corte cantonale ha violato l'art. 41 e 44 CO applicando erroneamente
+          la responsabilità extracontrattuale in assenza di un obbligo contrattuale
+          di verifica.
+        direction: rejection
+        references_facts:
+        - F1
+        - D1
+      - id: SEED_ARG2
+        claim: A. ha agito solo come collettore di fondi e non ha la competenza o
+          l'obbligo di verificare la validità delle garanzie fornite da terzi.
+        direction: rejection
+        references_facts:
+        - F1
+        - D1
+      controparte:
+      - id: SEED_RARG1
+        claim: La mancata verifica della garanzia, pur in assenza di obbligo contrattuale,
+          ha ingenerato responsabilità extracontrattuale data la posizione di fiducia
+          e le circostanze del caso.
+        direction: confirmation
+        references_facts:
+        - F1
+        - F3
+  timeline:
+  - date: '1997-01-20'
+    event: Sottoscrizione del contratto d'investimento e del contratto di mandato
+      da parte di B. e A.
+  - date: '1997-05-20'
+    event: Versamento delle prime quattro rate mensili d'interessi (US$ 42'000.--)
+  - date: '2000-09-28'
+    event: B. adisce il Tribunale d'appello del Cantone Ticino contro A.
+  - date: '2004-08-31'
+    event: Sentenza del Tribunale d'appello che condanna A. al pagamento di US$ 90'000.--
+  - date: '2004-10-01'
+    event: Ricorso per riforma di A. dinanzi al Tribunale Federale
+  - date: '2004-12-02'
+    event: Risposta di B. che chiede il rigetto del gravame
+  id: ch-1253

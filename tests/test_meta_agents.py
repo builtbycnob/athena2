@@ -4,7 +4,7 @@
 import pytest
 from unittest.mock import patch
 
-from athena.schemas.meta_output import RED_TEAM_SCHEMA, GAME_THEORIST_SCHEMA
+from athena.schemas.meta_output import RED_TEAM_SCHEMA, GAME_THEORIST_SCHEMA, IRAC_SCHEMA
 from athena.game_theory.schemas import (
     GameTheoryAnalysis, PartyValuations, OutcomeValuation,
     BATNA, SettlementRange, SensitivityResult,
@@ -269,3 +269,136 @@ class TestSchemaRegistration:
     def test_game_theorist_schema_is_valid_json_schema(self):
         assert GAME_THEORIST_SCHEMA["type"] == "object"
         assert "strategic_summary" in GAME_THEORIST_SCHEMA["properties"]
+
+    def test_irac_schema_registered(self):
+        from athena.schemas.structured_output import AGENT_SCHEMAS
+        assert "irac" in AGENT_SCHEMAS
+
+    def test_irac_schema_is_valid_json_schema(self):
+        assert IRAC_SCHEMA["type"] == "object"
+        assert "irac_analyses" in IRAC_SCHEMA["properties"]
+
+
+# --- IRAC Extraction Tests ---
+
+def _make_results_with_derived():
+    """Simulated run results with derived arguments for IRAC."""
+    return [
+        {
+            "run_id": "run_001",
+            "appellant_brief": {
+                "filed_brief": {
+                    "arguments": [
+                        {
+                            "id": "ARG1", "type": "derived",
+                            "derived_from": "SEED_ARG1",
+                            "claim": "Errata qualificazione",
+                            "legal_reasoning": "L'art. 143 non copre senso unico.",
+                        },
+                        {
+                            "id": "ARG2", "type": "new",
+                            "derived_from": None,
+                            "claim": "Argomento nuovo",
+                            "legal_reasoning": "Novità giuridica.",
+                        },
+                    ],
+                },
+            },
+            "respondent_brief": {},
+        },
+        {
+            "run_id": "run_002",
+            "appellant_brief": {
+                "filed_brief": {
+                    "arguments": [
+                        {
+                            "id": "ARG1", "type": "derived",
+                            "derived_from": "SEED_ARG1",
+                            "claim": "Errata qualificazione",
+                            "legal_reasoning": "Art. 143 disciplina solo doppio senso.",
+                        },
+                    ],
+                },
+            },
+            "respondent_brief": {},
+        },
+    ]
+
+
+def _make_irac_output():
+    return {
+        "irac_analyses": [
+            {
+                "seed_arg_id": "SEED_ARG1",
+                "claim": "Errata qualificazione giuridica",
+                "issue": "L'art. 143 CdS si applica a senso unico?",
+                "rule": "Art. 143 D.Lgs. 285/1992, comma 11",
+                "application": "La strada era a senso unico, non a doppio senso",
+                "conclusion": "Art. 143 non applicabile alla fattispecie",
+            },
+        ],
+    }
+
+
+class TestDeduplicateArguments:
+    def test_groups_by_seed(self):
+        from athena.agents.meta_agents import _deduplicate_arguments_by_seed
+        results = _make_results_with_derived()
+        case_data = _make_case_data()
+        deduped = _deduplicate_arguments_by_seed(results, case_data)
+        assert "SEED_ARG1" in deduped
+        assert len(deduped["SEED_ARG1"]["variants"]) == 2
+
+    def test_excludes_new_arguments(self):
+        from athena.agents.meta_agents import _deduplicate_arguments_by_seed
+        results = _make_results_with_derived()
+        case_data = _make_case_data()
+        deduped = _deduplicate_arguments_by_seed(results, case_data)
+        # ARG2 is type="new", should not appear
+        for seed_id in deduped:
+            assert seed_id.startswith("SEED_")
+
+    def test_empty_results(self):
+        from athena.agents.meta_agents import _deduplicate_arguments_by_seed
+        deduped = _deduplicate_arguments_by_seed([], _make_case_data())
+        assert deduped == {}
+
+
+class TestIracExtraction:
+    @patch("athena.agents.meta_agents.invoke_llm")
+    def test_returns_structured_output(self, mock_llm):
+        from athena.agents.meta_agents import run_irac_extraction
+        mock_llm.return_value = _make_irac_output()
+        result = run_irac_extraction(_make_results_with_derived(), _make_case_data())
+        assert "irac_analyses" in result
+        assert len(result["irac_analyses"]) == 1
+
+    @patch("athena.agents.meta_agents.invoke_llm")
+    def test_prompt_includes_seed_args(self, mock_llm):
+        from athena.agents.meta_agents import run_irac_extraction
+        mock_llm.return_value = _make_irac_output()
+        run_irac_extraction(_make_results_with_derived(), _make_case_data())
+        call_args = mock_llm.call_args
+        user_prompt = call_args[0][1]
+        assert "SEED_ARG1" in user_prompt
+
+    @patch("athena.agents.meta_agents.invoke_llm")
+    def test_uses_correct_temperature(self, mock_llm):
+        from athena.agents.meta_agents import run_irac_extraction
+        mock_llm.return_value = _make_irac_output()
+        run_irac_extraction(_make_results_with_derived(), _make_case_data())
+        call_args = mock_llm.call_args
+        assert call_args.kwargs.get("temperature") == 0.3
+
+    @patch("athena.agents.meta_agents.invoke_llm")
+    def test_passes_json_schema(self, mock_llm):
+        from athena.agents.meta_agents import run_irac_extraction
+        mock_llm.return_value = _make_irac_output()
+        run_irac_extraction(_make_results_with_derived(), _make_case_data())
+        call_args = mock_llm.call_args
+        assert call_args.kwargs.get("json_schema") is not None
+
+    def test_empty_results_returns_empty(self):
+        from athena.agents.meta_agents import run_irac_extraction
+        result = run_irac_extraction([], _make_case_data())
+        assert result == {"irac_analyses": []}

@@ -1,0 +1,181 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione della responsabilità civile della banca per le azioni
+      illecite del suo dipendente e quantificazione del danno risarcibile (fr. 476'869.35
+      o fr. 436'869.35).
+  evidence:
+  - id: DOC1
+    type: atto_pubblico
+    description: Attestazione dell'apertura della relazione bancaria e del versamento
+      iniziale di fr. 570'000.--.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F1
+  - id: DOC2
+    type: atto_pubblico
+    description: Sentenza penale della Corte delle assise criminali di Lugano del
+      13 luglio 2006 che condanna C. per truffa e falsità.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F2
+    - F4
+  - id: DOC3
+    type: atto_pubblico
+    description: Documentazione relativa alla chiusura del conto e al prelievo del
+      saldo di fr. 93'130.65.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F3
+  - id: DOC4
+    type: sentenza
+    description: Sentenza della Corte delle assise criminali di Lugano del 13 luglio
+      2006 relativa alla condanna di C.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F4
+  facts:
+    undisputed:
+    - id: F1
+      description: A. ha aperto una relazione presso la B._SA il 22 dicembre 1999
+        comprendente un deposito titoli e un conto di risparmio, versando la somma
+        totale di fr. 570'000.--.
+      evidence:
+      - DOC1
+    - id: F2
+      description: C., persona di riferimento presso la banca, ha effettuato dal luglio
+        2000 al 2003 diverse operazioni senza autorizzazione, falsificando la firma
+        o agendo a insaputa del cliente.
+      evidence:
+      - DOC2
+    - id: F3
+      description: Il 16 dicembre 2004 A. ha chiuso il conto prelevando il saldo di
+        fr. 93'130.65 dopo aver venduto i titoli in deposito.
+      evidence:
+      - DOC3
+    - id: F4
+      description: Il 13 luglio 2006 la Corte delle assise criminali di Lugano ha
+        condannato C. a 2 anni e 10 mesi di reclusione per truffa e falsità in documenti.
+      evidence:
+      - DOC4
+    - id: F5
+      description: 'Le parti hanno presentato una seconda presa di posizione: l''attore
+        il 27 aprile 2012 e la convenuta il 15 maggio 2012.'
+      evidence: []
+    disputed:
+    - id: D1
+      description: Responsabilità della banca per le operazioni eseguite senza consenso
+        del cliente e per il danno subito.
+      depends_on_facts:
+      - F1
+      - F2
+      - F3
+      positions:
+        ricorrente: La banca è responsabile del danno causatogli dal dipendente C.,
+          qualificato organo di fatto, per tutte le operazioni eseguite senza il suo
+          consenso.
+        controparte: I prelievi con firme false sono stati stornati; le operazioni
+          su titoli e derivati erano volute dal cliente, che ne deve sopportare i
+          rischi.
+  legal_texts: []
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: La banca deve risarcire la differenza tra la somma versata e quella
+          incassata poiché il dipendente C. agiva come organo di fatto.
+        direction: pro-attore
+        references_facts:
+        - F1
+        - F2
+        - F3
+        - D1
+      controparte:
+      - id: SEED_RARG1
+        claim: La banca non è responsabile poiché le operazioni illecite sono state
+          stornate e le operazioni su titoli erano volute dal cliente.
+        direction: pro-banca
+        references_facts:
+        - F2
+        - F3
+        - D1
+  timeline:
+  - date: '1999-12-22'
+    event: Apertura della relazione bancaria da parte di A.
+  - date: '2000-07-01'
+    event: Inizio delle operazioni non autorizzate da parte di C.
+  - date: '2003-12-31'
+    event: Fine delle operazioni non autorizzate da parte di C.
+  - date: '2004-12-16'
+    event: Chiusura del conto e prelievo del saldo da parte di A.
+  - date: '2006-05-08'
+    event: Petizione di A. al Pretore di Bellinzona per risarcimento danni.
+  - date: '2006-07-13'
+    event: Condanna penale di C. da parte della Corte delle assise criminali di Lugano.
+  - date: '2009-06-15'
+    event: Sentenza del Pretore di Bellinzona che respinge la petizione.
+  - date: '2011-11-23'
+    event: Sentenza della II Camera civile del Tribunale di appello del Cantone Ticino
+      che conferma il rigetto.
+  - date: '2012-01-13'
+    event: Ricorso in materia civile al Tribunale federale da parte di A.
+  - date: '2012-03-27'
+    event: Risposta della convenuta alla reiezione del ricorso.
+  - date: '2012-04-27'
+    event: Osservazioni dell'attore.
+  - date: '2012-05-15'
+    event: Duplica della convenuta.
+  id: ch-3295

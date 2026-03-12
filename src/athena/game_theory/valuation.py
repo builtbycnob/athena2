@@ -9,7 +9,10 @@ def _midpoint(range_pair: list | tuple) -> float:
 
 
 def compute_outcome_values(
-    stakes: dict, perspective: str, litigation_cost: float | None = None,
+    stakes: dict,
+    perspective: str,
+    litigation_cost: float | None = None,
+    outcome_space: list[str] | None = None,
 ) -> dict[str, OutcomeValuation]:
     """Map verdict outcomes to monetary values for a party.
 
@@ -17,12 +20,17 @@ def compute_outcome_values(
         stakes: Case stakes dict with current_sanction, alternative_sanction.
         perspective: "appellant" or "respondent".
         litigation_cost: Override litigation cost (for sensitivity sweeps).
+        outcome_space: List of outcome names to include. Defaults to
+            ["rejection", "annulment", "reclassification"].
 
     Returns:
         Dict mapping outcome name to OutcomeValuation.
     """
+    if outcome_space is None:
+        outcome_space = ["rejection", "annulment", "reclassification"]
+
     current = stakes["current_sanction"]
-    alt = stakes["alternative_sanction"]
+    alt = stakes.get("alternative_sanction", current)
     cost = litigation_cost if litigation_cost is not None else stakes["litigation_cost_estimate"]
 
     fine_mid = _midpoint(current["fine_range"])
@@ -30,8 +38,10 @@ def compute_outcome_values(
     current_points = current.get("points_deducted", 0)
     alt_points = alt.get("points_deducted", 0)
 
+    all_outcomes: dict[str, dict] = {}
+
     if perspective == "appellant":
-        return {
+        all_outcomes = {
             "rejection": OutcomeValuation(
                 outcome="rejection",
                 description="Appeal rejected — original sanction confirmed",
@@ -58,7 +68,7 @@ def compute_outcome_values(
             ),
         }
     else:  # respondent
-        return {
+        all_outcomes = {
             "rejection": OutcomeValuation(
                 outcome="rejection",
                 description="Appeal rejected — sanction upheld, fine collected",
@@ -84,6 +94,8 @@ def compute_outcome_values(
                 net_value=alt_fine_mid - cost,
             ),
         }
+
+    return {k: v for k, v in all_outcomes.items() if k in outcome_space}
 
 
 def compute_status_quo(stakes: dict, perspective: str) -> float:

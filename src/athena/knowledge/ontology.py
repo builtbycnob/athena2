@@ -73,6 +73,10 @@ class LegalTextNode(BaseModel):
     legal_text_id: str
     norm: str
     text: str
+    valid_from: str | None = None
+    valid_until: str | None = None
+    superseded_by: str | None = None
+    text_embedding: list[float] | None = None
 
 
 class PrecedentNode(BaseModel):
@@ -91,6 +95,7 @@ class SeedArgumentNode(BaseModel):
     direction: str
     party_id: str
     references_facts: list[str] = []
+    claim_embedding: list[float] | None = None
     # Aggregated stats (updated by stats_loader)
     mean_persuasiveness: float | None = None
     std_persuasiveness: float | None = None
@@ -108,6 +113,7 @@ class ArgumentNode(BaseModel):
     norm_text_cited: list[str] = []
     facts_referenced: list[str] = []
     evidence_cited: list[str] = []
+    claim_embedding: list[float] | None = None
 
 
 class ResponseNode(BaseModel):
@@ -161,6 +167,16 @@ class SensitivityNode(BaseModel):
     base_value: float = 0.0
 
 
+class IracNode(BaseModel):
+    irac_id: str          # case_id + "__" + seed_arg_id
+    seed_arg_id: str
+    case_id: str
+    issue: str
+    rule: str
+    application: str
+    conclusion: str
+
+
 # ---- Edge type constants ----
 
 EDGE_HAS_PARTY = "HAS_PARTY"
@@ -185,3 +201,5 @@ EDGE_PRODUCED_IN = "PRODUCED_IN"
 EDGE_HAS_BATNA = "HAS_BATNA"
 EDGE_HAS_SETTLEMENT = "HAS_SETTLEMENT"
 EDGE_HAS_SENSITIVITY = "HAS_SENSITIVITY"
+EDGE_SUPERSEDES = "SUPERSEDES"
+EDGE_HAS_IRAC = "HAS_IRAC"

@@ -119,3 +119,35 @@ GAME_THEORIST_SCHEMA = {
     ],
     "additionalProperties": False,
 }
+
+# --- IRAC Extraction ---
+
+_IRAC_DECOMPOSITION = {
+    "type": "object",
+    "properties": {
+        "seed_arg_id": {"type": "string", "maxLength": 20},
+        "claim": {"type": "string", "maxLength": 500},
+        "issue": {"type": "string", "maxLength": 1000},
+        "rule": {"type": "string", "maxLength": 1500},
+        "application": {"type": "string", "maxLength": 2000},
+        "conclusion": {"type": "string", "maxLength": 1000},
+    },
+    "required": [
+        "seed_arg_id", "claim", "issue", "rule", "application", "conclusion",
+    ],
+    "additionalProperties": False,
+}
+
+IRAC_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "irac_analyses": {
+            "type": "array",
+            "items": _IRAC_DECOMPOSITION,
+            "minItems": 1,
+            "maxItems": 20,
+        },
+    },
+    "required": ["irac_analyses"],
+    "additionalProperties": False,
+}
