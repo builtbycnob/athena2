@@ -28,12 +28,18 @@ class PartyObjectives(BaseModel):
     subordinate: str
 
 
+class Visibility(BaseModel):
+    evidence_visibility: str = "own_and_uncontested"  # "own_and_uncontested" | "all"
+    brief_visibility: list[str] = []  # empty = sees all prior-phase briefs
+
+
 class Party(BaseModel):
     id: str
     role: str
     type: str
     objectives: PartyObjectives
     entity: str | None = None
+    visibility: Visibility | None = None
 
 
 class Sanction(BaseModel):
@@ -67,8 +73,7 @@ class Fact(BaseModel):
 class DisputedFact(BaseModel):
     id: str
     description: str
-    appellant_position: str
-    respondent_position: str
+    positions: dict[str, str]  # party_id → position
     depends_on_facts: list[str]
 
 
@@ -91,8 +96,7 @@ class SeedArgument(BaseModel):
 
 
 class SeedArguments(BaseModel):
-    appellant: list[SeedArgument]
-    respondent: list[SeedArgument]
+    by_party: dict[str, list[SeedArgument]]  # party_id → [args]
 
 
 class TimelineEvent(BaseModel):
@@ -125,8 +129,7 @@ class CaseFile(BaseModel):
             ids.add(lt.id)
         for p in self.key_precedents:
             ids.add(p.id)
-        for sa in self.seed_arguments.appellant:
-            ids.add(sa.id)
-        for sa in self.seed_arguments.respondent:
-            ids.add(sa.id)
+        for party_args in self.seed_arguments.by_party.values():
+            for sa in party_args:
+                ids.add(sa.id)
         return ids

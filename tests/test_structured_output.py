@@ -22,8 +22,10 @@ class TestSchemasWellFormed:
         validator_cls = jsonschema.validators.validator_for(schema)
         validator_cls.check_schema(schema)
 
-    def test_agent_schemas_has_three_entries(self):
-        assert set(AGENT_SCHEMAS.keys()) == {"appellant", "respondent", "judge"}
+    def test_agent_schemas_has_expected_entries(self):
+        expected = {"appellant", "respondent", "judge",
+                    "advocate_filing", "advocate_response", "adjudicator"}
+        assert set(AGENT_SCHEMAS.keys()) == expected
 
 
 class TestAppellantSchema:

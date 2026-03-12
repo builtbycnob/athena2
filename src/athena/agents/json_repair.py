@@ -1,16 +1,25 @@
 """JSON extraction and repair for LLM output.
 
-Forked from ARGUS inference layer. Handles Qwen3.5-specific quirks:
-- Merged key-colon ("key:"value" instead of "key": "value")
-- Trailing commas
-- Single quotes
-- Newlines in string values
-- Truncated JSON from max_tokens cutoff
+Forked from ARGUS inference layer. Three-layer defense:
+
+1. **Prevention**: Prompt instructions tell the model to avoid unescaped quotes.
+2. **Targeted fixes**: Fast regex fixes for known Qwen3.5-specific patterns
+   (merged key-colon, trailing commas, single quotes).
+3. **Library repair**: `json_repair` — BNF-based recursive descent parser that
+   handles embedded quotes, structural errors, and other malformed JSON that
+   regex heuristics cannot reliably fix.
+4. **Truncation repair**: State-machine bracket closer for max_tokens cutoff.
+
+The `json_repair` library replaces ~150 lines of hand-written embedded-quote
+state machine / iterative repair that was fragile and could not handle all
+failure modes (e.g. stray brackets from schema-type confusion).
 """
 
 import json
 import re
 from dataclasses import dataclass, field
+
+from json_repair import repair_json
 
 
 @dataclass
@@ -128,8 +137,11 @@ def repair_truncated_json(text: str) -> str | None:
 
 
 def _clean(s: str) -> str:
-    """Remove control chars and fix invalid escape sequences."""
+    """Remove control chars, normalize curly quotes, fix invalid escape sequences."""
     s = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', ' ', s)
+    # Normalize curly/smart quotes to straight quotes (common in Italian LLM output)
+    s = s.replace('\u201c', '"').replace('\u201d', '"')  # " "
+    s = s.replace('\u2018', "'").replace('\u2019', "'")  # ' '
     s = re.sub(r'\\([^"\\/bfnrtu])', r'\1', s)
     return s
 
@@ -176,117 +188,16 @@ def _extract_from_markdown(text: str) -> str | None:
     return None
 
 
-def _fix_embedded_quotes(text: str) -> str:
-    """Fix unescaped double quotes used for emphasis inside JSON string values.
-
-    Common in Italian legal text where the model writes e.g.:
-        "claim": "...il reato di "contromano", bensì..."
-    The inner "contromano" quotes break JSON parsing.
-
-    Uses a state machine: when inside a string and we encounter a `"`,
-    we check if what follows looks like valid JSON continuation.
-    If not, it's an embedded quote and we escape it.
-    """
-    result = []
-    i = 0
-    in_string = False
-
-    while i < len(text):
-        ch = text[i]
-
-        # Handle escape sequences inside strings
-        if ch == '\\' and in_string and i + 1 < len(text):
-            result.append(ch)
-            result.append(text[i + 1])
-            i += 2
-            continue
-
-        if ch == '"':
-            if not in_string:
-                in_string = True
-                result.append(ch)
-                i += 1
-            else:
-                # Potential end of string — look ahead to decide
-                j = i + 1
-                while j < len(text) and text[j] in ' \t\n\r':
-                    j += 1
-
-                if j >= len(text) or text[j] in '}]':
-                    # End of object/array — real terminator
-                    in_string = False
-                    result.append(ch)
-                    i += 1
-                elif text[j] == ':':
-                    # Ended a key — real terminator
-                    in_string = False
-                    result.append(ch)
-                    i += 1
-                elif text[j] == ',':
-                    # After comma: check if next token is valid JSON
-                    k = j + 1
-                    while k < len(text) and text[k] in ' \t\n\r':
-                        k += 1
-                    if k < len(text) and text[k] == '"':
-                        # Comma then quote — could be next key/value or embedded
-                        # Find closing quote of potential key/value
-                        m = k + 1
-                        while m < len(text):
-                            if text[m] == '\\' and m + 1 < len(text):
-                                m += 2
-                                continue
-                            if text[m] == '"':
-                                break
-                            m += 1
-                        if m < len(text):
-                            # Check what follows the closing quote
-                            n = m + 1
-                            while n < len(text) and text[n] in ' \t\n\r':
-                                n += 1
-                            if n < len(text) and text[n] in ':,}]':
-                                # Valid JSON continuation — real terminator
-                                in_string = False
-                                result.append(ch)
-                                i += 1
-                            else:
-                                # Not valid JSON — embedded quote
-                                result.append('\\"')
-                                i += 1
-                        else:
-                            in_string = False
-                            result.append(ch)
-                            i += 1
-                    elif k < len(text) and text[k] in '{[0123456789tfn-':
-                        # Comma then value/object/array — real terminator
-                        in_string = False
-                        result.append(ch)
-                        i += 1
-                    else:
-                        # Comma then bare text — embedded quote
-                        result.append('\\"')
-                        i += 1
-                else:
-                    # Followed by letter/other — embedded quote
-                    result.append('\\"')
-                    i += 1
-        else:
-            result.append(ch)
-            i += 1
-
-    return ''.join(result)
-
-
 def extract_json(text: str, *, return_metadata: bool = False) -> str | RepairResult:
     """Extract and repair JSON from LLM output.
 
-    Applies fixes in priority order with early exit:
-    0. Qwen3.5 merged key-colon
-    1. Trailing commas
-    2. Single quotes
-    3. Newlines in values
-    4. Unquoted string values
-    5. Truncated JSON repair
-    6. Combined fixes
+    Pipeline (early exit on first success):
+    1. Markdown code block extraction
+    2. Direct parse
+    3. Targeted regex fixes (merged key-colon, trailing commas, single quotes)
+    4. json_repair library (BNF recursive descent — handles embedded quotes,
+       structural errors, and other complex malformations)
+    5. Truncated JSON repair (state-machine bracket closer)
 
     Args:
         text: Raw LLM output text.
@@ -298,6 +209,11 @@ def extract_json(text: str, *, return_metadata: bool = False) -> str | RepairRes
     applied_fixes: list[str] = []
     was_truncated = False
 
+    def _ok(text: str) -> str | RepairResult:
+        if return_metadata:
+            return RepairResult(text=text, applied_fixes=applied_fixes, was_truncated=was_truncated)
+        return text
+
     # Strip thinking blocks
     cleaned = _strip_thinking(text.strip())
 
@@ -305,42 +221,24 @@ def extract_json(text: str, *, return_metadata: bool = False) -> str | RepairRes
     md_result = _extract_from_markdown(cleaned)
     if md_result is not None:
         applied_fixes.append("markdown_extraction")
-        result_text = md_result
-        if return_metadata:
-            return RepairResult(text=result_text, applied_fixes=applied_fixes, was_truncated=False)
-        return result_text
+        return _ok(md_result)
 
     candidate = _find_json_block(cleaned)
 
     # Try direct parse
     try:
         json.loads(candidate)
-        if return_metadata:
-            return RepairResult(text=candidate, applied_fixes=[], was_truncated=False)
-        return candidate
+        return _ok(candidate)
     except json.JSONDecodeError:
         pass
 
-    # Fix 0: Qwen3.5 merged key-colon
+    # Fix 0: Qwen3.5 merged key-colon ("key:"value" → "key": "value")
     fixed0 = re.sub(r'([{,]\s*)"(\w+):', r'\1"\2":', candidate)
     fixed0 = re.sub(r'(":\s*)([A-Za-z$])', r'\1"\2', fixed0)
     try:
         json.loads(fixed0)
         applied_fixes.append("merged_key_colon")
-        if return_metadata:
-            return RepairResult(text=fixed0, applied_fixes=applied_fixes, was_truncated=False)
-        return fixed0
-    except json.JSONDecodeError:
-        pass
-
-    # Fix 0.5: Embedded quotes (e.g. Italian "contromano" inside strings)
-    fixed05 = _fix_embedded_quotes(candidate)
-    try:
-        json.loads(fixed05)
-        applied_fixes.append("embedded_quotes")
-        if return_metadata:
-            return RepairResult(text=fixed05, applied_fixes=applied_fixes, was_truncated=False)
-        return fixed05
+        return _ok(fixed0)
     except json.JSONDecodeError:
         pass
 
@@ -349,9 +247,7 @@ def extract_json(text: str, *, return_metadata: bool = False) -> str | RepairRes
     try:
         json.loads(fixed1)
         applied_fixes.append("trailing_commas")
-        if return_metadata:
-            return RepairResult(text=fixed1, applied_fixes=applied_fixes, was_truncated=False)
-        return fixed1
+        return _ok(fixed1)
     except json.JSONDecodeError:
         pass
 
@@ -365,64 +261,39 @@ def extract_json(text: str, *, return_metadata: bool = False) -> str | RepairRes
     try:
         json.loads(fixed2)
         applied_fixes.append("single_quotes")
-        if return_metadata:
-            return RepairResult(text=fixed2, applied_fixes=applied_fixes, was_truncated=False)
-        return fixed2
+        return _ok(fixed2)
     except json.JSONDecodeError:
         pass
 
-    # Fix 3: Newlines in values
-    fixed3 = re.sub(r'\n\s*', ' ', candidate)
+    # Fix 3: json_repair library — BNF-based recursive descent parser.
+    # Handles embedded quotes, structural errors, stray brackets, and other
+    # complex malformations that regex heuristics cannot reliably fix.
     try:
-        json.loads(fixed3)
-        applied_fixes.append("newlines")
-        if return_metadata:
-            return RepairResult(text=fixed3, applied_fixes=applied_fixes, was_truncated=False)
-        return fixed3
-    except json.JSONDecodeError:
+        library_repaired = repair_json(candidate, return_objects=False)
+        json.loads(library_repaired)
+        applied_fixes.append("json_repair_library")
+        return _ok(library_repaired)
+    except (json.JSONDecodeError, Exception):
         pass
 
-    # Fix 4: Unquoted string values
-    fixed4 = re.sub(
-        r'"(\w+)":\s+([A-Za-z][^"]*?)(?=\s*,?\s*"[a-zA-Z_]+"\s*:|\s*})',
-        lambda m: f'"{m.group(1)}": "{m.group(2).strip().rstrip(",")}"',
-        candidate,
-    )
-    fixed4 = re.sub(r'"\s+"', '", "', fixed4)
-    try:
-        json.loads(fixed4)
-        applied_fixes.append("unquoted_values")
-        if return_metadata:
-            return RepairResult(text=fixed4, applied_fixes=applied_fixes, was_truncated=False)
-        return fixed4
-    except json.JSONDecodeError:
-        pass
-
-    # Fix 5: Truncated JSON repair
+    # Fix 4: Truncated JSON repair (for max_tokens cutoff)
     repaired = repair_truncated_json(cleaned)
     if repaired is not None:
         try:
             json.loads(repaired)
             applied_fixes.append("repair_truncated")
-            if return_metadata:
-                return RepairResult(text=repaired, applied_fixes=applied_fixes, was_truncated=True)
-            return repaired
+            was_truncated = True
+            return _ok(repaired)
         except json.JSONDecodeError:
             pass
 
-    # Fix 6: Combined fixes
-    combined = _fix_embedded_quotes(candidate)
-    combined = re.sub(r'([{,]\s*)"(\w+):', r'\1"\2":', combined)
-    combined = re.sub(r'(":\s*)([A-Za-z$])', r'\1"\2', combined)
-    combined = re.sub(r',\s*([}\]])', r'\1', combined)
-    combined = re.sub(r'\n\s*', ' ', combined)
+    # Fix 5: Library repair on cleaned text (before _find_json_block extraction)
     try:
-        json.loads(combined)
-        applied_fixes.append("combined")
-        if return_metadata:
-            return RepairResult(text=combined, applied_fixes=applied_fixes, was_truncated=False)
-        return combined
-    except json.JSONDecodeError:
+        library_repaired2 = repair_json(cleaned, return_objects=False)
+        json.loads(library_repaired2)
+        applied_fixes.append("json_repair_library_raw")
+        return _ok(library_repaired2)
+    except (json.JSONDecodeError, Exception):
         pass
 
     # Nothing worked — return the best candidate

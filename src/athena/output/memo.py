@@ -21,11 +21,14 @@ Produci un memo strategico per l'avvocato:
 2. ANALISI PER SCENARIO — per profilo giudice: probabilità, strategia ottimale, argomenti chiave
 3. ARGOMENTI: RANKING DI EFFICACIA — universali vs polarizzanti vs irrilevanti
 4. ANALISI DEL PRECEDENTE — tasso adesione vs distinguishing per profilo
-5. RACCOMANDAZIONE STRATEGICA — dominante o condizionale, expected value in EUR
-6. RISCHI E CAVEAT — limiti simulazione, fattori non modellati, gaps
+5. RACCOMANDAZIONE STRATEGICA — dominante o condizionale, expected value in EUR \
+(usa i dati di teoria dei giochi se forniti: BATNA, ZOPA, EV per strategia)
+6. PATTERN DAL KNOWLEDGE GRAPH — argomenti universali vs polarizzanti, \
+argomenti determinativi, traiettorie cross-profilo (se dati KG disponibili)
+7. RISCHI E CAVEAT — limiti simulazione, fattori non modellati, gaps
 
 Vincoli: scrivi per un avvocato, usa i numeri ma spiega cosa significano, \
-non mascherare incertezza. 1500-2500 parole.
+non mascherare incertezza. 1500-2500 parole. Se la sezione KG non ha dati, omettila.
 
 NOTA: I confidence intervals sono ampi (N={n_per_cell} per cella). Segnala esplicitamente \
 dove i dati sono insufficienti per una raccomandazione forte vs dove il segnale \
@@ -33,7 +36,7 @@ dove i dati sono insufficienti per una raccomandazione forte vs dove il segnale 
 """
 
 
-def _build_user_prompt(aggregated: dict, case_data: dict) -> str:
+def _build_user_prompt(aggregated: dict, case_data: dict, game_analysis=None, kg_insights=None) -> str:
     """Build the user prompt with all aggregated data for the synthesizer."""
     sections = []
 
@@ -77,6 +80,61 @@ def _build_user_prompt(aggregated: dict, case_data: dict) -> str:
     else:
         sections.append("Nessuna strategia dominata.")
 
+    # Game theory analysis
+    if game_analysis is not None:
+        sections.append("\n## Analisi di teoria dei giochi")
+        app_batna = game_analysis.batna.get("appellant")
+        resp_batna = game_analysis.batna.get("respondent")
+        if app_batna:
+            sections.append(
+                f"- BATNA opponente: {app_batna.expected_value:.2f} EUR "
+                f"[{app_batna.expected_value_range[0]:.2f}, {app_batna.expected_value_range[1]:.2f}]"
+            )
+        if resp_batna:
+            sections.append(
+                f"- BATNA comune: {resp_batna.expected_value:.2f} EUR "
+                f"[{resp_batna.expected_value_range[0]:.2f}, {resp_batna.expected_value_range[1]:.2f}]"
+            )
+        s = game_analysis.settlement
+        if s.settlement_exists and s.zopa:
+            sections.append(f"- ZOPA: [{s.zopa[0]:.2f}, {s.zopa[1]:.2f}] EUR")
+            sections.append(f"- Soluzione di Nash: {s.nash_solution:.2f} EUR")
+        else:
+            sections.append("- ZOPA: Non esiste")
+        sections.append("- EV per strategia:")
+        for strat, ev in sorted(
+            game_analysis.expected_value_by_strategy.items(),
+            key=lambda x: x[1], reverse=True,
+        ):
+            sections.append(f"  - {strat}: {ev:.2f} EUR")
+        if game_analysis.recommended_strategy:
+            sections.append(f"- Strategia raccomandata: {game_analysis.recommended_strategy}")
+        sections.append("- Sensibilità (tornado):")
+        for sr in game_analysis.sensitivity[:5]:
+            sections.append(f"  - {sr.parameter}: impatto {sr.impact:.2f} EUR")
+
+    # Knowledge Graph insights
+    if kg_insights:
+        sections.append("\n## Insight dal Knowledge Graph")
+        det_args = kg_insights.get("determinative_arguments", [])
+        if det_args:
+            sections.append("### Argomenti determinativi")
+            for da in det_args[:10]:
+                sections.append(
+                    f"- {da.get('argument_id', '?')}: {da.get('claim', '')!r} "
+                    f"(determinativo {da.get('times_determinative', 0)}/"
+                    f"{da.get('total_evaluations', 0)} volte)"
+                )
+        trajectories = kg_insights.get("argument_trajectories", [])
+        if trajectories:
+            sections.append("### Traiettorie cross-profilo")
+            for t in trajectories[:15]:
+                sections.append(
+                    f"- {t.get('seed_arg_id', '?')} con {t.get('judge_profile_id', '?')}: "
+                    f"persuasività media {t.get('mean_persuasiveness', 0):.2f} "
+                    f"(n={t.get('n_evaluations', 0)})"
+                )
+
     # Run stats
     sections.append(f"\n## Statistiche simulazione")
     sections.append(f"Run totali: {aggregated.get('total_runs', 0)}")
@@ -85,12 +143,14 @@ def _build_user_prompt(aggregated: dict, case_data: dict) -> str:
     return "\n".join(sections)
 
 
-def generate_strategic_memo(aggregated: dict, case_data: dict) -> str:
+def generate_strategic_memo(aggregated: dict, case_data: dict, game_analysis=None, kg_insights=None) -> str:
     """Generate a strategic memo using the Synthesizer LLM.
 
     Args:
         aggregated: Dict from aggregate_results().
         case_data: The case YAML data (parsed dict).
+        game_analysis: Optional GameTheoryAnalysis from game theory module.
+        kg_insights: Optional dict from knowledge graph post-analysis.
 
     Returns:
         LLM-generated strategic memo in Italian.
@@ -106,7 +166,7 @@ def generate_strategic_memo(aggregated: dict, case_data: dict) -> str:
     system_prompt = SYNTHESIZER_SYSTEM_PROMPT.format(
         n_runs=n_runs, n_per_cell=n_per_cell
     )
-    user_prompt = _build_user_prompt(aggregated, case_data)
+    user_prompt = _build_user_prompt(aggregated, case_data, game_analysis=game_analysis, kg_insights=kg_insights)
 
     text, _, _, _ = _call_model(system_prompt, user_prompt, temperature=0.4)
     return text

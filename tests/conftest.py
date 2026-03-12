@@ -3,7 +3,7 @@ import pytest
 
 @pytest.fixture
 def sample_case_data():
-    """Minimal case data for testing."""
+    """Minimal case data for testing (N-party format)."""
     return {
         "case_id": "gdp-milano-17928-2025",
         "jurisdiction": {
@@ -90,8 +90,10 @@ def sample_case_data():
                 {
                     "id": "D1",
                     "description": "Correttezza qualificazione giuridica",
-                    "appellant_position": "Art. 143 inapplicabile",
-                    "respondent_position": "Art. 143 applicabile per Cass. 16515/2005",
+                    "positions": {
+                        "opponente": "Art. 143 inapplicabile",
+                        "comune_milano": "Art. 143 applicabile per Cass. 16515/2005",
+                    },
                     "depends_on_facts": ["F1", "F3"],
                 }
             ],
@@ -114,28 +116,30 @@ def sample_case_data():
             },
         ],
         "seed_arguments": {
-            "appellant": [
-                {
-                    "id": "SEED_ARG1",
-                    "claim": "Errata qualificazione giuridica",
-                    "direction": "Art. 143 non copre la fattispecie",
-                    "references_facts": ["F1", "F3", "D1"],
-                },
-                {
-                    "id": "SEED_ARG2",
-                    "claim": "Contraddizione interna del verbale",
-                    "direction": "Verbale descrive senso unico, applica norma da doppio senso",
-                    "references_facts": ["F3"],
-                },
-            ],
-            "respondent": [
-                {
-                    "id": "SEED_RARG1",
-                    "claim": "Legittimità ex Cass. 16515/2005",
-                    "direction": "Cassazione equipara le due condotte",
-                    "references_facts": ["F1", "D1"],
-                },
-            ],
+            "by_party": {
+                "opponente": [
+                    {
+                        "id": "SEED_ARG1",
+                        "claim": "Errata qualificazione giuridica",
+                        "direction": "Art. 143 non copre la fattispecie",
+                        "references_facts": ["F1", "F3", "D1"],
+                    },
+                    {
+                        "id": "SEED_ARG2",
+                        "claim": "Contraddizione interna del verbale",
+                        "direction": "Verbale descrive senso unico, applica norma da doppio senso",
+                        "references_facts": ["F3"],
+                    },
+                ],
+                "comune_milano": [
+                    {
+                        "id": "SEED_RARG1",
+                        "claim": "Legittimità ex Cass. 16515/2005",
+                        "direction": "Cassazione equipara le due condotte",
+                        "references_facts": ["F1", "D1"],
+                    },
+                ],
+            },
         },
         "key_precedents": [
             {
@@ -151,7 +155,7 @@ def sample_case_data():
 
 @pytest.fixture
 def sample_run_params():
-    """Minimal run params for testing."""
+    """Minimal run params for testing (N-party format)."""
     return {
         "run_id": "test__aggressivo__000",
         "judge_profile": {
@@ -159,10 +163,21 @@ def sample_run_params():
             "jurisprudential_orientation": "follows_cassazione",
             "formalism": "high",
         },
+        "party_profiles": {
+            "opponente": {
+                "id": "aggressivo",
+                "party_id": "opponente",
+                "role_type": "advocate",
+                "parameters": {
+                    "style": "Attacca frontalmente la giurisprudenza sfavorevole.",
+                },
+            },
+        },
         "appellant_profile": {
             "id": "aggressivo",
             "style": "Attacca frontalmente la giurisprudenza sfavorevole.",
         },
+        "temperatures": {"appellant": 0.5, "respondent": 0.4, "judge": 0.3},
         "temperature": {"appellant": 0.5, "respondent": 0.4, "judge": 0.3},
         "language": "it",
     }

@@ -38,9 +38,12 @@ def aggregate_results(results: list[dict], total_expected: int = 60) -> dict:
     by_style: dict[str, list[dict]] = defaultdict(list)
 
     for r in results:
-        key = (r["judge_profile"], r["appellant_profile"])
+        # Use appellant_profile for backward compat; for N-party, build composite key
+        appellant_profile = r.get("appellant_profile", "unknown")
+        judge_profile = r.get("judge_profile", "unknown")
+        key = (judge_profile, appellant_profile)
         by_combination[key].append(r)
-        by_style[r["appellant_profile"]].append(r)
+        by_style[appellant_profile].append(r)
 
     # --- 1. Probability table with CI ---
     probability_table: dict[tuple[str, str], dict] = {}

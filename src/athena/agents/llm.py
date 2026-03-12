@@ -344,10 +344,11 @@ def parse_json_response(
 
     try:
         data = json.loads(repair_result.text)
+        was_truncated = repair_result.was_truncated or finish_reason == "length"
         return GenerationResult(
             data=data,
             applied_fixes=repair_result.applied_fixes,
-            was_truncated=repair_result.was_truncated,
+            was_truncated=was_truncated,
         )
     except json.JSONDecodeError:
         err = classify_error(

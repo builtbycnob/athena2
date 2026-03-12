@@ -25,7 +25,7 @@ class TestParseJsonResponseWithRepair:
         )
         assert result.data["key"] == "value"
         assert result.was_truncated
-        assert "repair_truncated" in result.applied_fixes
+        assert "repair_truncated" in result.applied_fixes or "json_repair_library" in result.applied_fixes
 
     def test_fixes_trailing_comma(self):
         result = parse_json_response('{"key": "value",}', finish_reason="stop")
@@ -46,14 +46,16 @@ class TestParseJsonResponseWithRepair:
                 output_tokens=2000,
             )
 
-    def test_raises_truncated_error_when_unrepairable(self):
-        with pytest.raises(JSONTruncatedError):
-            parse_json_response(
-                "completely broken {{{ not json at all",
-                finish_reason="length",
-                prompt_tokens=5000,
-                output_tokens=16384,
-            )
+    def test_truncated_garbage_still_parses_with_library_repair(self):
+        """json_repair library is permissive — even garbage produces valid JSON."""
+        result = parse_json_response(
+            "completely broken {{{ not json at all",
+            finish_reason="length",
+            prompt_tokens=5000,
+            output_tokens=16384,
+        )
+        assert result.was_truncated
+        assert "json_repair_library" in result.applied_fixes or "json_repair_library_raw" in result.applied_fixes
 
 
 class TestInvokeLLMRefactored:
@@ -65,10 +67,10 @@ class TestInvokeLLMRefactored:
 
     @patch("athena.agents.llm._call_model")
     def test_retries_on_unrepairable_truncation(self, mock_call):
-        # First call: truncated with broken JSON that repair can't fix
-        # (nested braces confuse the repair heuristic)
+        # json_repair is very permissive — use pure prose (no braces) to
+        # trigger NonJSONOutputError → JSONTruncatedError on length finish
         mock_call.side_effect = [
-            ("broken {{{ not json at all", "length", 100, 16384),
+            ("The model refuses to produce JSON output and instead writes prose", "length", 100, 16384),
             ('{"key": "value"}', "stop", 100, 200),
         ]
         result = invoke_llm("system", "user", temperature=0.5)
@@ -150,7 +152,7 @@ class TestOmlxBackend:
     def test_truncation_retry_via_http(self, mock_call):
         """finish_reason=length from oMLX triggers the same retry logic."""
         mock_call.side_effect = [
-            ("broken {{{ not json at all", "length", 100, 16384),
+            ("The model refuses to produce JSON output and instead writes prose", "length", 100, 16384),
             ('{"key": "value"}', "stop", 100, 200),
         ]
         result = invoke_llm("system", "user", temperature=0.5)
