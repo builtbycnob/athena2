@@ -98,26 +98,34 @@ Post-processing agents that run AFTER aggregation + game theory, BEFORE memo:
 - `SUPERSEDES` edges between norm versions in KG
 - Backward-compatible: all fields optional with None defaults
 
+## Multi-Jurisdiction Support (v1.0)
+
+- **Jurisdiction registry**: `src/athena/jurisdiction/` — `JurisdictionConfig` maps country → prompts, schemas, outcome extractors
+- **Auto-detection**: `get_jurisdiction_for_case(case_data)` reads `jurisdiction.country`, defaults to IT
+- **Italian (IT)**: wraps existing behavior (zero regression), `JUDGE_SCHEMA` with `qualification_correct`
+- **Swiss (CH)**: Bundesgericht prompts, `JUDGE_CH_SCHEMA` with `appeal_outcome` enum (dismissed/upheld/partially_upheld/remanded)
+- **Outcome extraction**: aggregator, scorer, valuation all auto-detect jurisdiction from verdict shape
+- **Adding a new jurisdiction**: create `src/athena/jurisdiction/{code}.py` with `JurisdictionConfig`, add prompts to `prompts.py`, add judge schema if different from existing
+
 ## Current Phase
 
-v0.9 on main — **fully validated** (unit tests + LLM smoke tests + KG smoke test).
+v1.0 on main — multi-jurisdiction implemented, 388 tests green.
 - Monte Carlo run-v07-002: **60/60 OK**, 1833s (30.5 min), 210.7 eff tok/s
 - oMLX optimized: continuous batching fixed, hot cache enabled, concurrency=8 (-33% wall clock vs run-001)
 - Neo4j smoke test complete (2026-03-12): KG pipeline validated end-to-end
-- v0.9 LLM smoke tests: **smoke-v09-1** (186s, 75.9 tok/s) + **smoke-v09-2** (175s, 74.0 tok/s) — all outputs valid, 0 JSON repairs
-- 309 tests green (all mocked)
+- 10 Swiss Bundesgericht cases in `cases/validation/`, ground truth in `ground_truth/`
+- 388 tests green (all mocked)
 
 **Immediate next steps**:
-1. v1.0 multi-jurisdiction (jurisdiction registry, per-jurisdiction prompts + phase builders)
+1. Swiss validation re-run with CH prompts+schema (target ≥80%, was 70% with IT prompts)
 2. v1.0 thin API layer (extract pipeline from cli.py → FastAPI endpoints)
 
-**Roadmap**: v1.0 multi-jurisdiction + API → v1.1 sparring mode → v1.2 cross-case intelligence
+**Roadmap**: v1.0 Swiss validation + API → v1.1 sparring mode → v1.2 cross-case intelligence
 
 ## Key Risks & Open Questions
 
 - Judge agent quality depends on jurisdiction-specific calibration data
-- Multi-jurisdiction = different procedural rules per system, must be parameterizable
-- Validation: need past cases with known outcomes as test set
+- Swiss validation pending: CH prompts need LLM smoke test to confirm accuracy improvement
 - NOT legal advice — strategic analysis tool, decisions remain human
 - Confidentiality: another reason for local-only inference
 - Generic graph (`build_graph_from_phases`) is the production path — new agents are added as Phase entries
