@@ -1,14 +1,16 @@
 # tests/test_graph.py
 import pytest
 from unittest.mock import patch, call
-from athena.simulation.graph import build_graph, run_single, _MAX_TOKENS
+from athena.simulation.graph import (
+    build_graph_from_phases, build_bilateral_phases, run_single, _MAX_TOKENS,
+)
 from athena.schemas.structured_output import AGENT_SCHEMAS
 
 
 class TestBuildGraph:
-    def test_graph_has_expected_nodes(self):
-        graph = build_graph()
-        # LangGraph compiled graph should have the node names
+    def test_graph_compiles(self, sample_case_data, sample_run_params):
+        phases = build_bilateral_phases(sample_case_data, sample_run_params)
+        graph = build_graph_from_phases(phases)
         assert graph is not None
 
 

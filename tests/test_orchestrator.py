@@ -43,18 +43,28 @@ class TestGetConcurrency:
 
 
 class TestRunOne:
-    """Test _run_one with new signature."""
+    """Test _run_one with GraphState-shaped mock returns."""
 
     def test_returns_ok_on_success(self):
         mock_graph = MagicMock()
         mock_graph.invoke.return_value = {
-            "judge_decision": {"verdict": "ok"},
-            "appellant_brief": {"text": "brief"},
-            "respondent_brief": {"text": "resp"},
-            "appellant_validation": None,
-            "respondent_validation": None,
-            "judge_validation": None,
+            "briefs": {
+                "opponente": {"filed_brief": {"arguments": []}},
+                "comune_milano": {"filed_brief": {}},
+            },
+            "validations": {
+                "opponente": {"valid": True, "warnings": []},
+                "comune_milano": {"valid": True, "warnings": []},
+            },
+            "decision": {"verdict": {"qualification_correct": True}},
+            "decision_validation": {"valid": True, "warnings": []},
             "error": None,
+        }
+        case_data = {
+            "parties": [
+                {"id": "opponente", "role": "appellant"},
+                {"id": "comune_milano", "role": "respondent"},
+            ],
         }
         run_params = {
             "run_id": "judge1__app1__000",
@@ -66,7 +76,7 @@ class TestRunOne:
             "temperatures": {"appellant": 0.5},
             "language": "it",
         }
-        result = _run_one(mock_graph, {}, run_params, 1, 1)
+        result = _run_one(mock_graph, case_data, run_params, 1, 1)
         assert result["status"] == "ok"
         assert result["run_id"] == "judge1__app1__000"
         assert "result" in result
@@ -103,20 +113,32 @@ class TestRunOne:
 class TestParallelRuns:
     """Test parallel orchestrator execution."""
 
-    @patch("athena.simulation.orchestrator.build_graph")
-    def test_parallel_runs_all_complete(self, mock_build):
+    @patch("athena.simulation.orchestrator.build_graph_from_phases")
+    @patch("athena.simulation.orchestrator.build_bilateral_phases")
+    def test_parallel_runs_all_complete(self, mock_build_phases, mock_build_graph):
         mock_graph = MagicMock()
         mock_graph.invoke.return_value = {
-            "judge_decision": {"verdict": "ok"},
-            "appellant_brief": {"text": "b"},
-            "respondent_brief": {"text": "r"},
-            "appellant_validation": None,
-            "respondent_validation": None,
-            "judge_validation": None,
+            "briefs": {
+                "opponente": {"filed_brief": {"arguments": []}},
+                "comune_milano": {"filed_brief": {}},
+            },
+            "validations": {
+                "opponente": {"valid": True, "warnings": []},
+                "comune_milano": {"valid": True, "warnings": []},
+            },
+            "decision": {"verdict": {"qualification_correct": True}},
+            "decision_validation": {"valid": True, "warnings": []},
             "error": None,
         }
-        mock_build.return_value = mock_graph
+        mock_build_phases.return_value = []
+        mock_build_graph.return_value = mock_graph
 
+        case_data = {
+            "parties": [
+                {"id": "opponente", "role": "appellant"},
+                {"id": "comune_milano", "role": "respondent"},
+            ],
+        }
         sim_config = {
             "judge_profiles": [
                 {"id": "j1", "party_id": "judge", "role_type": "adjudicator", "parameters": {}},
@@ -133,7 +155,7 @@ class TestParallelRuns:
         }
 
         with patch.dict(os.environ, {"ATHENA_CONCURRENCY": "4"}):
-            results = run_monte_carlo({}, sim_config)
+            results = run_monte_carlo(case_data, sim_config)
 
         assert len(results) == 4  # 2 judges × 1 appellant × 2 runs
         assert mock_graph.invoke.call_count == 4
@@ -141,8 +163,9 @@ class TestParallelRuns:
         assert "j1__a1__000" in run_ids
         assert "j2__a1__001" in run_ids
 
-    @patch("athena.simulation.orchestrator.build_graph")
-    def test_mixed_success_and_failure(self, mock_build):
+    @patch("athena.simulation.orchestrator.build_graph_from_phases")
+    @patch("athena.simulation.orchestrator.build_bilateral_phases")
+    def test_mixed_success_and_failure(self, mock_build_phases, mock_build_graph):
         """Some runs succeed, some fail — all are collected."""
         call_count = 0
 
@@ -153,14 +176,27 @@ class TestParallelRuns:
                 return {**state, "error": "simulated failure"}
             return {
                 **state,
-                "judge_decision": {"verdict": "ok"},
+                "briefs": {
+                    "opponente": {"filed_brief": {"arguments": []}},
+                    "comune_milano": {"filed_brief": {}},
+                },
+                "validations": {},
+                "decision": {"verdict": {"qualification_correct": True}},
+                "decision_validation": None,
                 "error": None,
             }
 
         mock_graph = MagicMock()
         mock_graph.invoke.side_effect = invoke_side_effect
-        mock_build.return_value = mock_graph
+        mock_build_phases.return_value = []
+        mock_build_graph.return_value = mock_graph
 
+        case_data = {
+            "parties": [
+                {"id": "opponente", "role": "appellant"},
+                {"id": "comune_milano", "role": "respondent"},
+            ],
+        }
         sim_config = {
             "judge_profiles": [
                 {"id": "j1", "party_id": "judge", "role_type": "adjudicator", "parameters": {}},
@@ -176,7 +212,7 @@ class TestParallelRuns:
         }
 
         with patch.dict(os.environ, {"ATHENA_CONCURRENCY": "2"}):
-            results = run_monte_carlo({}, sim_config)
+            results = run_monte_carlo(case_data, sim_config)
 
         # Some succeed, some fail — but total invoke calls = 4
         assert mock_graph.invoke.call_count == 4
