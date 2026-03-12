@@ -379,6 +379,8 @@ JUDGE_SCHEMA = {
     "additionalProperties": False,
 }
 
+from athena.schemas.meta_output import RED_TEAM_SCHEMA, GAME_THEORIST_SCHEMA
+
 AGENT_SCHEMAS: dict[str, dict] = {
     "advocate_filing": APPELLANT_SCHEMA,
     "advocate_response": RESPONDENT_SCHEMA,
@@ -387,4 +389,7 @@ AGENT_SCHEMAS: dict[str, dict] = {
     "appellant": APPELLANT_SCHEMA,
     "respondent": RESPONDENT_SCHEMA,
     "judge": JUDGE_SCHEMA,
+    # Meta-agents
+    "red_team": RED_TEAM_SCHEMA,
+    "game_theorist": GAME_THEORIST_SCHEMA,
 }

@@ -25,10 +25,15 @@ Produci un memo strategico per l'avvocato:
 (usa i dati di teoria dei giochi se forniti: BATNA, ZOPA, EV per strategia)
 6. PATTERN DAL KNOWLEDGE GRAPH — argomenti universali vs polarizzanti, \
 argomenti determinativi, traiettorie cross-profilo (se dati KG disponibili)
-7. RISCHI E CAVEAT — limiti simulazione, fattori non modellati, gaps
+7. ANALISI AVVERSARIALE — vulnerabilità dal red team, raccomandazioni difensive \
+(se dati disponibili)
+8. POSIZIONE NEGOZIALE — interpretazione game theory, raccomandazione transazione \
+(se dati disponibili)
+9. RISCHI E CAVEAT — limiti simulazione, fattori non modellati, gaps
 
 Vincoli: scrivi per un avvocato, usa i numeri ma spiega cosa significano, \
-non mascherare incertezza. 1500-2500 parole. Se la sezione KG non ha dati, omettila.
+non mascherare incertezza. 1500-2500 parole. Se le sezioni KG, Red Team o \
+Game Theorist non hanno dati, omettile.
 
 NOTA: I confidence intervals sono ampi (N={n_per_cell} per cella). Segnala esplicitamente \
 dove i dati sono insufficienti per una raccomandazione forte vs dove il segnale \
@@ -36,7 +41,10 @@ dove i dati sono insufficienti per una raccomandazione forte vs dove il segnale 
 """
 
 
-def _build_user_prompt(aggregated: dict, case_data: dict, game_analysis=None, kg_insights=None) -> str:
+def _build_user_prompt(
+    aggregated: dict, case_data: dict, game_analysis=None, kg_insights=None,
+    red_team_output=None, game_theorist_output=None,
+) -> str:
     """Build the user prompt with all aggregated data for the synthesizer."""
     sections = []
 
@@ -135,6 +143,16 @@ def _build_user_prompt(aggregated: dict, case_data: dict, game_analysis=None, kg
                     f"(n={t.get('n_evaluations', 0)})"
                 )
 
+    # Red Team analysis
+    if red_team_output is not None:
+        sections.append("\n## Analisi Red Team")
+        sections.append(f"```json\n{json.dumps(red_team_output, indent=2, ensure_ascii=False)}\n```")
+
+    # Game Theorist interpretation
+    if game_theorist_output is not None:
+        sections.append("\n## Interpretazione Strategica (Game Theorist)")
+        sections.append(f"```json\n{json.dumps(game_theorist_output, indent=2, ensure_ascii=False)}\n```")
+
     # Run stats
     sections.append(f"\n## Statistiche simulazione")
     sections.append(f"Run totali: {aggregated.get('total_runs', 0)}")
@@ -143,7 +161,10 @@ def _build_user_prompt(aggregated: dict, case_data: dict, game_analysis=None, kg
     return "\n".join(sections)
 
 
-def generate_strategic_memo(aggregated: dict, case_data: dict, game_analysis=None, kg_insights=None) -> str:
+def generate_strategic_memo(
+    aggregated: dict, case_data: dict, game_analysis=None, kg_insights=None,
+    red_team_output=None, game_theorist_output=None,
+) -> str:
     """Generate a strategic memo using the Synthesizer LLM.
 
     Args:
@@ -151,6 +172,8 @@ def generate_strategic_memo(aggregated: dict, case_data: dict, game_analysis=Non
         case_data: The case YAML data (parsed dict).
         game_analysis: Optional GameTheoryAnalysis from game theory module.
         kg_insights: Optional dict from knowledge graph post-analysis.
+        red_team_output: Optional dict from red team meta-agent.
+        game_theorist_output: Optional dict from game theorist meta-agent.
 
     Returns:
         LLM-generated strategic memo in Italian.
@@ -166,7 +189,10 @@ def generate_strategic_memo(aggregated: dict, case_data: dict, game_analysis=Non
     system_prompt = SYNTHESIZER_SYSTEM_PROMPT.format(
         n_runs=n_runs, n_per_cell=n_per_cell
     )
-    user_prompt = _build_user_prompt(aggregated, case_data, game_analysis=game_analysis, kg_insights=kg_insights)
+    user_prompt = _build_user_prompt(
+        aggregated, case_data, game_analysis=game_analysis, kg_insights=kg_insights,
+        red_team_output=red_team_output, game_theorist_output=game_theorist_output,
+    )
 
     text, _, _, _ = _call_model(system_prompt, user_prompt, temperature=0.4)
     return text

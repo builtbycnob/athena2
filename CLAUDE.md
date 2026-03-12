@@ -29,6 +29,7 @@ Implemented:
 - Nash bargaining: bilateral settlement range (ZOPA + Nash solution) (v0.6)
 - EV by strategy: per-strategy expected value ranking (v0.6)
 - Sensitivity analysis: parameter sweeps + tornado ranking (v0.6)
+- Game Theorist Agent: LLM interprets computational GT output for lawyers (v0.8)
 
 Future:
 - Extensive form game trees (sequential moves: filing → response → discovery → motions → trial)
@@ -77,21 +78,31 @@ Optional Neo4j-backed knowledge graph (`--kg` flag / `ATHENA_KG_ENABLED=1`):
 - **Context enrichment**: pre-simulation queries — seed arg ranking by judge, best precedent strategy, expected counters (`context_enrichment.py`)
 - **Post-analysis**: argument trajectories cross-judge, determinative argument identification (`post_analysis.py`)
 - **CLI**: `athena run --kg`, `athena kg-status`
-- **Graceful degradation**: KG off by default, all 268 tests pass without Neo4j, import failures → warning + continue
+- **Graceful degradation**: KG off by default, all 285 tests pass without Neo4j, import failures → warning + continue
 - **Dependencies**: `graphiti-core>=0.5`, `neo4j>=5.0` as optional `[kg]` group
+
+## Meta-Agents Layer (v0.8)
+
+Post-processing agents that run AFTER aggregation + game theory, BEFORE memo:
+- **Red Teamer** (`run_red_team`): adversarial analysis from opponent's perspective, structured output via `RED_TEAM_SCHEMA`
+- **Game Theorist Agent** (`run_game_theorist`): interprets game theory computations for lawyers, structured output via `GAME_THEORIST_SCHEMA`
+- Both use `invoke_llm` (JSON repair + retry + Langfuse), temperature 0.6/0.3 respectively
+- CLI: try/except wrapper (pipeline continues if meta-agent fails), outputs `red_team.json` + `game_theorist_agent.json`
+- Memo: SYNTHESIZER_SYSTEM_PROMPT includes sections 7 (analisi avversariale) + 8 (posizione negoziale)
 
 ## Current Phase
 
-v0.7 on `feat/v0.7-knowledge-graph`, fully validated. Pending merge to main.
+v0.8 on main. All features merged and validated with unit tests.
 - Monte Carlo run-v07-002: **60/60 OK**, 1833s (30.5 min), 210.7 eff tok/s
 - oMLX optimized: continuous batching fixed, hot cache enabled, concurrency=8 (-33% wall clock vs run-001)
-- 268 tests green. KG not yet tested with real Neo4j.
+- Neo4j smoke test complete (2026-03-12): KG pipeline validated end-to-end
+- 285 tests green (all mocked)
 
 **Immediate next steps**:
-1. Smoke test with Neo4j (KG pipeline)
-2. v0.8 meta-agents (red teamer, game theorist agent)
+1. v0.8 smoke test with real LLM (verify red_team.json + game_theorist_agent.json)
+2. v0.9 temporal KG + IRAC
 
-**Roadmap**: v0.8 meta-agents (red teamer, game theorist agent) → v0.9 temporal KG + IRAC → v1.0 multi-jurisdiction → v1.1 sparring mode → v1.2 cross-case intelligence
+**Roadmap**: v0.9 temporal KG + IRAC → v1.0 multi-jurisdiction → v1.1 sparring mode → v1.2 cross-case intelligence
 
 ## Key Risks & Open Questions
 

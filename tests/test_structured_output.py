@@ -24,7 +24,8 @@ class TestSchemasWellFormed:
 
     def test_agent_schemas_has_expected_entries(self):
         expected = {"appellant", "respondent", "judge",
-                    "advocate_filing", "advocate_response", "adjudicator"}
+                    "advocate_filing", "advocate_response", "adjudicator",
+                    "red_team", "game_theorist"}
         assert set(AGENT_SCHEMAS.keys()) == expected
 
 

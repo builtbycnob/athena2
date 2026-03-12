@@ -236,6 +236,30 @@ def main(argv: list[str] | None = None) -> None:
         except Exception as e:
             print(f"[KG] Warning: post-analysis query failed ({e})")
 
+    # --- Meta-agents ---
+    red_team_output = None
+    game_theorist_output = None
+
+    print("[ATHENA] Running red team analysis...")
+    try:
+        from athena.agents.meta_agents import run_red_team
+        red_team_output = run_red_team(
+            aggregated, case_data,
+            game_analysis=game_analysis, kg_insights=kg_post,
+        )
+    except Exception as e:
+        print(f"[ATHENA] Warning: red team analysis failed ({e})")
+
+    if game_analysis is not None:
+        print("[ATHENA] Running game theorist analysis...")
+        try:
+            from athena.agents.meta_agents import run_game_theorist
+            game_theorist_output = run_game_theorist(
+                aggregated, case_data, game_analysis,
+            )
+        except Exception as e:
+            print(f"[ATHENA] Warning: game theorist analysis failed ({e})")
+
     # --- Generate outputs ---
     print("[ATHENA] Generating probability table...")
     table_md = format_probability_table(aggregated)
@@ -253,6 +277,7 @@ def main(argv: list[str] | None = None) -> None:
     try:
         memo_md = generate_strategic_memo(
             aggregated, case_data, game_analysis=game_analysis, kg_insights=kg_post,
+            red_team_output=red_team_output, game_theorist_output=game_theorist_output,
         )
     except Exception as e:
         memo_md = f"# Strategic Memo\n\nMemo generation failed: {e}\n"
@@ -271,6 +296,18 @@ def main(argv: list[str] | None = None) -> None:
         with open(gt_summary_path, "w") as f:
             f.write(gt_summary_md)
         print(f"[ATHENA] Saved: {gt_summary_path}")
+
+    if red_team_output:
+        rt_path = os.path.join(args.output, "red_team.json")
+        with open(rt_path, "w") as f:
+            json.dump(red_team_output, f, indent=2, ensure_ascii=False)
+        print(f"[ATHENA] Saved: {rt_path}")
+
+    if game_theorist_output:
+        gta_path = os.path.join(args.output, "game_theorist_agent.json")
+        with open(gta_path, "w") as f:
+            json.dump(game_theorist_output, f, indent=2, ensure_ascii=False)
+        print(f"[ATHENA] Saved: {gta_path}")
 
     table_path = os.path.join(args.output, "probability_table.md")
     with open(table_path, "w") as f:
