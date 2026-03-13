@@ -103,29 +103,40 @@ Post-processing agents that run AFTER aggregation + game theory, BEFORE memo:
 - **Jurisdiction registry**: `src/athena/jurisdiction/` — `JurisdictionConfig` maps country → prompts, schemas, outcome extractors
 - **Auto-detection**: `get_jurisdiction_for_case(case_data)` reads `jurisdiction.country`, defaults to IT
 - **Italian (IT)**: wraps existing behavior (zero regression), `JUDGE_SCHEMA` with `qualification_correct`
-- **Swiss (CH)**: Bundesgericht prompts, `JUDGE_CH_SCHEMA` with `appeal_outcome` enum (dismissed/upheld/partially_upheld/remanded)
+- **Swiss (CH)**: Bundesgericht prompts, two-step judge architecture with `JUDGE_CH_STEP1_SCHEMA` + `JUDGE_CH_STEP2_SCHEMA`
 - **Outcome extraction**: aggregator, scorer, valuation all auto-detect jurisdiction from verdict shape
 - **Adding a new jurisdiction**: create `src/athena/jurisdiction/{code}.py` with `JurisdictionConfig`, add prompts to `prompts.py`, add judge schema if different from existing
 
+## Two-Step CH Judge (v1.1)
+
+- **Step 1** (temp=0.7): error identification — finds errors in lower court decision, classifies severity (decisive/significant/minor/none)
+- **Step 2** (temp=0.4): outcome decision — re-evaluates Step 1 errors, decides `lower_court_correct`
+- **Consistency enforcement** (`_ch_enforce_consistency`): deterministic override — decisive errors → force `lower_court_correct=False`, no decisive → force True. Applied at graph merge + outcome extraction.
+- **Prompt key**: `judge_ch_step1` / `judge_ch_step2`, schema key: `judge_ch_step1` / `judge_ch_step2`
+- Broke monodirezionale dismissed bias (93% → balanced), accuracy 50% → 60%
+
 ## Current Phase
 
-v1.0 on main — multi-jurisdiction implemented, 388 tests green.
+v1.1 on main — two-step CH judge + consistency enforcement, 429 tests green.
 - Monte Carlo run-v07-002: **60/60 OK**, 1833s (30.5 min), 210.7 eff tok/s
-- oMLX optimized: continuous batching fixed, hot cache enabled, concurrency=8 (-33% wall clock vs run-001)
-- Neo4j smoke test complete (2026-03-12): KG pipeline validated end-to-end
+- oMLX optimized: continuous batching fixed, hot cache enabled, concurrency=8
+- **OMLX_MODEL must be `qwen3.5-35b-a3b-text-hi`** (short name — full HF name gives 404)
 - 10 Swiss Bundesgericht cases in `cases/validation/`, ground truth in `ground_truth/`
-- 388 tests green (all mocked)
+- **Swiss validation (2026-03-13): 60% accuracy** (6/10), up from 50% pre-fix
+- 429 tests green (all mocked)
 
 **Immediate next steps**:
-1. Swiss validation re-run with CH prompts+schema (target ≥80%, was 70% with IT prompts)
-2. v1.0 thin API layer (extract pipeline from cli.py → FastAPI endpoints)
+1. Calibrate Step 1 severity classification (4 residual errors: ch-247/1124/1253 under-classify, ch-2434 over-classifies)
+2. v1.1 thin API layer (extract pipeline from cli.py → FastAPI endpoints)
+3. RAG legal corpus (embed norms per jurisdiction for context enrichment)
 
-**Roadmap**: v1.0 Swiss validation + API → v1.1 sparring mode → v1.2 cross-case intelligence
+**Roadmap**: calibrate CH Step 1 → API layer → v1.2 sparring → v1.3 cross-case intelligence + RAG corpus
 
 ## Key Risks & Open Questions
 
 - Judge agent quality depends on jurisdiction-specific calibration data
-- Swiss validation pending: CH prompts need LLM smoke test to confirm accuracy improvement
+- Swiss validation: 60% accuracy, residual errors are severity calibration (not bias)
+- RAG legal corpus planned: embed full norms per jurisdiction for better context (see memory/rag-legal-corpus.md)
 - NOT legal advice — strategic analysis tool, decisions remain human
 - Confidentiality: another reason for local-only inference
 - Generic graph (`build_graph_from_phases`) is the production path — new agents are added as Phase entries
