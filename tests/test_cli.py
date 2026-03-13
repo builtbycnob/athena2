@@ -102,8 +102,8 @@ class TestMainPipeline:
         case_file.write_text(yaml.dump(self.CASE_DATA))
         sim_file.write_text(yaml.dump(self.SIM_DATA))
 
-        with patch("athena.cli.run_monte_carlo", return_value=[self.MOCK_RESULT]) as mock_mc, \
-             patch("athena.cli.generate_strategic_memo", return_value="# Memo\n\nTest memo.") as mock_memo:
+        with patch("athena.simulation.orchestrator.run_monte_carlo", return_value=[self.MOCK_RESULT]) as mock_mc, \
+             patch("athena.output.memo.generate_strategic_memo", return_value="# Memo\n\nTest memo.") as mock_memo:
 
             main(["run", "--case", str(case_file), "--simulation", str(sim_file), "--output", str(output_dir)])
 
@@ -138,8 +138,8 @@ class TestMainPipeline:
         case_file.write_text(yaml.dump(self.CASE_DATA))
         sim_file.write_text(yaml.dump(self.SIM_DATA))
 
-        with patch("athena.cli.run_monte_carlo", return_value=[self.MOCK_RESULT]), \
-             patch("athena.cli.generate_strategic_memo", side_effect=RuntimeError("No LLM available")):
+        with patch("athena.simulation.orchestrator.run_monte_carlo", return_value=[self.MOCK_RESULT]), \
+             patch("athena.output.memo.generate_strategic_memo", side_effect=RuntimeError("No LLM available")):
 
             main(["run", "--case", str(case_file), "--simulation", str(sim_file), "--output", str(output_dir)])
 

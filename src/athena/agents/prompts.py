@@ -789,7 +789,8 @@ register_prompt("judge_it", PromptTemplate(
     constraints="",
     user_preamble="Di seguito il fascicolo completo e le memorie delle parti.",
     user_closing="\nProduci la tua sentenza in formato JSON come specificato nelle istruzioni.",
-    context_blocks=["Fatti", "Prove", "Testi normativi", "Precedenti", "Stakes",
+    context_blocks=["Fatti", "Prove", "Testi normativi", "Testi normativi aggiuntivi (RAG)",
+                     "Precedenti", "Stakes",
                      "Regole procedurali", "Memoria dell'opponente (depositata)",
                      "Memoria del Comune (depositata)"],
 ))
@@ -826,7 +827,8 @@ register_prompt("judge_ch", PromptTemplate(
     constraints="",
     user_preamble="Di seguito il fascicolo completo e le memorie delle parti.",
     user_closing="\nProduci la tua sentenza in formato JSON come specificato nelle istruzioni.",
-    context_blocks=["Fatti", "Prove", "Testi normativi", "Precedenti", "Stakes",
+    context_blocks=["Fatti", "Prove", "Testi normativi", "Testi normativi aggiuntivi (RAG)",
+                     "Precedenti", "Stakes",
                      "Regole procedurali", "Memoria del ricorrente (depositata)",
                      "Memoria della controparte (depositata)"],
 ))
@@ -839,7 +841,8 @@ register_prompt("judge_ch_step1", PromptTemplate(
     constraints="",
     user_preamble="Di seguito il fascicolo completo e le memorie delle parti.",
     user_closing="\nIdentifica gli errori nella decisione impugnata. Produci l'analisi in formato JSON.",
-    context_blocks=["Fatti", "Prove", "Testi normativi", "Precedenti", "Stakes",
+    context_blocks=["Fatti", "Prove", "Testi normativi", "Testi normativi aggiuntivi (RAG)",
+                     "Precedenti", "Stakes",
                      "Regole procedurali", "Memoria del ricorrente (depositata)",
                      "Memoria della controparte (depositata)"],
 ))
@@ -851,7 +854,8 @@ register_prompt("judge_ch_step2", PromptTemplate(
     constraints="",
     user_preamble="Di seguito il fascicolo completo e le memorie delle parti.",
     user_closing="\nValuta criticamente gli errori e decidi l'esito del ricorso in formato JSON.",
-    context_blocks=["Fatti", "Prove", "Testi normativi", "Precedenti", "Stakes",
+    context_blocks=["Fatti", "Prove", "Testi normativi", "Testi normativi aggiuntivi (RAG)",
+                     "Precedenti", "Stakes",
                      "Regole procedurali", "Memoria del ricorrente (depositata)",
                      "Memoria della controparte (depositata)"],
 ))

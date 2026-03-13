@@ -65,7 +65,7 @@ Future:
 - Python, LangGraph (orchestration), oMLX (local inference via OpenAI-compatible HTTP)
 - MLX on Mac Studio M3 Ultra, model: Qwen3.5-35B-A3B-Text (text-only, 35B MoE)
 - Langfuse (observability), Neo4j CE + knowledge graph (`src/athena/knowledge/`, optional `--kg` flag)
-- CLI entry point (`athena run`), YAML-driven case/simulation definitions
+- CLI entry point (`athena run`, `athena serve`, `athena ingest-corpus`), YAML-driven case/simulation definitions
 - JSON Schema structured output via oMLX `response_format`
 - ThreadPoolExecutor for parallel Monte Carlo runs
 - Pure-computation game theory module (`src/athena/game_theory/`)
@@ -115,28 +115,48 @@ Post-processing agents that run AFTER aggregation + game theory, BEFORE memo:
 - **Prompt key**: `judge_ch_step1` / `judge_ch_step2`, schema key: `judge_ch_step1` / `judge_ch_step2`
 - Broke monodirezionale dismissed bias (93% → balanced), accuracy 50% → 60%
 
+## Thin API Layer (v1.2)
+
+- **Pipeline extraction**: `src/athena/api/pipeline.py` — `run_pipeline()` pure logic (no file I/O), `prepare_case_data()`, `prepare_sim_config()`, `write_pipeline_outputs()`
+- **Pydantic models**: `src/athena/api/models.py` — `PipelineOptions`, `ProgressEvent`, `PipelineResult`, `RunState`, `RunRequest`
+- **FastAPI app**: `src/athena/api/app.py` — `GET /health`, `POST /runs` (202 + background), `GET /runs/{id}`, `GET /runs`, `GET /runs/{id}/stream` (SSE)
+- **Run registry**: `src/athena/api/registry.py` — in-memory thread-safe state + asyncio.Queue for SSE bridge
+- **CLI refactor**: `athena run` now ~30 lines (load YAML → `run_pipeline` → `write_pipeline_outputs`), `athena serve --host --port` for FastAPI
+- **Dependencies**: `pip install athena[api]` → fastapi, uvicorn, sse-starlette
+
+## RAG Legal Corpus (v1.3)
+
+- **Embedder**: `src/athena/rag/embedder.py` — BGE-M3 (1024D, multilingual), lazy-load with double-checked locking
+- **Vector store**: `src/athena/rag/store.py` — LanceDB (embedded, zero-server), `NormChunk` model, per-jurisdiction tables, hybrid search with RRF
+- **Swiss corpus ingestion**: `src/athena/rag/ingestion/swiss.py` — `rcds/swiss_legislation` from HuggingFace, article-level chunking, batch embedding
+- **Retriever**: `src/athena/rag/retriever.py` — queries from seed arguments + facts, dedup, filter existing norms, token budget truncation
+- **Integration**: judge prompts include `## Testi normativi aggiuntivi (RAG)` section when enabled
+- **CLI**: `athena run --rag`, `athena ingest-corpus --jurisdiction CH`, `ATHENA_RAG_ENABLED=1`
+- **Graceful degradation**: RAG off by default, all tests pass without lancedb/sentence-transformers
+- **Dependencies**: `pip install athena[rag]` → lancedb, sentence-transformers
+
 ## Current Phase
 
-v1.1 on main — two-step CH judge + consistency + severity calibration, 433 tests green.
+v1.3 on main — API layer + RAG legal corpus, 490 tests green.
 - Monte Carlo run-v07-002: **60/60 OK**, 1833s (30.5 min), 210.7 eff tok/s
 - oMLX optimized: continuous batching fixed, hot cache enabled, concurrency=8
 - **OMLX_MODEL must be `qwen3.5-35b-a3b-text-hi`** (short name — full HF name gives 404)
 - 10 Swiss Bundesgericht cases in `cases/validation/`, ground truth in `ground_truth/`
 - **Swiss validation (2026-03-13): 80% accuracy** (8/10), up from 50% (v1.0) → 60% (consistency) → 80% (severity calibration)
   - Residual errors: ch-2434 (systematic, 3/3 annulment), ch-1253 (borderline, 1/3 annulment — high variance)
-- 433 tests green (all mocked)
+- 490 tests green (all mocked)
 
 **Immediate next steps**:
-1. v1.2 thin API layer (extract pipeline from cli.py → FastAPI endpoints)
-2. RAG legal corpus (embed norms per jurisdiction — may help ch-2434 + ch-1253)
+1. Ingest Swiss corpus + validate RAG accuracy improvement (target: ch-2434 fix, ch-1253 improvement)
+2. v1.4 sparring mode (interactive adversarial simulation)
 
-**Roadmap**: API layer → RAG corpus → v1.3 sparring → v1.4 cross-case intelligence
+**Roadmap**: RAG validation → v1.4 sparring → v1.5 cross-case intelligence
 
 ## Key Risks & Open Questions
 
 - Judge agent quality depends on jurisdiction-specific calibration data
 - Swiss validation: 80% accuracy (8/10), residuals ch-2434 (systematic) + ch-1253 (high variance) may need RAG norms
-- RAG legal corpus planned: embed full norms per jurisdiction for better context (see memory/rag-legal-corpus.md)
+- RAG legal corpus implemented: Swiss corpus via rcds/swiss_legislation, BGE-M3 + LanceDB (needs validation run)
 - NOT legal advice — strategic analysis tool, decisions remain human
 - Confidentiality: another reason for local-only inference
 - Generic graph (`build_graph_from_phases`) is the production path — new agents are added as Phase entries

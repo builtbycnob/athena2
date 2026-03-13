@@ -100,4 +100,6 @@ _LABEL_TO_KEY = {
     "Insight dal Knowledge Graph": "kg_insights",
     # Two-step judge
     "Errori identificati (fase precedente)": "step1_errors",
+    # RAG
+    "Testi normativi aggiuntivi (RAG)": "rag_legal_texts",
 }

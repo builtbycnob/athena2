@@ -3,18 +3,16 @@
 
 Usage:
     athena run --case CASE_YAML --simulation SIM_YAML --output OUTPUT_DIR
+    athena serve --host HOST --port PORT
 """
 
 import argparse
-import json
 import os
 import sys
 
 import yaml
 
-from athena.agents.llm import get_stats
-from athena.schemas.simulation import SimulationConfig, migrate_simulation_v1
-from athena.simulation.orchestrator import run_monte_carlo
+from athena.schemas.simulation import SimulationConfig
 
 
 def migrate_case_v1(case_data: dict) -> dict:
@@ -59,10 +57,6 @@ def migrate_case_v1(case_data: dict) -> dict:
             facts["disputed"][i] = df
 
     return case_data
-from athena.simulation.aggregator import aggregate_results
-from athena.output.table import format_probability_table
-from athena.output.decision_tree import generate_decision_tree
-from athena.output.memo import generate_strategic_memo
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -90,9 +84,29 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--kg", action="store_true", default=False,
         help="Enable knowledge graph (requires Neo4j, default: off)",
     )
+    run_parser.add_argument(
+        "--rag", action="store_true", default=False,
+        help="Enable RAG legal corpus retrieval (default: off)",
+    )
+
+    # serve subcommand
+    serve_parser = sub.add_parser("serve", help="Start the FastAPI API server")
+    serve_parser.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
+    serve_parser.add_argument("--port", type=int, default=8080, help="Bind port (default: 8080)")
 
     # kg status subcommand
     sub.add_parser("kg-status", help="Show knowledge graph status (node/edge counts)")
+
+    # ingest-corpus subcommand
+    ingest_parser = sub.add_parser("ingest-corpus", help="Ingest legal corpus into RAG vector store")
+    ingest_parser.add_argument(
+        "--jurisdiction", required=True,
+        help="Jurisdiction code (e.g. CH)",
+    )
+    ingest_parser.add_argument(
+        "--source", default="huggingface",
+        help="Corpus source (default: huggingface)",
+    )
 
     # validation subcommands
     fetch_parser = sub.add_parser("fetch-cases", help="Fetch validation cases from HuggingFace")
@@ -200,22 +214,105 @@ def _validate(args) -> None:
     print(f"[VALIDATION] Report saved: {output_path}")
 
 
-def _init_kg(args) -> bool:
-    """Initialize KG if --kg flag set or ATHENA_KG_ENABLED=1. Returns True if enabled."""
-    kg_enabled = getattr(args, "kg", False) or os.environ.get("ATHENA_KG_ENABLED") == "1"
-    if not kg_enabled:
-        return False
+def _ingest_corpus(args) -> None:
+    """Ingest legal corpus into RAG vector store."""
+    jurisdiction = args.jurisdiction.upper()
+    print(f"[RAG] Ingesting corpus for jurisdiction: {jurisdiction}")
 
-    os.environ["ATHENA_KG_ENABLED"] = "1"
+    if jurisdiction == "CH":
+        from athena.rag.ingestion.swiss import ingest_swiss_corpus
+        stats = ingest_swiss_corpus()
+        print(f"[RAG] Done: {stats['laws_processed']} laws, {stats['chunks_created']} chunks ingested")
+    else:
+        print(f"[RAG] Error: no corpus ingestion available for jurisdiction '{jurisdiction}'")
+        sys.exit(1)
+
+
+def _run(args) -> None:
+    """Run the pipeline via the extracted API layer."""
+    from athena.api.models import PipelineOptions, ProgressEvent
+    from athena.api.pipeline import (
+        prepare_case_data,
+        prepare_sim_config,
+        run_pipeline,
+        write_pipeline_outputs,
+    )
+
+    # --- Load inputs ---
+    print(f"[ATHENA] Loading case file: {args.case}")
+    with open(args.case) as f:
+        case_raw = yaml.safe_load(f)
+    case_data = prepare_case_data(case_raw)
+
+    print(f"[ATHENA] Loading simulation config: {args.simulation}")
+    with open(args.simulation) as f:
+        sim_raw = yaml.safe_load(f)
+    sim_config_dict = prepare_sim_config(sim_raw)
+
+    # Print plan summary
+    sim_config = SimulationConfig(**sim_config_dict)
+    print(f"[ATHENA] Total runs planned: {sim_config.total_runs}")
+    party_counts = " x ".join(
+        f"{len(profiles)} {pid} profiles"
+        for pid, profiles in sim_config.party_profiles.items()
+    )
+    print(
+        f"[ATHENA] Combinations: {len(sim_config.judge_profiles)} judge profiles "
+        f"x {party_counts} "
+        f"x {sim_config.runs_per_combination} runs"
+    )
+
+    # --- Build options ---
+    rag_enabled = args.rag or os.environ.get("ATHENA_RAG_ENABLED") == "1"
+    options = PipelineOptions(
+        concurrency=args.concurrency,
+        kg_enabled=args.kg or os.environ.get("ATHENA_KG_ENABLED") == "1",
+        rag_enabled=rag_enabled,
+    )
+
+    if rag_enabled:
+        os.environ["ATHENA_RAG_ENABLED"] = "1"
+
+    # --- Progress callback → print ---
+    def _on_progress(event: ProgressEvent) -> None:
+        print(f"[ATHENA] [{event.stage}] {event.message}")
+
+    # --- Run ---
+    result = run_pipeline(case_data, sim_config_dict, options, _on_progress)
+
+    # --- Write outputs ---
+    written = write_pipeline_outputs(result, args.output)
+    for path in written:
+        print(f"[ATHENA] Saved: {path}")
+
+    # --- Stats ---
+    from athena.simulation.orchestrator import _get_concurrency
+    stats = result.stats
+    print(f"[ATHENA] LLM stats: {stats.get('calls', 0)} calls, "
+          f"{stats.get('total_tokens', 0)} tokens, "
+          f"{stats.get('total_time', 0):.0f}s total, "
+          f"{stats.get('avg_tok_s', 0):.1f} avg tok/s, "
+          f"concurrency={_get_concurrency()}")
+
+    print(f"[ATHENA] Done. {len(result.results)} runs, outputs in {args.output}/")
+
+    from athena.agents.llm import langfuse
+    langfuse.flush()
+
+
+def _serve(args) -> None:
+    """Start the FastAPI server."""
     try:
-        from athena.knowledge.config import get_driver
-        get_driver()
-        print("[KG] Knowledge graph connected")
-        return True
-    except Exception as e:
-        print(f"[KG] Warning: knowledge graph unavailable ({e}), continuing without KG")
-        os.environ["ATHENA_KG_ENABLED"] = "0"
-        return False
+        import uvicorn
+    except ImportError:
+        print("Error: uvicorn not installed. Install with: pip install athena[api]")
+        sys.exit(1)
+
+    from athena.api.app import create_app
+
+    app = create_app()
+    print(f"[ATHENA] Starting API server on {args.host}:{args.port}")
+    uvicorn.run(app, host=args.host, port=args.port)
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -233,229 +330,16 @@ def main(argv: list[str] | None = None) -> None:
         _validate(args)
         return
 
+    if args.command == "serve":
+        _serve(args)
+        return
+
+    if args.command == "ingest-corpus":
+        _ingest_corpus(args)
+        return
+
     if args.command != "run":
         print("Usage: athena run --case CASE.yaml --simulation SIM.yaml --output DIR")
         sys.exit(1)
 
-    # --- Load inputs ---
-    print(f"[ATHENA] Loading case file: {args.case}")
-    with open(args.case) as f:
-        case_raw = yaml.safe_load(f)
-    # Unwrap top-level 'case' key if present
-    case_data = case_raw.get("case", case_raw)
-    # Map YAML field names to schema field names
-    if "id" in case_data and "case_id" not in case_data:
-        case_data["case_id"] = case_data.pop("id")
-    # Promote key_precedents from jurisdiction to top level if missing
-    if "key_precedents" not in case_data:
-        jur = case_data.get("jurisdiction")
-        if isinstance(jur, dict):
-            case_data["key_precedents"] = jur.get("key_precedents", [])
-    # Migrate v1 case format (hardcoded appellant/respondent) to v2 (N-party)
-    case_data = migrate_case_v1(case_data)
-
-    # --- Knowledge Graph init + case ingestion ---
-    kg_active = _init_kg(args)
-    if kg_active:
-        try:
-            from athena.knowledge import ingest_case
-            counts = ingest_case(case_data)
-            print(f"[KG] Case ingested: {counts['nodes']} nodes, {counts['edges']} edges")
-        except Exception as e:
-            print(f"[KG] Warning: case ingestion failed ({e})")
-
-    print(f"[ATHENA] Loading simulation config: {args.simulation}")
-    with open(args.simulation) as f:
-        sim_raw = yaml.safe_load(f)
-
-    # YAML has a top-level 'simulation' key wrapper
-    sim_data = sim_raw.get("simulation", sim_raw)
-    sim_data = migrate_simulation_v1(sim_data)
-    sim_config = SimulationConfig(**sim_data)
-    sim_config_dict = sim_config.model_dump()
-
-    print(f"[ATHENA] Total runs planned: {sim_config.total_runs}")
-    party_counts = " x ".join(
-        f"{len(profiles)} {pid} profiles"
-        for pid, profiles in sim_config.party_profiles.items()
-    )
-    print(
-        f"[ATHENA] Combinations: {len(sim_config.judge_profiles)} judge profiles "
-        f"x {party_counts} "
-        f"x {sim_config.runs_per_combination} runs"
-    )
-
-    # --- Concurrency ---
-    if args.concurrency is not None:
-        os.environ["ATHENA_CONCURRENCY"] = str(args.concurrency)
-
-    # --- Run simulations ---
-    print("[ATHENA] Starting Monte Carlo simulation...")
-    results = run_monte_carlo(case_data, sim_config_dict)
-    print(f"[ATHENA] Completed: {len(results)}/{sim_config.total_runs} runs succeeded")
-
-    # --- Aggregate ---
-    print("[ATHENA] Aggregating results...")
-    aggregated = aggregate_results(results, sim_config.total_runs)
-
-    # --- Game theory analysis ---
-    game_analysis = None
-    if "stakes" in case_data:
-        print("[ATHENA] Running game theory analysis...")
-        from athena.game_theory import analyze as gt_analyze
-        game_analysis = gt_analyze(aggregated, case_data, results)
-    else:
-        print("[ATHENA] Skipping game theory analysis (no stakes in case data)")
-
-    # --- KG: store aggregation + game theory ---
-    if kg_active:
-        try:
-            from athena.knowledge import store_aggregation, store_game_theory
-            store_aggregation(case_data["case_id"], aggregated)
-            if game_analysis:
-                store_game_theory(case_data["case_id"], game_analysis)
-            print("[KG] Aggregation and game theory stored")
-        except Exception as e:
-            print(f"[KG] Warning: stats ingestion failed ({e})")
-
-    # --- KG: post-analysis for memo ---
-    kg_post = None
-    if kg_active:
-        try:
-            from athena.knowledge import get_post_analysis
-            kg_post = get_post_analysis(case_data["case_id"])
-            if kg_post:
-                print("[KG] Post-analysis retrieved for memo")
-        except Exception as e:
-            print(f"[KG] Warning: post-analysis query failed ({e})")
-
-    # --- Meta-agents ---
-    red_team_output = None
-    game_theorist_output = None
-
-    print("[ATHENA] Running red team analysis...")
-    try:
-        from athena.agents.meta_agents import run_red_team
-        red_team_output = run_red_team(
-            aggregated, case_data,
-            game_analysis=game_analysis, kg_insights=kg_post,
-        )
-    except Exception as e:
-        print(f"[ATHENA] Warning: red team analysis failed ({e})")
-
-    if game_analysis is not None:
-        print("[ATHENA] Running game theorist analysis...")
-        try:
-            from athena.agents.meta_agents import run_game_theorist
-            game_theorist_output = run_game_theorist(
-                aggregated, case_data, game_analysis,
-            )
-        except Exception as e:
-            print(f"[ATHENA] Warning: game theorist analysis failed ({e})")
-
-    # --- IRAC extraction ---
-    irac_output = None
-    print("[ATHENA] Running IRAC extraction...")
-    try:
-        from athena.agents.meta_agents import run_irac_extraction
-        irac_output = run_irac_extraction(results, case_data)
-    except Exception as e:
-        print(f"[ATHENA] Warning: IRAC extraction failed ({e})")
-
-    # KG: store IRAC
-    if kg_active and irac_output and irac_output.get("irac_analyses"):
-        try:
-            from athena.knowledge import store_irac
-            store_irac(case_data["case_id"], irac_output)
-        except Exception:
-            pass
-
-    # --- Generate outputs ---
-    print("[ATHENA] Generating probability table...")
-    table_md = format_probability_table(aggregated)
-
-    print("[ATHENA] Generating decision tree...")
-    tree_txt = generate_decision_tree(aggregated)
-
-    gt_summary_md = None
-    if game_analysis is not None:
-        print("[ATHENA] Generating game theory summary...")
-        from athena.output.game_theory_summary import format_game_theory_summary
-        gt_summary_md = format_game_theory_summary(game_analysis)
-
-    print("[ATHENA] Generating strategic memo (requires LLM)...")
-    try:
-        memo_md = generate_strategic_memo(
-            aggregated, case_data, game_analysis=game_analysis, kg_insights=kg_post,
-            red_team_output=red_team_output, game_theorist_output=game_theorist_output,
-            irac_output=irac_output,
-        )
-    except Exception as e:
-        memo_md = f"# Strategic Memo\n\nMemo generation failed: {e}\n"
-        print(f"[ATHENA] Warning: memo generation failed ({e}), saved placeholder")
-
-    # --- Save outputs ---
-    os.makedirs(args.output, exist_ok=True)
-
-    if game_analysis is not None:
-        gt_json_path = os.path.join(args.output, "game_theory.json")
-        with open(gt_json_path, "w") as f:
-            json.dump(game_analysis.model_dump(), f, indent=2, ensure_ascii=False)
-        print(f"[ATHENA] Saved: {gt_json_path}")
-
-        gt_summary_path = os.path.join(args.output, "game_theory_summary.md")
-        with open(gt_summary_path, "w") as f:
-            f.write(gt_summary_md)
-        print(f"[ATHENA] Saved: {gt_summary_path}")
-
-    if red_team_output:
-        rt_path = os.path.join(args.output, "red_team.json")
-        with open(rt_path, "w") as f:
-            json.dump(red_team_output, f, indent=2, ensure_ascii=False)
-        print(f"[ATHENA] Saved: {rt_path}")
-
-    if game_theorist_output:
-        gta_path = os.path.join(args.output, "game_theorist_agent.json")
-        with open(gta_path, "w") as f:
-            json.dump(game_theorist_output, f, indent=2, ensure_ascii=False)
-        print(f"[ATHENA] Saved: {gta_path}")
-
-    if irac_output and irac_output.get("irac_analyses"):
-        irac_path = os.path.join(args.output, "irac_analysis.json")
-        with open(irac_path, "w") as f:
-            json.dump(irac_output, f, indent=2, ensure_ascii=False)
-        print(f"[ATHENA] Saved: {irac_path}")
-
-    table_path = os.path.join(args.output, "probability_table.md")
-    with open(table_path, "w") as f:
-        f.write(table_md)
-    print(f"[ATHENA] Saved: {table_path}")
-
-    tree_path = os.path.join(args.output, "decision_tree.txt")
-    with open(tree_path, "w") as f:
-        f.write(tree_txt)
-    print(f"[ATHENA] Saved: {tree_path}")
-
-    memo_path = os.path.join(args.output, "strategic_memo.md")
-    with open(memo_path, "w") as f:
-        f.write(memo_md)
-    print(f"[ATHENA] Saved: {memo_path}")
-
-    raw_path = os.path.join(args.output, "raw_results.json")
-    with open(raw_path, "w") as f:
-        json.dump(results, f, indent=2, ensure_ascii=False)
-    print(f"[ATHENA] Saved: {raw_path}")
-
-    # --- LLM stats ---
-    stats = get_stats()
-    from athena.simulation.orchestrator import _get_concurrency
-    print(f"[ATHENA] LLM stats: {stats['calls']} calls, "
-          f"{stats['total_tokens']} tokens, "
-          f"{stats['total_time']:.0f}s total, "
-          f"{stats['avg_tok_s']:.1f} avg tok/s, "
-          f"concurrency={_get_concurrency()}")
-
-    print(f"[ATHENA] Done. {len(results)} runs, outputs in {args.output}/")
-
-    from athena.agents.llm import langfuse
-    langfuse.flush()
+    _run(args)

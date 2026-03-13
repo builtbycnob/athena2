@@ -27,6 +27,36 @@ def _log(msg: str) -> None:
     print(msg, flush=True)
 
 
+def _inject_rag_context(ctx: dict, case_data: dict) -> None:
+    """Inject RAG-retrieved legal norms into adjudicator context if enabled."""
+    from athena.rag import is_rag_enabled, retrieve_norms
+    if not is_rag_enabled():
+        return
+
+    jurisdiction = case_data.get("jurisdiction", {})
+    country = jurisdiction.get("country", "IT") if isinstance(jurisdiction, dict) else "IT"
+
+    # Collect seed arguments from all parties
+    all_seeds = []
+    by_party = case_data.get("seed_arguments", {}).get("by_party", {})
+    for party_args in by_party.values():
+        if isinstance(party_args, list):
+            all_seeds.extend(party_args)
+
+    norms = retrieve_norms(
+        seed_arguments=all_seeds,
+        facts=case_data.get("facts", {}),
+        existing_legal_texts=case_data.get("legal_texts", []),
+        jurisdiction=country,
+    )
+    if norms:
+        ctx["rag_legal_texts"] = [
+            {"sr_number": n.get("sr_number", ""), "article": n.get("article_number", ""),
+             "text": n.get("text", ""), "breadcrumb": n.get("section_breadcrumb", "")}
+            for n in norms
+        ]
+
+
 # --- AgentConfig & Phase dataclasses ---
 
 @dataclass
@@ -175,6 +205,9 @@ def _node_adjudicator(state: GraphState, *, config: AgentConfig) -> dict:
                   if brief is not None}
     ctx = build_adjudicator_context(state["case"], state["params"], all_briefs)
 
+    # RAG: inject retrieved legal norms
+    _inject_rag_context(ctx, state["case"])
+
     # Provide separate brief keys for judge prompts (IT and CH)
     if config.prompt_key in ("judge_it", "judge_ch"):
         parties = state["case"].get("parties", [])
@@ -229,6 +262,9 @@ def _node_adjudicator_two_step(
     all_briefs = {pid: brief for pid, brief in state["briefs"].items()
                   if brief is not None}
     ctx = build_adjudicator_context(state["case"], state["params"], all_briefs)
+
+    # RAG: inject retrieved legal norms
+    _inject_rag_context(ctx, state["case"])
 
     # Provide separate brief keys for judge prompts
     parties = state["case"].get("parties", [])

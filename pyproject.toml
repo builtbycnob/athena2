@@ -26,6 +26,15 @@ kg = [
     "neo4j>=5.0",
     "sentence-transformers>=3.0.0",
 ]
+api = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "sse-starlette>=2.0",
+]
+rag = [
+    "lancedb>=0.15",
+    "sentence-transformers>=3.0.0",
+]
 validation = [
     "datasets>=2.0,<3.0",
 ]
