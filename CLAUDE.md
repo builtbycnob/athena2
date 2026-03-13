@@ -137,26 +137,26 @@ Post-processing agents that run AFTER aggregation + game theory, BEFORE memo:
 
 ## Current Phase
 
-v1.3 on main — API layer + RAG legal corpus, 490 tests green.
-- Monte Carlo run-v07-002: **60/60 OK**, 1833s (30.5 min), 210.7 eff tok/s
+v1.3 on main — API layer + RAG legal corpus, **502 tests green**.
+- **Swiss validation: 90% accuracy** (9/10, 60 simulations) — 50%→60%→80%→**90%**
+  - ch-1253 fixed by RAG (1/3 → 5/6 annulment)
+  - ch-2434 remains systematic (6/6 annulment, should be rejection) — structural, not norm coverage
+- RAG corpus: 747,946 chunks from 35,698 Swiss laws (BGE-M3 + LanceDB)
+- Dual-backend embedder: BGE-M3 default (96 text/s), Qwen3 MLX optional via `ATHENA_RAG_BACKEND=mlx`
 - oMLX optimized: continuous batching fixed, hot cache enabled, concurrency=8
 - **OMLX_MODEL must be `qwen3.5-35b-a3b-text-hi`** (short name — full HF name gives 404)
 - 10 Swiss Bundesgericht cases in `cases/validation/`, ground truth in `ground_truth/`
-- **Swiss validation (2026-03-13): 80% accuracy** (8/10), up from 50% (v1.0) → 60% (consistency) → 80% (severity calibration)
-  - Residual errors: ch-2434 (systematic, 3/3 annulment), ch-1253 (borderline, 1/3 annulment — high variance)
-- 490 tests green (all mocked)
 
 **Immediate next steps**:
-1. Ingest Swiss corpus + validate RAG accuracy improvement (target: ch-2434 fix, ch-1253 improvement)
+1. Investigate ch-2434 (only remaining error — case file or prompt bias)
 2. v1.4 sparring mode (interactive adversarial simulation)
 
-**Roadmap**: RAG validation → v1.4 sparring → v1.5 cross-case intelligence
+**Roadmap**: ch-2434 investigation → v1.4 sparring → v1.5 cross-case intelligence
 
 ## Key Risks & Open Questions
 
 - Judge agent quality depends on jurisdiction-specific calibration data
-- Swiss validation: 80% accuracy (8/10), residuals ch-2434 (systematic) + ch-1253 (high variance) may need RAG norms
-- RAG legal corpus implemented: Swiss corpus via rcds/swiss_legislation, BGE-M3 + LanceDB (needs validation run)
+- Swiss validation: 90% accuracy (9/10), ch-2434 is structural (needs case file / prompt investigation)
 - NOT legal advice — strategic analysis tool, decisions remain human
 - Confidentiality: another reason for local-only inference
 - Generic graph (`build_graph_from_phases`) is the production path — new agents are added as Phase entries
