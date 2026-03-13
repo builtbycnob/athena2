@@ -231,6 +231,68 @@ class TestSwissConsistencyEnforcement:
         assert result["if_correct"] is None
         assert result["if_incorrect"] is not None
 
+    def test_severity_floor_decisive_to_none_raises_to_significant(self):
+        """Step 1 decisive + Step 2 none → floor to significant."""
+        verdict = {
+            "lower_court_correct": True,
+            "identified_errors": [
+                {"error_type": "legal_interpretation", "severity": "decisive"},
+            ],
+            "error_assessment": [
+                {"error_id": 0, "confirmed_severity": "none",
+                 "assessment_reasoning": "Dismissed."},
+            ],
+        }
+        result = _ch_enforce_consistency(verdict)
+        assert result["error_assessment"][0]["confirmed_severity"] == "significant"
+        # significant (not decisive) → LCC stays True
+        assert result["lower_court_correct"] is True
+
+    def test_severity_floor_decisive_to_minor_raises_to_significant(self):
+        """Step 1 decisive + Step 2 minor → floor to significant."""
+        verdict = {
+            "lower_court_correct": True,
+            "identified_errors": [
+                {"error_type": "legal_interpretation", "severity": "decisive"},
+            ],
+            "error_assessment": [
+                {"error_id": 0, "confirmed_severity": "minor",
+                 "assessment_reasoning": "Minor issue."},
+            ],
+        }
+        result = _ch_enforce_consistency(verdict)
+        assert result["error_assessment"][0]["confirmed_severity"] == "significant"
+
+    def test_severity_floor_does_not_affect_significant(self):
+        """Step 1 decisive + Step 2 significant → no change (floor not triggered)."""
+        verdict = {
+            "lower_court_correct": True,
+            "identified_errors": [
+                {"error_type": "legal_interpretation", "severity": "decisive"},
+            ],
+            "error_assessment": [
+                {"error_id": 0, "confirmed_severity": "significant",
+                 "assessment_reasoning": "Significant but not decisive."},
+            ],
+        }
+        result = _ch_enforce_consistency(verdict)
+        assert result["error_assessment"][0]["confirmed_severity"] == "significant"
+
+    def test_severity_floor_does_not_affect_non_decisive_step1(self):
+        """Step 1 significant + Step 2 none → no floor (only applies to Step 1 decisive)."""
+        verdict = {
+            "lower_court_correct": True,
+            "identified_errors": [
+                {"error_type": "legal_interpretation", "severity": "significant"},
+            ],
+            "error_assessment": [
+                {"error_id": 0, "confirmed_severity": "none",
+                 "assessment_reasoning": "Dismissed."},
+            ],
+        }
+        result = _ch_enforce_consistency(verdict)
+        assert result["error_assessment"][0]["confirmed_severity"] == "none"
+
     def test_significant_without_decisive_forces_correct(self):
         verdict = {
             "lower_court_correct": False,

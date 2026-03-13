@@ -309,13 +309,24 @@ def _node_adjudicator_two_step(
         t2 = time.time()
         _log(f"[{run_id}]   judge step 2: done ({t2-t1:.1f}s, valid={val2['valid']})")
 
+        # --- Severity floor: Step 1 decisive can't be downgraded below significant ---
+        step1_errors = step1_output.get("identified_errors", [])
+        step2_assessments = step2_output.get("error_assessment", [])
+        for i, ea in enumerate(step2_assessments):
+            if i < len(step1_errors):
+                s1_sev = step1_errors[i].get("severity", "none")
+                s2_sev = ea.get("confirmed_severity", "none")
+                if s1_sev == "decisive" and s2_sev in ("minor", "none"):
+                    _log(f"[{run_id}]   severity floor: err{i} Step1=decisive, Step2={s2_sev} → raising to significant")
+                    ea["confirmed_severity"] = "significant"
+
         # --- Merge: Step 1 analysis + Step 2 decision ---
         # Consistency override: if Step 2 confirmed any error as "decisive",
         # lower_court_correct MUST be False (logical invariant).
         lcc = step2_output.get("lower_court_correct", True)
         has_decisive = any(
             e.get("confirmed_severity") == "decisive"
-            for e in step2_output.get("error_assessment", [])
+            for e in step2_assessments
         )
         if has_decisive and lcc:
             _log(f"[{run_id}]   consistency fix: decisive error confirmed but LCC=True → forcing False")
@@ -328,8 +339,8 @@ def _node_adjudicator_two_step(
             "argument_evaluation": step1_output.get("argument_evaluation", []),
             "precedent_analysis": step1_output.get("precedent_analysis", {}),
             "verdict": {
-                "identified_errors": step1_output.get("identified_errors", []),
-                "error_assessment": step2_output.get("error_assessment", []),
+                "identified_errors": step1_errors,
+                "error_assessment": step2_assessments,
                 "lower_court_correct": lcc,
                 "correctness_reasoning": step2_output.get("correctness_reasoning", ""),
                 "if_incorrect": step2_output.get("if_incorrect"),

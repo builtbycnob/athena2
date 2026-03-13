@@ -117,25 +117,25 @@ Post-processing agents that run AFTER aggregation + game theory, BEFORE memo:
 
 ## Current Phase
 
-v1.1 on main — two-step CH judge + consistency enforcement, 429 tests green.
+v1.1 on main — two-step CH judge + consistency + severity calibration, 433 tests green.
 - Monte Carlo run-v07-002: **60/60 OK**, 1833s (30.5 min), 210.7 eff tok/s
 - oMLX optimized: continuous batching fixed, hot cache enabled, concurrency=8
 - **OMLX_MODEL must be `qwen3.5-35b-a3b-text-hi`** (short name — full HF name gives 404)
 - 10 Swiss Bundesgericht cases in `cases/validation/`, ground truth in `ground_truth/`
-- **Swiss validation (2026-03-13): 60% accuracy** (6/10), up from 50% pre-fix
-- 429 tests green (all mocked)
+- **Swiss validation (2026-03-13): 80% accuracy** (8/10), up from 50% (v1.0) → 60% (consistency) → 80% (severity calibration)
+  - Residual errors: ch-2434 (systematic, 3/3 annulment), ch-1253 (borderline, 1/3 annulment — high variance)
+- 433 tests green (all mocked)
 
 **Immediate next steps**:
-1. Calibrate Step 1 severity classification (4 residual errors: ch-247/1124/1253 under-classify, ch-2434 over-classifies)
-2. v1.1 thin API layer (extract pipeline from cli.py → FastAPI endpoints)
-3. RAG legal corpus (embed norms per jurisdiction for context enrichment)
+1. v1.2 thin API layer (extract pipeline from cli.py → FastAPI endpoints)
+2. RAG legal corpus (embed norms per jurisdiction — may help ch-2434 + ch-1253)
 
-**Roadmap**: calibrate CH Step 1 → API layer → v1.2 sparring → v1.3 cross-case intelligence + RAG corpus
+**Roadmap**: API layer → RAG corpus → v1.3 sparring → v1.4 cross-case intelligence
 
 ## Key Risks & Open Questions
 
 - Judge agent quality depends on jurisdiction-specific calibration data
-- Swiss validation: 60% accuracy, residual errors are severity calibration (not bias)
+- Swiss validation: 80% accuracy (8/10), residuals ch-2434 (systematic) + ch-1253 (high variance) may need RAG norms
 - RAG legal corpus planned: embed full norms per jurisdiction for better context (see memory/rag-legal-corpus.md)
 - NOT legal advice — strategic analysis tool, decisions remain human
 - Confidentiality: another reason for local-only inference

@@ -690,19 +690,22 @@ Gli errori seguenti sono stati identificati nell'analisi della decisione impugna
 
 ## Metodologia
 
-### Fase 1 — Ri-valutazione critica degli errori
-La fase precedente tende a sovra-identificare errori. Il tuo compito è filtrare rigorosamente.
+### Fase 1 — Valutazione indipendente degli errori
 
-Per ogni errore identificato, valuta criticamente:
+Per ogni errore identificato nella fase precedente, conduci una valutazione INDIPENDENTE:
 
 1. VERIFICA: l'errore è effettivamente presente nella decisione impugnata? Confronta con i fatti e le norme nel fascicolo.
 2. CAUSALITÀ: se l'errore è presente, il dispositivo sarebbe stato DIVERSO senza di esso?
    - Sì → "decisive"
    - Possibile ma non certo → "significant"
    - No → "minor"
+   - Errore non presente → "none"
 
-NON confermare un errore come "decisive" solo perché il ricorrente lo afferma. Verifica autonomamente con i testi normativi forniti.
-NON declassare un errore se è chiaramente presente e causalmente collegato al dispositivo.
+PRINCIPI:
+- NON confermare un errore come "decisive" solo perché il ricorrente lo afferma. Verifica autonomamente.
+- NON declassare un errore se è chiaramente presente e causalmente collegato al dispositivo.
+- Se la fase precedente ha classificato un errore come "decisive" e l'errore è EFFETTIVAMENTE presente nei fatti e nelle norme, CONFERMA la classificazione.
+- Declassa SOLO se hai una ragione specifica e verificabile (l'errore non esiste nei fatti, la norma non si applica, il nesso causale è assente).
 
 ### Fase 2 — Ragionamento complessivo
 Sulla base della ri-valutazione, formula il tuo ragionamento complessivo sulla correttezza della decisione impugnata.

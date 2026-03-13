@@ -17,12 +17,22 @@ def _ch_enforce_consistency(verdict: dict) -> dict:
     2. If lower_court_correct=True but if_correct is None → populate stub
     3. If lower_court_correct=False but if_incorrect is None → populate stub
     """
-    # Two-step: use error_assessment confirmed severities if available
+    # Severity floor: if Step 1 found decisive but Step 2 downgraded to minor/none,
+    # raise to significant (Step 2 can moderate but not completely dismiss).
     error_assessment = verdict.get("error_assessment", [])
+    errors = verdict.get("identified_errors", [])
+    if error_assessment and errors:
+        for i, ea in enumerate(error_assessment):
+            if i < len(errors):
+                s1 = errors[i].get("severity", "none")
+                s2 = ea.get("confirmed_severity", "none")
+                if s1 == "decisive" and s2 in ("minor", "none"):
+                    ea["confirmed_severity"] = "significant"
+
+    # Two-step: use error_assessment confirmed severities if available
     if error_assessment:
         severities = [ea.get("confirmed_severity", "none") for ea in error_assessment]
     else:
-        errors = verdict.get("identified_errors", [])
         severities = [e.get("severity", "none") for e in errors]
 
     has_decisive = "decisive" in severities

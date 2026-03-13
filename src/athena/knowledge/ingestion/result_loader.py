@@ -203,7 +203,8 @@ def store_run_result(case_id: str, result: dict) -> dict:
         decision = result.get("judge_decision", {})
         if decision:
             verdict = decision.get("verdict", {})
-            qual_correct = verdict.get("qualification_correct", True)
+            qual_correct = verdict.get("qualification_correct",
+                                       verdict.get("lower_court_correct", True))
             consequence = None
             if not qual_correct:
                 if_inc = verdict.get("if_incorrect", {})
