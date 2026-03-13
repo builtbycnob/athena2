@@ -20,6 +20,15 @@ class JurisdictionConfig:
     source_hierarchy: str                 # for prompt injection
     respondent_brief_label: str = "Memoria della controparte (depositata)"
     valuation_config: dict = field(default_factory=dict)
+    default_temperatures: dict[str, float] = field(default_factory=dict)
+    # Two-step judge (optional — only CH uses this)
+    judge_two_step: bool = False
+    judge_step1_prompt_key: str | None = None
+    judge_step1_schema_key: str | None = None
+    judge_step1_temperature: float | None = None
+    judge_step2_prompt_key: str | None = None
+    judge_step2_schema_key: str | None = None
+    judge_step2_temperature: float | None = None
 
 
 _REGISTRY: dict[str, JurisdictionConfig] = {}

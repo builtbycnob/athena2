@@ -207,6 +207,149 @@ def _node_adjudicator(state: GraphState, *, config: AgentConfig) -> dict:
         return {"error": f"{config.party_id} failed: {e}"}
 
 
+@observe(name="adjudicator_two_step")
+def _node_adjudicator_two_step(
+    state: GraphState,
+    *,
+    step1_config: AgentConfig,
+    step2_config: AgentConfig,
+) -> dict:
+    """Two-step judge node: Step 1 identifies errors, Step 2 decides outcome.
+
+    Breaks cascading bias by making Step 1 errors INPUT to Step 2
+    instead of self-generated context under constrained decoding.
+    """
+    if state.get("error"):
+        return {}
+    run_id = state["params"].get("run_id", "?")
+    _log(f"[{run_id}]   judge (two-step): starting step 1 (error identification)...")
+    t0 = time.time()
+
+    # Build adjudicator context with all briefs
+    all_briefs = {pid: brief for pid, brief in state["briefs"].items()
+                  if brief is not None}
+    ctx = build_adjudicator_context(state["case"], state["params"], all_briefs)
+
+    # Provide separate brief keys for judge prompts
+    parties = state["case"].get("parties", [])
+    for p in parties:
+        if p["role"] == "appellant" and p["id"] in all_briefs:
+            ctx["appellant_brief"] = _sanitize_brief(all_briefs[p["id"]])
+        if p["role"] == "respondent" and p["id"] in all_briefs:
+            ctx["respondent_brief"] = _sanitize_brief(all_briefs[p["id"]])
+
+    try:
+        case = CaseFile(**state["case"])
+
+        # --- Step 1: Error Identification ---
+        system1, user1 = _get_prompt_for_config(step1_config, ctx)
+        step1_output, val1 = _run_agent_with_retry(
+            system1, user1, step1_config.temperature,
+            lambda o: validate_agent_output(
+                o, step1_config.role_type, case, prior_briefs=all_briefs
+            ),
+            json_schema=AGENT_SCHEMAS.get(step1_config.schema_key),
+            max_tokens=step1_config.max_tokens,
+        )
+        t1 = time.time()
+        _log(f"[{run_id}]   judge step 1: done ({t1-t0:.1f}s, valid={val1['valid']})")
+
+        # --- Step 2: Outcome Decision ---
+        _log(f"[{run_id}]   judge (two-step): starting step 2 (outcome decision)...")
+
+        # Format Step 1 errors as text for injection into Step 2 prompt
+        import json as _json
+        errors = step1_output.get("identified_errors", [])
+        if errors:
+            errors_text = _json.dumps(errors, indent=2, ensure_ascii=False)
+        else:
+            errors_text = "Nessun errore identificato nella decisione impugnata."
+
+        # Also include argument evaluation summary
+        arg_eval = step1_output.get("argument_evaluation", [])
+        arg_eval_text = _json.dumps(arg_eval, indent=2, ensure_ascii=False) if arg_eval else "[]"
+
+        error_analysis = step1_output.get("error_analysis_reasoning", "")
+
+        step1_errors_block = (
+            f"### Errori identificati\n{errors_text}\n\n"
+            f"### Sintesi dell'analisi errori\n{error_analysis}\n\n"
+            f"### Valutazione argomenti\n{arg_eval_text}"
+        )
+
+        # Inject into Step 2 context via template_vars
+        step2_vars = dict(step2_config.template_vars)
+        step2_vars["step1_errors_text"] = step1_errors_block
+
+        # Also inject judge profile vars from step1
+        step2_vars.setdefault("jurisprudential_orientation",
+                              step1_config.template_vars.get("jurisprudential_orientation", "follows_cassazione"))
+        step2_vars.setdefault("formalism",
+                              step1_config.template_vars.get("formalism", "high"))
+
+        step2_config_with_vars = AgentConfig(
+            party_id=step2_config.party_id,
+            role_type=step2_config.role_type,
+            prompt_key=step2_config.prompt_key,
+            schema_key=step2_config.schema_key,
+            max_tokens=step2_config.max_tokens,
+            temperature=step2_config.temperature,
+            template_vars=step2_vars,
+        )
+
+        system2, user2 = _get_prompt_for_config(step2_config_with_vars, ctx)
+        step2_output, val2 = _run_agent_with_retry(
+            system2, user2, step2_config.temperature,
+            lambda o: validate_agent_output(
+                o, step2_config.role_type, case, prior_briefs=all_briefs
+            ),
+            json_schema=AGENT_SCHEMAS.get(step2_config.schema_key),
+            max_tokens=step2_config.max_tokens,
+        )
+        t2 = time.time()
+        _log(f"[{run_id}]   judge step 2: done ({t2-t1:.1f}s, valid={val2['valid']})")
+
+        # --- Merge: Step 1 analysis + Step 2 decision ---
+        # Consistency override: if Step 2 confirmed any error as "decisive",
+        # lower_court_correct MUST be False (logical invariant).
+        lcc = step2_output.get("lower_court_correct", True)
+        has_decisive = any(
+            e.get("confirmed_severity") == "decisive"
+            for e in step2_output.get("error_assessment", [])
+        )
+        if has_decisive and lcc:
+            _log(f"[{run_id}]   consistency fix: decisive error confirmed but LCC=True → forcing False")
+            lcc = False
+
+        # Build output compatible with JUDGE_CH_SCHEMA format for downstream
+        merged = {
+            "preliminary_objections_ruling": step1_output.get("preliminary_objections_ruling", []),
+            "case_reaches_merits": step1_output.get("case_reaches_merits", True),
+            "argument_evaluation": step1_output.get("argument_evaluation", []),
+            "precedent_analysis": step1_output.get("precedent_analysis", {}),
+            "verdict": {
+                "identified_errors": step1_output.get("identified_errors", []),
+                "error_assessment": step2_output.get("error_assessment", []),
+                "lower_court_correct": lcc,
+                "correctness_reasoning": step2_output.get("correctness_reasoning", ""),
+                "if_incorrect": step2_output.get("if_incorrect"),
+                "if_correct": step2_output.get("if_correct"),
+                "costs_ruling": step2_output.get("costs_ruling", ""),
+            },
+            "reasoning": step1_output.get("error_analysis_reasoning", ""),
+            "gaps": [],
+        }
+
+        _log(f"[{run_id}]   judge (two-step): total {t2-t0:.1f}s")
+        return {
+            "decision": merged,
+            "decision_validation": val2,
+        }
+    except Exception as e:
+        _log(f"[{run_id}]   judge (two-step): FAILED ({time.time()-t0:.1f}s) — {e}")
+        return {"error": f"judge (two-step) failed: {e}"}
+
+
 def _get_prompt_for_config(config: AgentConfig, ctx: dict) -> tuple[str, str]:
     """Get prompt for an agent config — uses legacy builders for IT, registry for others."""
     if config.prompt_key == "appellant_it":
@@ -231,7 +374,24 @@ def build_graph_from_phases(phases: list[Phase]) -> object:
         current_nodes: list[str] = []
         for agent in phase.agents:
             node_name = f"phase{i}_{agent.party_id}"
-            if agent.role_type == "adjudicator":
+            if agent.role_type == "adjudicator_two_step":
+                # Build Step 2 config from template_vars metadata
+                step2_config = AgentConfig(
+                    party_id=agent.party_id,
+                    role_type="adjudicator",
+                    prompt_key=agent.template_vars["_step2_prompt_key"],
+                    schema_key=agent.template_vars["_step2_schema_key"],
+                    max_tokens=agent.max_tokens,
+                    temperature=agent.template_vars["_step2_temperature"],
+                    template_vars={k: v for k, v in agent.template_vars.items()
+                                   if not k.startswith("_step2_")},
+                )
+                graph.add_node(node_name, partial(
+                    _node_adjudicator_two_step,
+                    step1_config=agent,
+                    step2_config=step2_config,
+                ))
+            elif agent.role_type == "adjudicator":
                 graph.add_node(node_name, partial(_node_adjudicator, config=agent))
             else:
                 graph.add_node(node_name, partial(_node_party, config=agent))
@@ -285,7 +445,7 @@ def build_bilateral_phases(case_data: dict, run_params: dict) -> list[Phase]:
     if not style:
         style = run_params.get("appellant_profile", {}).get("style", "")
 
-    return [
+    phases = [
         Phase("filing", [AgentConfig(
             party_id=appellant_id,
             role_type="advocate",
@@ -303,15 +463,44 @@ def build_bilateral_phases(case_data: dict, run_params: dict) -> list[Phase]:
             max_tokens=4096,
             temperature=temps.get("respondent", temps.get(respondent_id, 0.4)),
         )]),
-        Phase("decision", [AgentConfig(
+    ]
+
+    if jconfig.judge_two_step:
+        # Two-step judge: separate error identification from outcome decision
+        judge_temp = temps.get("judge", jconfig.default_temperatures.get("judge", 0.7))
+        # Get judge profile for template_vars
+        judge_profile = run_params.get("judge_profile", {})
+        if isinstance(judge_profile, str):
+            judge_profile = {"jurisprudential_orientation": "follows_cassazione", "formalism": judge_profile}
+        tvars = {
+            "jurisprudential_orientation": judge_profile.get("jurisprudential_orientation", "follows_cassazione"),
+            "formalism": judge_profile.get("formalism", "high"),
+        }
+        phases.append(Phase("decision", [AgentConfig(
+            party_id="judge",
+            role_type="adjudicator_two_step",
+            prompt_key=jconfig.judge_step1_prompt_key,
+            schema_key=jconfig.judge_step1_schema_key,
+            max_tokens=6144,
+            temperature=jconfig.judge_step1_temperature or judge_temp,
+            template_vars={
+                **tvars,
+                "_step2_prompt_key": jconfig.judge_step2_prompt_key,
+                "_step2_schema_key": jconfig.judge_step2_schema_key,
+                "_step2_temperature": jconfig.judge_step2_temperature or 0.4,
+            },
+        )]))
+    else:
+        phases.append(Phase("decision", [AgentConfig(
             party_id="judge",
             role_type="adjudicator",
             prompt_key=jconfig.prompt_keys["judge"],
             schema_key=jconfig.schema_keys["judge"],
             max_tokens=6144,
-            temperature=temps.get("judge", 0.3),
-        )]),
-    ]
+            temperature=temps.get("judge", jconfig.default_temperatures.get("judge", 0.3)),
+        )]))
+
+    return phases
 
 
 

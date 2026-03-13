@@ -98,4 +98,6 @@ _LABEL_TO_KEY = {
     "Memoria del ricorrente (depositata)": "appellant_brief",
     "Memoria della controparte (depositata)": "respondent_brief",
     "Insight dal Knowledge Graph": "kg_insights",
+    # Two-step judge
+    "Errori identificati (fase precedente)": "step1_errors",
 }

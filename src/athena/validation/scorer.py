@@ -211,14 +211,21 @@ def _compute_outcome_probabilities(results: list[dict]) -> tuple[float, float]:
 
     # Detect schema from first verdict
     first_verdict = results[0].get("judge_decision", {}).get("verdict", {})
-    is_swiss = "appeal_outcome" in first_verdict
+    is_swiss = "appeal_outcome" in first_verdict or "lower_court_correct" in first_verdict
 
     n_rejection = 0
     n_annulment = 0
     for r in results:
         verdict = r.get("judge_decision", {}).get("verdict", {})
         if is_swiss:
-            if verdict.get("appeal_outcome", "dismissed") == "dismissed":
+            # New two-step schema
+            if "lower_court_correct" in verdict:
+                if verdict.get("lower_court_correct"):
+                    n_rejection += 1
+                else:
+                    n_annulment += 1
+            # Legacy flat schema
+            elif verdict.get("appeal_outcome", "dismissed") == "dismissed":
                 n_rejection += 1
             else:
                 n_annulment += 1

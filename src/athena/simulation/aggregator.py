@@ -27,7 +27,7 @@ def _detect_outcome_extractor(results: list[dict]):
     if not results:
         return _it_outcome_extractor
     first_verdict = results[0].get("judge_decision", {}).get("verdict", {})
-    if "appeal_outcome" in first_verdict:
+    if "appeal_outcome" in first_verdict or "lower_court_correct" in first_verdict:
         return _ch_outcome_extractor
     return _it_outcome_extractor
 
@@ -45,6 +45,12 @@ def _it_outcome_extractor(verdict: dict) -> str:
 
 def _ch_outcome_extractor(verdict: dict) -> str:
     """Swiss verdict → outcome string."""
+    # New two-step schema
+    if "lower_court_correct" in verdict:
+        if verdict.get("lower_court_correct"):
+            return "rejection"
+        return "annulment"
+    # Legacy flat schema
     outcome = verdict.get("appeal_outcome", "dismissed")
     if outcome == "dismissed":
         return "rejection"
@@ -117,8 +123,8 @@ def aggregate_results(
     for r in results:
         for eval_item in r["judge_decision"].get("argument_evaluation", []):
             argument_scores[eval_item["argument_id"]].append({
-                "persuasiveness": eval_item["persuasiveness"],
-                "determinative": eval_item["determinative"],
+                "persuasiveness": eval_item.get("persuasiveness", 5),
+                "determinative": eval_item.get("determinative", False),
                 "judge_profile": r["judge_profile"],
                 "appellant_style": r["appellant_profile"],
             })

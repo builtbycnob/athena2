@@ -397,6 +397,25 @@ _CH_REMEDY = {
     "additionalProperties": False,
 }
 
+_CH_IDENTIFIED_ERROR = {
+    "type": "object",
+    "properties": {
+        "error_type": {
+            "type": "string",
+            "enum": ["legal_interpretation", "fact_finding",
+                     "procedural", "proportionality", "none_found"],
+        },
+        "description": {"type": "string", "maxLength": 500},
+        "severity": {
+            "type": "string",
+            "enum": ["significant", "minor", "decisive", "none"],
+        },
+        "relevant_norm": {"type": "string", "maxLength": 200},
+    },
+    "required": ["error_type", "description", "severity"],
+    "additionalProperties": False,
+}
+
 JUDGE_CH_SCHEMA = {
     "type": "object",
     "properties": {
@@ -420,15 +439,37 @@ JUDGE_CH_SCHEMA = {
         "verdict": {
             "type": "object",
             "properties": {
-                "appeal_outcome": {
-                    "type": "string",
-                    "enum": ["dismissed", "upheld", "partially_upheld", "remanded"],
+                "identified_errors": {
+                    "type": "array",
+                    "items": _CH_IDENTIFIED_ERROR,
+                    "minItems": 0,
+                    "maxItems": 5,
                 },
-                "outcome_reasoning": {"type": "string", "maxLength": 3000},
-                "remedy": _CH_REMEDY,
+                "lower_court_correct": {"type": "boolean"},
+                "correctness_reasoning": {"type": "string", "maxLength": 2000},
+                "if_incorrect": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "consequence": {
+                            "type": "string",
+                            "enum": ["annulment", "partial_annulment", "remand"],
+                        },
+                        "consequence_reasoning": {"type": "string", "maxLength": 1500},
+                        "remedy": _CH_REMEDY,
+                    },
+                    "required": ["consequence", "consequence_reasoning", "remedy"],
+                },
+                "if_correct": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "confirmation_reasoning": {"type": "string", "maxLength": 1500},
+                    },
+                    "required": ["confirmation_reasoning"],
+                },
                 "costs_ruling": {"type": "string", "maxLength": 500},
             },
-            "required": ["appeal_outcome", "outcome_reasoning", "remedy", "costs_ruling"],
+            "required": ["identified_errors", "lower_court_correct", "correctness_reasoning",
+                          "if_incorrect", "if_correct", "costs_ruling"],
             "additionalProperties": False,
         },
         "reasoning": {"type": "string", "maxLength": 5000},
@@ -447,6 +488,97 @@ JUDGE_CH_SCHEMA = {
 }
 
 
+# --- Swiss Judge Two-Step (v1.1 bias fix) ---
+
+# Step 1: Error Identification — analysis only, no outcome decision
+JUDGE_CH_STEP1_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "preliminary_objections_ruling": {
+            "type": "array",
+            "items": _PRELIMINARY_OBJECTION_RULING,
+            "minItems": 0,
+            "maxItems": 5,
+        },
+        "case_reaches_merits": {"type": "boolean"},
+        "argument_evaluation": {
+            "type": "array",
+            "items": _ARGUMENT_EVALUATION,
+            "minItems": 1,
+            "maxItems": 15,
+        },
+        "precedent_analysis": {
+            "type": "object",
+            "additionalProperties": _PRECEDENT_ANALYSIS_ITEM,
+        },
+        "identified_errors": {
+            "type": "array",
+            "items": _CH_IDENTIFIED_ERROR,
+            "minItems": 0,
+            "maxItems": 5,
+        },
+        "error_analysis_reasoning": {"type": "string", "maxLength": 2000},
+    },
+    "required": [
+        "preliminary_objections_ruling", "case_reaches_merits", "argument_evaluation",
+        "precedent_analysis", "identified_errors", "error_analysis_reasoning",
+    ],
+    "additionalProperties": False,
+}
+
+# Step 2: Outcome Decision — receives Step 1 errors as input, decides outcome
+_CH_ERROR_ASSESSMENT = {
+    "type": "object",
+    "properties": {
+        "error_id": {"type": "integer"},
+        "confirmed_severity": {
+            "type": "string",
+            "enum": ["decisive", "significant", "minor", "none"],
+        },
+        "assessment_reasoning": {"type": "string", "maxLength": 1000},
+    },
+    "required": ["error_id", "confirmed_severity", "assessment_reasoning"],
+    "additionalProperties": False,
+}
+
+JUDGE_CH_STEP2_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "error_assessment": {
+            "type": "array",
+            "items": _CH_ERROR_ASSESSMENT,
+            "minItems": 0,
+            "maxItems": 5,
+        },
+        "correctness_reasoning": {"type": "string", "maxLength": 2000},
+        "lower_court_correct": {"type": "boolean"},
+        "if_incorrect": {
+            "type": ["object", "null"],
+            "properties": {
+                "consequence": {
+                    "type": "string",
+                    "enum": ["annulment", "partial_annulment", "remand"],
+                },
+                "consequence_reasoning": {"type": "string", "maxLength": 1500},
+                "remedy": _CH_REMEDY,
+            },
+            "required": ["consequence", "consequence_reasoning", "remedy"],
+        },
+        "if_correct": {
+            "type": ["object", "null"],
+            "properties": {
+                "confirmation_reasoning": {"type": "string", "maxLength": 1500},
+            },
+            "required": ["confirmation_reasoning"],
+        },
+        "costs_ruling": {"type": "string", "maxLength": 500},
+    },
+    "required": ["error_assessment", "correctness_reasoning", "lower_court_correct",
+                  "if_incorrect", "if_correct", "costs_ruling"],
+    "additionalProperties": False,
+}
+
+
 from athena.schemas.meta_output import RED_TEAM_SCHEMA, GAME_THEORIST_SCHEMA, IRAC_SCHEMA
 
 AGENT_SCHEMAS: dict[str, dict] = {
@@ -459,6 +591,9 @@ AGENT_SCHEMAS: dict[str, dict] = {
     "judge": JUDGE_SCHEMA,
     # Swiss judge
     "judge_ch": JUDGE_CH_SCHEMA,
+    # Swiss judge two-step
+    "judge_ch_step1": JUDGE_CH_STEP1_SCHEMA,
+    "judge_ch_step2": JUDGE_CH_STEP2_SCHEMA,
     # Meta-agents
     "red_team": RED_TEAM_SCHEMA,
     "game_theorist": GAME_THEORIST_SCHEMA,

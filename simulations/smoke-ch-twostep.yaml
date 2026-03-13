@@ -1,0 +1,21 @@
+# simulations/smoke-ch-twostep.yaml — Two-step judge smoke test: 1 judge × 1 style × 1 run
+simulation:
+  case_ref: "validation-ch"
+  language: "it"
+
+  judge_profiles:
+    - id: "formalista_neutro"
+      jurisprudential_orientation: "neutral"
+      formalism: "high"
+
+  appellant_profiles:
+    - id: "tecnico"
+      style: |
+        Concentrati sui vizi giuridici della decisione impugnata e sulla lettera
+        della legge. Argomentazione analitica e testuale.
+
+  temperature:
+    appellant: 0.5
+    respondent: 0.4
+
+  runs_per_combination: 1

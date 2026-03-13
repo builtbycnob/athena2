@@ -4,12 +4,83 @@
 from athena.jurisdiction.registry import JurisdictionConfig, register_jurisdiction
 
 
+def _ch_enforce_consistency(verdict: dict) -> dict:
+    """Enforce cross-field consistency that constrained decoding cannot.
+
+    Works with both single-step schema (identified_errors in verdict)
+    and two-step merged output (error_assessment from Step 2).
+
+    Rules:
+    1. If no decisive errors → force lower_court_correct=True
+       - Two-step: uses confirmed_severity from error_assessment
+       - Single-step: uses severity from identified_errors
+    2. If lower_court_correct=True but if_correct is None → populate stub
+    3. If lower_court_correct=False but if_incorrect is None → populate stub
+    """
+    # Two-step: use error_assessment confirmed severities if available
+    error_assessment = verdict.get("error_assessment", [])
+    if error_assessment:
+        severities = [ea.get("confirmed_severity", "none") for ea in error_assessment]
+    else:
+        errors = verdict.get("identified_errors", [])
+        severities = [e.get("severity", "none") for e in errors]
+
+    has_decisive = "decisive" in severities
+
+    lcc = verdict.get("lower_court_correct")
+
+    # Rule 1a: decisive errors present → lower_court_correct must be False
+    if has_decisive and lcc is True:
+        verdict["lower_court_correct"] = False
+        lcc = False
+
+    # Rule 1b: no decisive errors → lower_court_correct should be True
+    if not has_decisive and lcc is False:
+        verdict["lower_court_correct"] = True
+        lcc = True
+
+    # Rule 2: branch completion
+    if lcc is True:
+        verdict["if_incorrect"] = None
+        if not verdict.get("if_correct"):
+            verdict["if_correct"] = {
+                "confirmation_reasoning": verdict.get("correctness_reasoning", "Decisione confermata.")
+            }
+    elif lcc is False:
+        verdict["if_correct"] = None
+        if not verdict.get("if_incorrect"):
+            verdict["if_incorrect"] = {
+                "consequence": "annulment",
+                "consequence_reasoning": verdict.get("correctness_reasoning", "Errore decisivo individuato."),
+                "remedy": {
+                    "type": "annul",
+                    "description": "Annullamento della decisione impugnata.",
+                    "amount_awarded": None,
+                    "costs_appellant": 0,
+                    "costs_respondent": 0,
+                },
+            }
+
+    return verdict
+
+
 def _ch_outcome_extractor(verdict: dict) -> str:
-    """Extract outcome from Swiss judge verdict (appeal_outcome schema)."""
+    """Extract outcome from Swiss judge verdict.
+
+    Applies consistency enforcement before extracting outcome.
+    Supports both new two-step schema (lower_court_correct) and
+    legacy flat schema (appeal_outcome).
+    """
+    # Apply consistency enforcement for new schema
+    if "lower_court_correct" in verdict:
+        verdict = _ch_enforce_consistency(verdict)
+        if verdict.get("lower_court_correct"):
+            return "rejection"
+        return "annulment"
+    # Legacy fallback for old appeal_outcome results
     outcome = verdict.get("appeal_outcome", "dismissed")
     if outcome == "dismissed":
         return "rejection"
-    # upheld, partially_upheld, remanded → all favorable to appellant
     return "annulment"
 
 
@@ -34,6 +105,15 @@ _CH_CONFIG = JurisdictionConfig(
         "Giurisprudenza del Tribunale federale (DTF/BGE)"
     ),
     respondent_brief_label="Memoria della controparte (depositata)",
+    default_temperatures={"judge": 0.7},
+    # Two-step judge architecture (v1.1 bias fix)
+    judge_two_step=True,
+    judge_step1_prompt_key="judge_ch_step1",
+    judge_step1_schema_key="judge_ch_step1",
+    judge_step1_temperature=0.7,
+    judge_step2_prompt_key="judge_ch_step2",
+    judge_step2_schema_key="judge_ch_step2",
+    judge_step2_temperature=0.4,
 )
 
 register_jurisdiction("CH", _CH_CONFIG)
