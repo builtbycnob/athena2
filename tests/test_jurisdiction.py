@@ -293,6 +293,39 @@ class TestSwissConsistencyEnforcement:
         result = _ch_enforce_consistency(verdict)
         assert result["error_assessment"][0]["confirmed_severity"] == "none"
 
+    def test_severity_floor_uses_error_id_not_position(self):
+        """Severity floor must match by error_id, not array position."""
+        verdict = {
+            "lower_court_correct": True,
+            "identified_errors": [
+                {"error_type": "procedural", "severity": "minor"},
+                {"error_type": "legal_interpretation", "severity": "decisive"},
+            ],
+            "error_assessment": [
+                # Only assess error_id=1 (the decisive one), skip error_id=0
+                {"error_id": 1, "confirmed_severity": "none",
+                 "assessment_reasoning": "Dismissed."},
+            ],
+        }
+        result = _ch_enforce_consistency(verdict)
+        # error_id=1 maps to the decisive Step 1 error → floor to significant
+        assert result["error_assessment"][0]["confirmed_severity"] == "significant"
+
+    def test_severity_floor_missing_error_id_no_crash(self):
+        """If error_id is missing from assessment, severity floor is skipped."""
+        verdict = {
+            "lower_court_correct": True,
+            "identified_errors": [
+                {"error_type": "legal_interpretation", "severity": "decisive"},
+            ],
+            "error_assessment": [
+                {"confirmed_severity": "none", "assessment_reasoning": "No error_id."},
+            ],
+        }
+        result = _ch_enforce_consistency(verdict)
+        # No error_id → no matching → no floor applied
+        assert result["error_assessment"][0]["confirmed_severity"] == "none"
+
     def test_significant_without_decisive_forces_correct(self):
         verdict = {
             "lower_court_correct": False,
@@ -986,7 +1019,8 @@ class TestTwoStepConsistencyEnforcement:
         assert result["lower_court_correct"] is True
 
     def test_error_assessment_takes_priority_over_identified_errors(self):
-        """error_assessment confirmed_severity overrides identified_errors severity."""
+        """error_assessment confirmed_severity overrides identified_errors severity,
+        but severity ceiling limits upgrades to +1 level max."""
         verdict = {
             "lower_court_correct": False,
             "identified_errors": [
@@ -998,7 +1032,43 @@ class TestTwoStepConsistencyEnforcement:
             ],
         }
         result = _ch_enforce_consistency(verdict)
+        # Severity ceiling: minor→decisive capped to significant (max +1)
+        assert result["error_assessment"][0]["confirmed_severity"] == "significant"
+        # No decisive → lcc forced True
+        assert result["lower_court_correct"] is True
+
+    def test_error_assessment_upgrade_within_ceiling(self):
+        """Step 2 can upgrade +1 level (significant→decisive is allowed)."""
+        verdict = {
+            "lower_court_correct": True,
+            "identified_errors": [
+                {"error_type": "legal_interpretation", "severity": "significant"},
+            ],
+            "error_assessment": [
+                {"error_id": 0, "confirmed_severity": "decisive",
+                 "assessment_reasoning": "Error is clearly decisive."},
+            ],
+        }
+        result = _ch_enforce_consistency(verdict)
+        # significant→decisive is +1, within ceiling
+        assert result["error_assessment"][0]["confirmed_severity"] == "decisive"
         assert result["lower_court_correct"] is False
+
+    def test_severity_ceiling_none_to_decisive(self):
+        """Step 2 cannot jump from none to decisive (3 levels)."""
+        verdict = {
+            "lower_court_correct": False,
+            "identified_errors": [
+                {"error_type": "procedural", "severity": "none"},
+            ],
+            "error_assessment": [
+                {"error_id": 0, "confirmed_severity": "decisive"},
+            ],
+        }
+        result = _ch_enforce_consistency(verdict)
+        # none→decisive capped to minor (max +1)
+        assert result["error_assessment"][0]["confirmed_severity"] == "minor"
+        assert result["lower_court_correct"] is True
 
 
 # --- Two-Step Phase Builder ---

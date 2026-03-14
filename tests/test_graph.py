@@ -143,8 +143,10 @@ class TestRunSingle:
         run_single(sample_case_data, sample_run_params)
 
         # Check each call got the right schema and max_tokens
+        # Schemas are now dynamic deep copies (with enum constraints), not identity
         assert mock_llm.call_count == 3
         for i, agent in enumerate(["appellant", "respondent", "judge"]):
             _, kwargs = mock_llm.call_args_list[i]
-            assert kwargs["json_schema"] is AGENT_SCHEMAS[agent]
+            assert kwargs["json_schema"]["type"] == AGENT_SCHEMAS[agent]["type"]
+            assert kwargs["json_schema"]["required"] == AGENT_SCHEMAS[agent]["required"]
             assert kwargs["max_tokens"] == _MAX_TOKENS[agent]

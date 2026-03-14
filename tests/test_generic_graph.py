@@ -187,17 +187,20 @@ class TestGenericGraphEndToEnd:
         graph.invoke(initial_state)
 
         assert mock_llm.call_count == 3
-        # Appellant call
+        # Appellant call — dynamic schema (deep copy with enum constraints)
         _, kwargs0 = mock_llm.call_args_list[0]
-        assert kwargs0["json_schema"] is AGENT_SCHEMAS["appellant"]
+        assert kwargs0["json_schema"]["type"] == AGENT_SCHEMAS["appellant"]["type"]
+        assert kwargs0["json_schema"]["required"] == AGENT_SCHEMAS["appellant"]["required"]
         assert kwargs0["max_tokens"] == _MAX_TOKENS["appellant"]
         # Respondent call
         _, kwargs1 = mock_llm.call_args_list[1]
-        assert kwargs1["json_schema"] is AGENT_SCHEMAS["respondent"]
+        assert kwargs1["json_schema"]["type"] == AGENT_SCHEMAS["respondent"]["type"]
+        assert kwargs1["json_schema"]["required"] == AGENT_SCHEMAS["respondent"]["required"]
         assert kwargs1["max_tokens"] == _MAX_TOKENS["respondent"]
         # Judge call
         _, kwargs2 = mock_llm.call_args_list[2]
-        assert kwargs2["json_schema"] is AGENT_SCHEMAS["judge"]
+        assert kwargs2["json_schema"]["type"] == AGENT_SCHEMAS["judge"]["type"]
+        assert kwargs2["json_schema"]["required"] == AGENT_SCHEMAS["judge"]["required"]
         assert kwargs2["max_tokens"] == _MAX_TOKENS["judge"]
 
     @patch("athena.simulation.graph.invoke_llm")

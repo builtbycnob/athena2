@@ -212,6 +212,16 @@ def run_monte_carlo(case_data: dict, simulation_config: dict) -> list[dict]:
     sim_start = time.time()
     concurrency = _get_concurrency()
 
+    # Pre-load RAG embedder on main thread to avoid multiprocessing
+    # deadlocks when sentence-transformers loads inside ThreadPoolExecutor
+    if os.environ.get("ATHENA_RAG_ENABLED") == "1":
+        try:
+            from athena.rag.embedder import is_embedder_available
+            if is_embedder_available():
+                _log("[MC] RAG embedder pre-loaded on main thread")
+        except Exception as e:
+            _log(f"[MC] RAG embedder pre-load failed (non-fatal): {e}")
+
     _log(f"[MC] Starting {total} runs (concurrency={concurrency})")
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=concurrency) as executor:

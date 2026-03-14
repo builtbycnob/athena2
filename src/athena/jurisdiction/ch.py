@@ -17,17 +17,28 @@ def _ch_enforce_consistency(verdict: dict) -> dict:
     2. If lower_court_correct=True but if_correct is None → populate stub
     3. If lower_court_correct=False but if_incorrect is None → populate stub
     """
-    # Severity floor: if Step 1 found decisive but Step 2 downgraded to minor/none,
-    # raise to significant (Step 2 can moderate but not completely dismiss).
+    # Severity calibration: floor + ceiling.
+    # Floor: Step 1 decisive can't be downgraded below significant.
+    # Ceiling: Step 2 can upgrade at most +1 level (prevents false decisive).
+    _SEV_ORDER = {"none": 0, "minor": 1, "significant": 2, "decisive": 3}
+    _SEV_NAMES = {v: k for k, v in _SEV_ORDER.items()}
     error_assessment = verdict.get("error_assessment", [])
     errors = verdict.get("identified_errors", [])
     if error_assessment and errors:
-        for i, ea in enumerate(error_assessment):
-            if i < len(errors):
-                s1 = errors[i].get("severity", "none")
+        errors_by_idx = {i: err for i, err in enumerate(errors)}
+        for ea in error_assessment:
+            eid = ea.get("error_id")
+            if eid is not None and eid in errors_by_idx:
+                s1 = errors_by_idx[eid].get("severity", "none")
                 s2 = ea.get("confirmed_severity", "none")
+                s1_level = _SEV_ORDER.get(s1, 0)
+                s2_level = _SEV_ORDER.get(s2, 0)
+                # Floor: decisive can't drop below significant
                 if s1 == "decisive" and s2 in ("minor", "none"):
                     ea["confirmed_severity"] = "significant"
+                # Ceiling: max +1 level upgrade
+                elif s2_level > s1_level + 1:
+                    ea["confirmed_severity"] = _SEV_NAMES[s1_level + 1]
 
     # Two-step: use error_assessment confirmed severities if available
     if error_assessment:

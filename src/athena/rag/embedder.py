@@ -85,6 +85,11 @@ def _ensure_model():
         if _backend is not None:
             return
 
+        # Disable tokenizers parallelism to avoid deadlocks when embedder
+        # is loaded/used inside ThreadPoolExecutor worker threads.
+        import os
+        os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+
         from athena.rag.config import get_rag_config
         cfg = get_rag_config()
 

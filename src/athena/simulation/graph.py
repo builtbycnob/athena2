@@ -21,6 +21,7 @@ from athena.agents.prompts import (
 from athena.agents.llm import invoke_llm
 from athena.schemas.case import CaseFile
 from athena.schemas.structured_output import AGENT_SCHEMAS
+from athena.schemas.schema_builder import build_schema_for_agent
 
 
 def _log(msg: str) -> None:
@@ -178,7 +179,9 @@ def _node_party(state: GraphState, *, config: AgentConfig) -> dict:
             lambda o: validate_agent_output(
                 o, config.role_type, case, prior_briefs=all_prior_briefs
             ),
-            json_schema=AGENT_SCHEMAS.get(config.schema_key),
+            json_schema=build_schema_for_agent(
+                config.schema_key, state["case"], prior_briefs=all_prior_briefs
+            ),
             max_tokens=config.max_tokens,
         )
         _log(f"[{run_id}]   {config.party_id}: done ({time.time()-t0:.1f}s, valid={val['valid']})")
@@ -227,7 +230,9 @@ def _node_adjudicator(state: GraphState, *, config: AgentConfig) -> dict:
             lambda o: validate_agent_output(
                 o, config.role_type, case, prior_briefs=all_briefs
             ),
-            json_schema=AGENT_SCHEMAS.get(config.schema_key),
+            json_schema=build_schema_for_agent(
+                config.schema_key, state["case"], prior_briefs=all_briefs
+            ),
             max_tokens=config.max_tokens,
         )
         _log(f"[{run_id}]   {config.party_id}: done ({time.time()-t0:.1f}s, valid={val['valid']})")
@@ -284,7 +289,9 @@ def _node_adjudicator_two_step(
             lambda o: validate_agent_output(
                 o, step1_config.role_type, case, prior_briefs=all_briefs
             ),
-            json_schema=AGENT_SCHEMAS.get(step1_config.schema_key),
+            json_schema=build_schema_for_agent(
+                step1_config.schema_key, state["case"], prior_briefs=all_briefs
+            ),
             max_tokens=step1_config.max_tokens,
         )
         t1 = time.time()
@@ -339,22 +346,37 @@ def _node_adjudicator_two_step(
             lambda o: validate_agent_output(
                 o, step2_config.role_type, case, prior_briefs=all_briefs
             ),
-            json_schema=AGENT_SCHEMAS.get(step2_config.schema_key),
+            json_schema=build_schema_for_agent(
+                step2_config.schema_key, state["case"], prior_briefs=all_briefs,
+                step1_error_count=len(step1_output.get("identified_errors", [])),
+            ),
             max_tokens=step2_config.max_tokens,
         )
         t2 = time.time()
         _log(f"[{run_id}]   judge step 2: done ({t2-t1:.1f}s, valid={val2['valid']})")
 
-        # --- Severity floor: Step 1 decisive can't be downgraded below significant ---
+        # --- Severity calibration: floor + ceiling ---
+        _SEV_ORDER = {"none": 0, "minor": 1, "significant": 2, "decisive": 3}
+        _SEV_NAMES = {v: k for k, v in _SEV_ORDER.items()}
         step1_errors = step1_output.get("identified_errors", [])
         step2_assessments = step2_output.get("error_assessment", [])
-        for i, ea in enumerate(step2_assessments):
-            if i < len(step1_errors):
-                s1_sev = step1_errors[i].get("severity", "none")
+        step1_by_idx = {i: err for i, err in enumerate(step1_errors)}
+        for ea in step2_assessments:
+            eid = ea.get("error_id")
+            if eid is not None and eid in step1_by_idx:
+                s1_sev = step1_by_idx[eid].get("severity", "none")
                 s2_sev = ea.get("confirmed_severity", "none")
+                s1_level = _SEV_ORDER.get(s1_sev, 0)
+                s2_level = _SEV_ORDER.get(s2_sev, 0)
+                # Floor: Step 1 decisive can't be downgraded below significant
                 if s1_sev == "decisive" and s2_sev in ("minor", "none"):
-                    _log(f"[{run_id}]   severity floor: err{i} Step1=decisive, Step2={s2_sev} → raising to significant")
+                    _log(f"[{run_id}]   severity floor: err{eid} Step1=decisive, Step2={s2_sev} → raising to significant")
                     ea["confirmed_severity"] = "significant"
+                # Ceiling: Step 2 can upgrade at most +1 level
+                elif s2_level > s1_level + 1:
+                    capped = _SEV_NAMES[s1_level + 1]
+                    _log(f"[{run_id}]   severity ceiling: err{eid} Step1={s1_sev}, Step2={s2_sev} → capping to {capped}")
+                    ea["confirmed_severity"] = capped
 
         # --- Merge: Step 1 analysis + Step 2 decision ---
         # Consistency override: if Step 2 confirmed any error as "decisive",
@@ -428,7 +450,7 @@ def build_graph_from_phases(phases: list[Phase]) -> object:
                     role_type="adjudicator",
                     prompt_key=agent.template_vars["_step2_prompt_key"],
                     schema_key=agent.template_vars["_step2_schema_key"],
-                    max_tokens=agent.max_tokens,
+                    max_tokens=agent.template_vars.get("_step2_max_tokens", agent.max_tokens),
                     temperature=agent.template_vars["_step2_temperature"],
                     template_vars={k: v for k, v in agent.template_vars.items()
                                    if not k.startswith("_step2_")},
@@ -528,13 +550,14 @@ def build_bilateral_phases(case_data: dict, run_params: dict) -> list[Phase]:
             role_type="adjudicator_two_step",
             prompt_key=jconfig.judge_step1_prompt_key,
             schema_key=jconfig.judge_step1_schema_key,
-            max_tokens=6144,
+            max_tokens=8192,
             temperature=jconfig.judge_step1_temperature or judge_temp,
             template_vars={
                 **tvars,
                 "_step2_prompt_key": jconfig.judge_step2_prompt_key,
                 "_step2_schema_key": jconfig.judge_step2_schema_key,
                 "_step2_temperature": jconfig.judge_step2_temperature or 0.4,
+                "_step2_max_tokens": 6144,
             },
         )]))
     else:
