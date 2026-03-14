@@ -127,8 +127,9 @@ _CH_CONFIG = JurisdictionConfig(
     ),
     respondent_brief_label="Memoria della controparte (depositata)",
     default_temperatures={"judge": 0.7},
-    # Multi-model: 122B MoE for judge (higher accuracy on complex reasoning)
-    default_models={"judge": "qwen3.5-122b-a10b-4bit"},
+    # Multi-model: no default override — 122B showed rejection bias in validation
+    # (see memory/v14b-122b-validation-results.md). Use YAML override for selective routing.
+    default_models={},
     # Two-step judge architecture (v1.1 bias fix)
     judge_two_step=True,
     judge_step1_prompt_key="judge_ch_step1",

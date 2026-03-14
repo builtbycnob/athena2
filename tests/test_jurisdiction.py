@@ -54,9 +54,9 @@ class TestJurisdictionRegistry:
         config = get_jurisdiction_for_case({})
         assert config.country == "IT"
 
-    def test_ch_has_default_models(self):
+    def test_ch_has_no_default_model_override(self):
         config = get_jurisdiction("CH")
-        assert config.default_models.get("judge") == "qwen3.5-122b-a10b-4bit"
+        assert config.default_models == {}
 
     def test_it_has_empty_default_models(self):
         config = get_jurisdiction("IT")
@@ -1160,7 +1160,7 @@ class TestJurisdictionConfigTwoStep:
 class TestMultiModelConfig:
     """Tests for per-role model override in jurisdiction config and graph phases."""
 
-    def test_ch_judge_gets_122b_model(self, sample_run_params):
+    def test_ch_judge_gets_no_default_model_override(self, sample_run_params):
         from athena.simulation.graph import build_bilateral_phases
         swiss_case = {
             "jurisdiction": {"country": "CH"},
@@ -1171,7 +1171,7 @@ class TestMultiModelConfig:
         }
         phases = build_bilateral_phases(swiss_case, sample_run_params)
         judge_config = phases[2].agents[0]
-        assert judge_config.model == "qwen3.5-122b-a10b-4bit"
+        assert judge_config.model is None
 
     def test_ch_parties_get_no_model_override(self, sample_run_params):
         from athena.simulation.graph import build_bilateral_phases
@@ -1215,7 +1215,7 @@ class TestMultiModelConfig:
         assert phases[1].agents[0].model is None  # respondent: no override
         assert phases[2].agents[0].model == "custom-model"  # judge from sim YAML (overrides CH default)
 
-    def test_step2_inherits_model_from_step1(self, sample_run_params):
+    def test_step2_inherits_model_from_yaml_override(self, sample_run_params):
         from athena.simulation.graph import build_bilateral_phases, build_graph_from_phases, AgentConfig
         swiss_case = {
             "jurisdiction": {"country": "CH"},
@@ -1224,9 +1224,10 @@ class TestMultiModelConfig:
                 {"id": "controparte", "role": "respondent"},
             ],
         }
-        phases = build_bilateral_phases(swiss_case, sample_run_params)
+        params = {**sample_run_params, "models": {"judge": "custom-122b"}}
+        phases = build_bilateral_phases(swiss_case, params)
         judge_step1 = phases[2].agents[0]
-        assert judge_step1.model == "qwen3.5-122b-a10b-4bit"
+        assert judge_step1.model == "custom-122b"
         # Verify step2 config inherits model when graph is built
         # (step2 is constructed inside build_graph_from_phases)
         assert judge_step1.role_type == "adjudicator_two_step"
