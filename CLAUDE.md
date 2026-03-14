@@ -66,7 +66,7 @@ Future:
 - MLX on Mac Studio M3 Ultra, model: Qwen3.5-35B-A3B-Text (text-only, 35B MoE)
 - Langfuse (observability), Neo4j CE + knowledge graph (`src/athena/knowledge/`, optional `--kg` flag)
 - CLI entry point (`athena run`, `athena serve`, `athena ingest-corpus`), YAML-driven case/simulation definitions
-- JSON Schema structured output via oMLX `response_format`
+- JSON Schema structured output via oMLX `response_format` + XGrammar token-level enforcement
 - ThreadPoolExecutor for parallel Monte Carlo runs
 - Pure-computation game theory module (`src/athena/game_theory/`)
 
@@ -135,28 +135,60 @@ Post-processing agents that run AFTER aggregation + game theory, BEFORE memo:
 - **Graceful degradation**: RAG off by default, all tests pass without lancedb/sentence-transformers
 - **Dependencies**: `pip install athena[rag]` → lancedb, sentence-transformers
 
+## XGrammar Constrained Decoding (v1.4)
+
+Token-level JSON schema enforcement via XGrammar pushdown automaton in oMLX:
+- **`omlx/xgrammar_processor.py`** (site-packages): GrammarCompilerCache + XGrammarLogitsProcessor
+- **`omlx/request.py`**: `json_schema` field on SamplingParams
+- **`omlx/server.py`**: extracts JSON schema from response_format
+- **`omlx/scheduler.py`**: GrammarCompilerCache init + processor creation in `_build_sampler_and_processors()`
+- **Graceful degradation**: xgrammar not installed → prompt-only schema hint (no crash)
+- **Performance**: 0.28ms/token overhead (~1.5% of generation time)
+- **MLX compat**: bitmask unpacked via numpy → `mx.where(mask, logits, -inf)` (torch bitmask → mx conversion)
+
+### Dynamic Enum Schemas
+- **`src/athena/schemas/schema_builder.py`**: deep-copies static schemas, injects enum constraints from case data
+- `build_schema_for_agent(schema_key, case_data, prior_briefs, step1_error_count)` → schema with enums
+- Fields: `facts_referenced`, `evidence_cited`, `norm_text_cited`, `legal_basis`, `to_argument`, `argument_id`, `error_id`, `precedents_addressed[].id`
+- Dynamic `minItems` on `argument_evaluation` = total argument count
+- **graph.py**: 4 call sites use `build_schema_for_agent()` instead of `AGENT_SCHEMAS.get()`
+
+### Error-ID Merge Fix
+- `graph.py` + `ch.py` severity floor: matches by `error_id` field (not array position)
+- Prevents mismatch when Step 2 skips or reorders errors
+
+### Robustness Fixes (v1.4)
+- **Embedder pre-load**: `orchestrator.py` loads RAG embedder on main thread before ThreadPoolExecutor; `embedder.py` sets `TOKENIZERS_PARALLELISM=false` to prevent sentence-transformers/loky POSIX semaphore deadlocks
+- **Step 1 max_tokens**: 6144 → 8192 (Step 2 stays 6144 via `_step2_max_tokens` template var in graph.py)
+- **Severity ceiling**: Step 2 can upgrade severity at most +1 level (graph.py merge + ch.py consistency enforcement). Prevents none→decisive false upgrades while allowing legitimate escalation (e.g. significant→decisive)
+
 ## Current Phase
 
-v1.3 on main — API layer + RAG legal corpus, **502 tests green**.
-- **Swiss validation: 90% accuracy** (9/10, 60 simulations) — 50%→60%→80%→**90%**
-  - ch-1253 fixed by RAG (1/3 → 5/6 annulment)
-  - ch-2434 remains systematic (6/6 annulment, should be rejection) — structural, not norm coverage
+v1.4 (not yet committed) — XGrammar + robustness fixes, **522 tests green**.
+- **Swiss validation 35B: 9/10 accuracy** (ch-741 fixed from crash, ch-3408 = 35B limit)
+- **Swiss validation 122B: 10/10 accuracy** (100%)
+- ch-741: was 0/6 crash (embedder deadlock) → 5/6 rejection (correct)
+- ch-3408: 3/3 tie (Step 1 false-decisive = 35B model limit, same as ch-2434)
+- 3 robustness fixes: embedder pre-load + TOKENIZERS_PARALLELISM, Step 1 max_tokens 8192, severity ceiling
 - RAG corpus: 747,946 chunks from 35,698 Swiss laws (BGE-M3 + LanceDB)
 - Dual-backend embedder: BGE-M3 default (96 text/s), Qwen3 MLX optional via `ATHENA_RAG_BACKEND=mlx`
 - oMLX optimized: continuous batching fixed, hot cache enabled, concurrency=8
 - **OMLX_MODEL must be `qwen3.5-35b-a3b-text-hi`** (short name — full HF name gives 404)
+- **XGrammar**: `xgrammar==0.1.32`, oMLX patches in site-packages (4 files)
 - 10 Swiss Bundesgericht cases in `cases/validation/`, ground truth in `ground_truth/`
 
 **Immediate next steps**:
-1. Investigate ch-2434 (only remaining error — case file or prompt bias)
-2. v1.4 sparring mode (interactive adversarial simulation)
+1. Commit v1.4
+2. Multi-model support (122B for judge, 35B for parties) — fixes ch-3408
+3. v1.5 sparring mode (interactive adversarial simulation)
 
-**Roadmap**: ch-2434 investigation → v1.4 sparring → v1.5 cross-case intelligence
+**Roadmap**: commit v1.4 → multi-model → v1.5 sparring → v1.6 cross-case intelligence
 
 ## Key Risks & Open Questions
 
 - Judge agent quality depends on jurisdiction-specific calibration data
-- Swiss validation: 90% accuracy (9/10), ch-2434 is structural (needs case file / prompt investigation)
+- Swiss validation: 100% with 122B, 90% with 35B — model size matters for complex legal reasoning (ch-2434, ch-3408 = conditional-waiver reasoning beyond 35B capacity)
+- oMLX XGrammar patches are in site-packages — oMLX update will overwrite them (pin version or upstream PR)
 - NOT legal advice — strategic analysis tool, decisions remain human
 - Confidentiality: another reason for local-only inference
 - Generic graph (`build_graph_from_phases`) is the production path — new agents are added as Phase entries
