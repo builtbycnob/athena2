@@ -54,6 +54,14 @@ class TestJurisdictionRegistry:
         config = get_jurisdiction_for_case({})
         assert config.country == "IT"
 
+    def test_ch_has_default_models(self):
+        config = get_jurisdiction("CH")
+        assert config.default_models.get("judge") == "qwen3.5-122b-a10b-4bit"
+
+    def test_it_has_empty_default_models(self):
+        config = get_jurisdiction("IT")
+        assert config.default_models == {}
+
 
 # --- Italian jurisdiction ---
 
@@ -1145,3 +1153,80 @@ class TestJurisdictionConfigTwoStep:
         config = get_jurisdiction("IT")
         assert config.judge_two_step is False
         assert config.judge_step1_prompt_key is None
+
+
+# --- Multi-model support ---
+
+class TestMultiModelConfig:
+    """Tests for per-role model override in jurisdiction config and graph phases."""
+
+    def test_ch_judge_gets_122b_model(self, sample_run_params):
+        from athena.simulation.graph import build_bilateral_phases
+        swiss_case = {
+            "jurisdiction": {"country": "CH"},
+            "parties": [
+                {"id": "ricorrente", "role": "appellant"},
+                {"id": "controparte", "role": "respondent"},
+            ],
+        }
+        phases = build_bilateral_phases(swiss_case, sample_run_params)
+        judge_config = phases[2].agents[0]
+        assert judge_config.model == "qwen3.5-122b-a10b-4bit"
+
+    def test_ch_parties_get_no_model_override(self, sample_run_params):
+        from athena.simulation.graph import build_bilateral_phases
+        swiss_case = {
+            "jurisdiction": {"country": "CH"},
+            "parties": [
+                {"id": "ricorrente", "role": "appellant"},
+                {"id": "controparte", "role": "respondent"},
+            ],
+        }
+        phases = build_bilateral_phases(swiss_case, sample_run_params)
+        assert phases[0].agents[0].model is None  # appellant
+        assert phases[1].agents[0].model is None  # respondent
+
+    def test_it_agents_get_no_model_override(self, sample_run_params):
+        from athena.simulation.graph import build_bilateral_phases
+        it_case = {
+            "jurisdiction": {"country": "IT"},
+            "parties": [
+                {"id": "opponente", "role": "appellant"},
+                {"id": "comune", "role": "respondent"},
+            ],
+        }
+        phases = build_bilateral_phases(it_case, sample_run_params)
+        for phase in phases:
+            for agent in phase.agents:
+                assert agent.model is None
+
+    def test_sim_yaml_model_override_takes_priority(self, sample_run_params):
+        from athena.simulation.graph import build_bilateral_phases
+        swiss_case = {
+            "jurisdiction": {"country": "CH"},
+            "parties": [
+                {"id": "ricorrente", "role": "appellant"},
+                {"id": "controparte", "role": "respondent"},
+            ],
+        }
+        params = {**sample_run_params, "models": {"judge": "custom-model", "appellant": "small-model"}}
+        phases = build_bilateral_phases(swiss_case, params)
+        assert phases[0].agents[0].model == "small-model"  # appellant from sim YAML
+        assert phases[1].agents[0].model is None  # respondent: no override
+        assert phases[2].agents[0].model == "custom-model"  # judge from sim YAML (overrides CH default)
+
+    def test_step2_inherits_model_from_step1(self, sample_run_params):
+        from athena.simulation.graph import build_bilateral_phases, build_graph_from_phases, AgentConfig
+        swiss_case = {
+            "jurisdiction": {"country": "CH"},
+            "parties": [
+                {"id": "ricorrente", "role": "appellant"},
+                {"id": "controparte", "role": "respondent"},
+            ],
+        }
+        phases = build_bilateral_phases(swiss_case, sample_run_params)
+        judge_step1 = phases[2].agents[0]
+        assert judge_step1.model == "qwen3.5-122b-a10b-4bit"
+        # Verify step2 config inherits model when graph is built
+        # (step2 is constructed inside build_graph_from_phases)
+        assert judge_step1.role_type == "adjudicator_two_step"

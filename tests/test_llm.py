@@ -227,7 +227,7 @@ class TestBackendDispatch:
         llm_mod._BACKEND = "omlx"
         try:
             llm_mod._call_model("s", "u", 0.5)
-            mock_omlx.assert_called_once_with("s", "u", 0.5, llm_mod._DEFAULT_MAX_TOKENS, None)
+            mock_omlx.assert_called_once_with("s", "u", 0.5, llm_mod._DEFAULT_MAX_TOKENS, None, None)
         finally:
             llm_mod._BACKEND = old
 
@@ -375,6 +375,59 @@ class TestOmlxPayload:
         finally:
             llm_mod._OMLX_CLIENT = None
             llm_mod._stats["calls"] = old_calls
+
+
+class TestMultiModel:
+    """Tests for per-call model override."""
+
+    @patch("athena.agents.llm._OMLX_CLIENT")
+    def test_model_override_in_omlx_payload(self, _):
+        """model param overrides _OMLX_MODEL in payload."""
+        mock_client = MagicMock()
+        resp = MagicMock()
+        resp.json.return_value = _make_omlx_response()
+        resp.raise_for_status = MagicMock()
+        mock_client.post.return_value = resp
+
+        llm_mod._OMLX_CLIENT = mock_client
+        old_calls = llm_mod._stats["calls"]
+        try:
+            llm_mod._call_model_omlx("sys", "usr", 0.5, model="qwen3.5-122b-a10b-4bit")
+            payload = mock_client.post.call_args[1]["json"]
+            assert payload["model"] == "qwen3.5-122b-a10b-4bit"
+        finally:
+            llm_mod._OMLX_CLIENT = None
+            llm_mod._stats["calls"] = old_calls
+
+    @patch("athena.agents.llm._OMLX_CLIENT")
+    def test_model_none_uses_default(self, _):
+        """model=None falls back to _OMLX_MODEL."""
+        mock_client = MagicMock()
+        resp = MagicMock()
+        resp.json.return_value = _make_omlx_response()
+        resp.raise_for_status = MagicMock()
+        mock_client.post.return_value = resp
+
+        llm_mod._OMLX_CLIENT = mock_client
+        old_calls = llm_mod._stats["calls"]
+        try:
+            llm_mod._call_model_omlx("sys", "usr", 0.5, model=None)
+            payload = mock_client.post.call_args[1]["json"]
+            assert payload["model"] == llm_mod._OMLX_MODEL
+        finally:
+            llm_mod._OMLX_CLIENT = None
+            llm_mod._stats["calls"] = old_calls
+
+    def test_model_threads_through_call_model(self):
+        """_call_model passes model to _call_model_omlx."""
+        old = llm_mod._BACKEND
+        llm_mod._BACKEND = "omlx"
+        try:
+            with patch("athena.agents.llm._call_model_omlx", return_value=("t", "stop", 1, 1)) as mock:
+                llm_mod._call_model("s", "u", 0.5, model="big-model")
+                mock.assert_called_once_with("s", "u", 0.5, llm_mod._DEFAULT_MAX_TOKENS, None, "big-model")
+        finally:
+            llm_mod._BACKEND = old
 
 
 class TestResetStats:

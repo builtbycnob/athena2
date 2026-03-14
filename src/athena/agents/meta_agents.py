@@ -147,20 +147,22 @@ def _build_game_theorist_user_prompt(
 def run_red_team(
     aggregated: dict, case_data: dict,
     game_analysis=None, kg_insights=None,
+    model: str | None = None,
 ) -> dict:
     """Run red team adversarial analysis. Returns structured output dict."""
     system = RED_TEAM_SYSTEM_PROMPT.format(n_runs=aggregated.get("total_runs", 0))
     user = _build_red_team_user_prompt(aggregated, case_data, game_analysis, kg_insights)
-    return invoke_llm(system, user, temperature=0.6, max_tokens=4096, json_schema=RED_TEAM_SCHEMA)
+    return invoke_llm(system, user, temperature=0.6, max_tokens=4096, json_schema=RED_TEAM_SCHEMA, model=model)
 
 
 def run_game_theorist(
     aggregated: dict, case_data: dict, game_analysis,
+    model: str | None = None,
 ) -> dict:
     """Interpret game theory for the lawyer. Returns structured output dict."""
     system = GAME_THEORIST_SYSTEM_PROMPT.format(n_runs=aggregated.get("total_runs", 0))
     user = _build_game_theorist_user_prompt(aggregated, case_data, game_analysis)
-    return invoke_llm(system, user, temperature=0.3, max_tokens=4096, json_schema=GAME_THEORIST_SCHEMA)
+    return invoke_llm(system, user, temperature=0.3, max_tokens=4096, json_schema=GAME_THEORIST_SCHEMA, model=model)
 
 
 # --- IRAC Extraction ---
@@ -248,7 +250,7 @@ def _build_irac_user_prompt(deduped_args: dict, case_data: dict) -> str:
     return "\n".join(sections)
 
 
-def run_irac_extraction(results: list[dict], case_data: dict) -> dict:
+def run_irac_extraction(results: list[dict], case_data: dict, model: str | None = None) -> dict:
     """IRAC decomposition of seed arguments. Returns structured output dict.
 
     Input is `results` (raw list), NOT `aggregated` — needs legal_reasoning text.
@@ -260,4 +262,4 @@ def run_irac_extraction(results: list[dict], case_data: dict) -> dict:
     n_runs = len(results)
     system = IRAC_SYSTEM_PROMPT.format(n_runs=n_runs)
     user = _build_irac_user_prompt(deduped, case_data)
-    return invoke_llm(system, user, temperature=0.3, max_tokens=6144, json_schema=IRAC_SCHEMA)
+    return invoke_llm(system, user, temperature=0.3, max_tokens=6144, json_schema=IRAC_SCHEMA, model=model)

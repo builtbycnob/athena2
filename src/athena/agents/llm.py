@@ -181,11 +181,13 @@ def _call_model_omlx(
     temperature: float,
     max_tokens: int = _DEFAULT_MAX_TOKENS,
     json_schema: dict | None = None,
+    model: str | None = None,
 ) -> tuple[str, str, int, int]:
     """Call oMLX via OpenAI-compatible HTTP API. Returns (text, finish_reason, prompt_tokens, output_tokens)."""
     client = _ensure_omlx()
+    effective_model = model or _OMLX_MODEL
     payload = {
-        "model": _OMLX_MODEL,
+        "model": effective_model,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
@@ -268,10 +270,11 @@ def _call_model(
     temperature: float,
     max_tokens: int = _DEFAULT_MAX_TOKENS,
     json_schema: dict | None = None,
+    model: str | None = None,
 ) -> tuple[str, str, int, int]:
     """Dispatch to oMLX or MLX backend. Returns (text, finish_reason, prompt_tokens, output_tokens)."""
     if _BACKEND == "omlx":
-        return _call_model_omlx(system_prompt, user_prompt, temperature, max_tokens, json_schema)
+        return _call_model_omlx(system_prompt, user_prompt, temperature, max_tokens, json_schema, model)
     elif _BACKEND == "mlx":
         return _call_model_mlx(system_prompt, user_prompt, temperature, max_tokens)
     else:
@@ -367,8 +370,12 @@ def invoke_llm(
     temperature: float,
     max_tokens: int = _DEFAULT_MAX_TOKENS,
     json_schema: dict | None = None,
+    model: str | None = None,
 ) -> dict:
     """Invoke LLM and return parsed JSON dict.
+
+    Args:
+        model: Override model name for this call. None uses OMLX_MODEL default.
 
     Pipeline:
     1. Call model via oMLX or MLX backend
@@ -377,16 +384,17 @@ def invoke_llm(
     4. If still fails: save artifact and raise classified error
     """
     raw, finish_reason, prompt_tokens, output_tokens = _call_model(
-        system_prompt, user_prompt, temperature, max_tokens, json_schema
+        system_prompt, user_prompt, temperature, max_tokens, json_schema, model
     )
 
+    effective_model = model or _OMLX_MODEL
     try:
         result = parse_json_response(raw, finish_reason, prompt_tokens, output_tokens)
         if result.applied_fixes:
             fixes_str = ", ".join(result.applied_fixes)
             print(f"[LLM] JSON repaired: {fixes_str}", flush=True)
         langfuse.update_current_generation(
-            model=_MODEL_PATH,
+            model=effective_model,
             input={"system": system_prompt[:200], "user": user_prompt[:200]},
             output=result.data,
             usage_details={"input": prompt_tokens, "output": output_tokens},
@@ -414,7 +422,7 @@ def invoke_llm(
             "Produci l'output JSON completo."
         )
         raw2, fr2, pt2, ot2 = _call_model(
-            system_prompt, retry_user, temperature, retry_max, json_schema
+            system_prompt, retry_user, temperature, retry_max, json_schema, model
         )
         try:
             result2 = parse_json_response(raw2, fr2, pt2, ot2)
@@ -426,7 +434,7 @@ def invoke_llm(
             raise
     except LLMError as e:
         langfuse.update_current_generation(
-            model=_MODEL_PATH,
+            model=effective_model,
             input={"system": system_prompt[:200], "user": user_prompt[:200]},
             output={"error": str(e)},
             usage_details={"input": prompt_tokens, "output": output_tokens},

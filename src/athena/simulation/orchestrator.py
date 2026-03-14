@@ -42,6 +42,7 @@ def _generate_combinations(sim_config: dict) -> list[dict]:
     judge_profiles = sim_config["judge_profiles"]
     party_profile_map = sim_config.get("party_profiles", {})
     temperatures = sim_config.get("temperatures", sim_config.get("temperature", {}))
+    models = sim_config.get("models", {})
     language = sim_config.get("language", "it")
     runs_per = sim_config["runs_per_combination"]
 
@@ -67,6 +68,7 @@ def _generate_combinations(sim_config: dict) -> list[dict]:
                 pid: prof for pid, prof in party_profs.items()
             },
             "temperatures": temperatures,
+            "models": models,
             "language": language,
             # Legacy fields for backward compat with graph nodes
             "temperature": temperatures,
@@ -198,6 +200,7 @@ def run_monte_carlo(case_data: dict, simulation_config: dict) -> list[dict]:
                 "party_profiles": {},
                 "temperature": temperature,
                 "temperatures": temperature,
+                "models": simulation_config.get("models", {}),
                 "language": simulation_config.get("language", "it"),
             })
 

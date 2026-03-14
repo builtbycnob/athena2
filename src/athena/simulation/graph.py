@@ -69,6 +69,7 @@ class AgentConfig:
     max_tokens: int
     temperature: float
     template_vars: dict = field(default_factory=dict)
+    model: str | None = None  # per-agent model override (None = use OMLX_MODEL default)
 
 
 @dataclass
@@ -116,6 +117,7 @@ def _run_agent_with_retry(
     max_retries: int = MAX_RETRIES,
     json_schema: dict | None = None,
     max_tokens: int | None = None,
+    model: str | None = None,
 ) -> tuple[dict, dict]:
     """Run LLM with validation and retry. Returns (output, validation_dump)."""
     kwargs: dict = {}
@@ -123,6 +125,8 @@ def _run_agent_with_retry(
         kwargs["json_schema"] = json_schema
     if max_tokens is not None:
         kwargs["max_tokens"] = max_tokens
+    if model is not None:
+        kwargs["model"] = model
     output = invoke_llm(system, user, temp, **kwargs)
     validation = validate_fn(output)
     for _ in range(max_retries):
@@ -183,6 +187,7 @@ def _node_party(state: GraphState, *, config: AgentConfig) -> dict:
                 config.schema_key, state["case"], prior_briefs=all_prior_briefs
             ),
             max_tokens=config.max_tokens,
+            model=config.model,
         )
         _log(f"[{run_id}]   {config.party_id}: done ({time.time()-t0:.1f}s, valid={val['valid']})")
         return {
@@ -234,6 +239,7 @@ def _node_adjudicator(state: GraphState, *, config: AgentConfig) -> dict:
                 config.schema_key, state["case"], prior_briefs=all_briefs
             ),
             max_tokens=config.max_tokens,
+            model=config.model,
         )
         _log(f"[{run_id}]   {config.party_id}: done ({time.time()-t0:.1f}s, valid={val['valid']})")
         return {
@@ -293,6 +299,7 @@ def _node_adjudicator_two_step(
                 step1_config.schema_key, state["case"], prior_briefs=all_briefs
             ),
             max_tokens=step1_config.max_tokens,
+            model=step1_config.model,
         )
         t1 = time.time()
         _log(f"[{run_id}]   judge step 1: done ({t1-t0:.1f}s, valid={val1['valid']})")
@@ -351,6 +358,7 @@ def _node_adjudicator_two_step(
                 step1_error_count=len(step1_output.get("identified_errors", [])),
             ),
             max_tokens=step2_config.max_tokens,
+            model=step2_config.model,
         )
         t2 = time.time()
         _log(f"[{run_id}]   judge step 2: done ({t2-t1:.1f}s, valid={val2['valid']})")
@@ -454,6 +462,7 @@ def build_graph_from_phases(phases: list[Phase]) -> object:
                     temperature=agent.template_vars["_step2_temperature"],
                     template_vars={k: v for k, v in agent.template_vars.items()
                                    if not k.startswith("_step2_")},
+                    model=agent.model,  # inherit model from step1 config
                 )
                 graph.add_node(node_name, partial(
                     _node_adjudicator_two_step,
@@ -508,6 +517,14 @@ def build_bilateral_phases(case_data: dict, run_params: dict) -> list[Phase]:
     # Get temperatures
     temps = run_params.get("temperatures", run_params.get("temperature", {}))
 
+    # Get per-role model overrides: simulation YAML > jurisdiction defaults > None (global)
+    sim_models = run_params.get("models", {})
+    jur_models = jconfig.default_models
+
+    def _model_for_role(role: str) -> str | None:
+        """Resolve model for a role: sim YAML override > jurisdiction default > None."""
+        return sim_models.get(role) or jur_models.get(role) or None
+
     # Get advocacy style
     appellant_profile = run_params.get("party_profiles", {}).get(appellant_id, {})
     style = appellant_profile.get("parameters", {}).get("style", "")
@@ -523,6 +540,7 @@ def build_bilateral_phases(case_data: dict, run_params: dict) -> list[Phase]:
             max_tokens=4096,
             temperature=temps.get("appellant", temps.get(appellant_id, 0.5)),
             template_vars={"advocacy_style": style},
+            model=_model_for_role("appellant"),
         )]),
         Phase("response", [AgentConfig(
             party_id=respondent_id,
@@ -531,6 +549,7 @@ def build_bilateral_phases(case_data: dict, run_params: dict) -> list[Phase]:
             schema_key=jconfig.schema_keys["respondent"],
             max_tokens=4096,
             temperature=temps.get("respondent", temps.get(respondent_id, 0.4)),
+            model=_model_for_role("respondent"),
         )]),
     ]
 
@@ -559,6 +578,7 @@ def build_bilateral_phases(case_data: dict, run_params: dict) -> list[Phase]:
                 "_step2_temperature": jconfig.judge_step2_temperature or 0.4,
                 "_step2_max_tokens": 6144,
             },
+            model=_model_for_role("judge"),
         )]))
     else:
         phases.append(Phase("decision", [AgentConfig(
@@ -568,6 +588,7 @@ def build_bilateral_phases(case_data: dict, run_params: dict) -> list[Phase]:
             schema_key=jconfig.schema_keys["judge"],
             max_tokens=6144,
             temperature=temps.get("judge", jconfig.default_temperatures.get("judge", 0.3)),
+            model=_model_for_role("judge"),
         )]))
 
     return phases

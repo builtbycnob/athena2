@@ -21,6 +21,9 @@ class JurisdictionConfig:
     respondent_brief_label: str = "Memoria della controparte (depositata)"
     valuation_config: dict = field(default_factory=dict)
     default_temperatures: dict[str, float] = field(default_factory=dict)
+    # Per-role model overrides (optional — role_type → model name)
+    # e.g. {"judge": "qwen3.5-122b-a10b-4bit"} uses 122B for judge, default for parties
+    default_models: dict[str, str] = field(default_factory=dict)
     # Two-step judge (optional — only CH uses this)
     judge_two_step: bool = False
     judge_step1_prompt_key: str | None = None

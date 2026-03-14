@@ -19,6 +19,7 @@ class SimulationConfig(BaseModel):
     party_profiles: dict[str, list[PartyProfile]]  # party_id → [profiles]
     temperatures: dict[str, float]                   # party_id → temp
     runs_per_combination: int
+    models: dict[str, str] = {}                      # role → model name override
 
     @property
     def total_runs(self) -> int:
@@ -74,5 +75,9 @@ def migrate_simulation_v1(raw: dict) -> dict:
     if "temperature" in result and "temperatures" not in result:
         old_temp = result.pop("temperature")
         result["temperatures"] = old_temp
+
+    # Ensure models field exists (empty dict = use defaults)
+    if "models" not in result:
+        result["models"] = {}
 
     return result
