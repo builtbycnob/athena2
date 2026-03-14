@@ -162,13 +162,28 @@ Token-level JSON schema enforcement via XGrammar pushdown automaton in oMLX:
 - **Step 1 max_tokens**: 6144 → 8192 (Step 2 stays 6144 via `_step2_max_tokens` template var in graph.py)
 - **Severity ceiling**: Step 2 can upgrade severity at most +1 level (graph.py merge + ch.py consistency enforcement). Prevents none→decisive false upgrades while allowing legitimate escalation (e.g. significant→decisive)
 
+## Multi-Model Support (v1.4b)
+
+- **Static role-based routing**: each agent role maps to a model name, threaded through entire call chain
+- **Resolution order**: simulation YAML `models.{role}` > `JurisdictionConfig.default_models` > `OMLX_MODEL` env var
+- **CH default**: `qwen3.5-122b-a10b-4bit` (122B MoE) for judge, parties use default 35B
+- **Implementation**: `model` param on `invoke_llm` → `_call_model` → `_call_model_omlx`; `AgentConfig.model` field; `_model_for_role()` in `graph.py`
+- **oMLX**: per-request model selection via `model` field in OpenAI-compatible API; EnginePool handles concurrent loading + LRU eviction
+- **Memory**: 122B (~73GB) + 35B (~22GB) = ~95GB — within 223GB budget on Mac Studio
+- **Langfuse**: reports `effective_model` (actual model used, not default) in both success and error paths
+- **Research basis**: FrugalGPT, RouteLLM, AutoMix, R2-Reasoner, Hybrid LLM — static routing valid for domain-knowledge-driven task decomposition
+
 ## Current Phase
 
-v1.4 (not yet committed) — XGrammar + robustness fixes, **522 tests green**.
-- **Swiss validation 35B: 9/10 accuracy** (ch-741 fixed from crash, ch-3408 = 35B limit)
+v1.4b on main — XGrammar + robustness + multi-model support, **532 tests green**.
+- **Multi-model routing**: 122B MoE for judge, 35B for parties (static role-based)
+  - Resolution: simulation YAML `models.{role}` > `JurisdictionConfig.default_models` > `OMLX_MODEL`
+  - CH default: `qwen3.5-122b-a10b-4bit` for judge, parties use `OMLX_MODEL` (35B)
+  - Research: FrugalGPT, RouteLLM, AutoMix, R2-Reasoner validate static routing for known task decomposition
+- **Swiss validation 35B: 9/10 accuracy** (ch-3408 = 35B limit on conditional-waiver reasoning)
 - **Swiss validation 122B: 10/10 accuracy** (100%)
 - ch-741: was 0/6 crash (embedder deadlock) → 5/6 rejection (correct)
-- ch-3408: 3/3 tie (Step 1 false-decisive = 35B model limit, same as ch-2434)
+- ch-3408: 3/3 tie with 35B (Step 1 false-decisive); expected to resolve with 122B judge
 - 3 robustness fixes: embedder pre-load + TOKENIZERS_PARALLELISM, Step 1 max_tokens 8192, severity ceiling
 - RAG corpus: 747,946 chunks from 35,698 Swiss laws (BGE-M3 + LanceDB)
 - Dual-backend embedder: BGE-M3 default (96 text/s), Qwen3 MLX optional via `ATHENA_RAG_BACKEND=mlx`
@@ -178,11 +193,10 @@ v1.4 (not yet committed) — XGrammar + robustness fixes, **522 tests green**.
 - 10 Swiss Bundesgericht cases in `cases/validation/`, ground truth in `ground_truth/`
 
 **Immediate next steps**:
-1. Commit v1.4
-2. Multi-model support (122B for judge, 35B for parties) — fixes ch-3408
-3. v1.5 sparring mode (interactive adversarial simulation)
+1. Full validation with 122B judge (expect 10/10)
+2. v1.5 sparring mode (interactive adversarial simulation)
 
-**Roadmap**: commit v1.4 → multi-model → v1.5 sparring → v1.6 cross-case intelligence
+**Roadmap**: 122B validation → v1.5 sparring → v1.6 cross-case intelligence
 
 ## Key Risks & Open Questions
 
