@@ -11,6 +11,16 @@ case:
       holding: La domanda di accertamento dell'inesistenza del debito è prematura
         se non è ancora intervenuta l'alienazione dei pegni prevista nella convenzione.
       weight: binding
+    - id: prec_2
+      citation: DTF 132 III 277
+      holding: La sospensione provvisoria dell'esecuzione ai sensi dell'art. 85a cpv.
+        2 n. 2 LEF può essere concessa solo se la domanda appare molto verosimilmente
+        fondata, vale a dire quando le prospettive di successo del debitore appaiono
+        evidentemente maggiori di quelle del creditore. In caso di rinuncia condizionata
+        al credito, il mancato adempimento tempestivo della condizione da parte del
+        terzo debitore fa sì che la rinuncia non si perfezioni e il debito sussista
+        integralmente.
+      weight: binding
     procedural_rules:
       rite: ricorso_tribunale_federale
       phases:
@@ -97,8 +107,16 @@ case:
       - DOC1
     - id: F2
       description: La convenzione prevedeva che C._S.p.A. pagasse fr. 5'000'000.--
-        in quattro rate e autorizzava le banche a vendere gli attivi entro il 31 marzo
-        2000; il diritto di realizzarli sarebbe decaduto il 31 dicembre 2000.
+        in quattro rate entro scadenze precise e autorizzava le banche a vendere gli
+        attivi entro il 31 marzo 2000; il diritto di realizzarli sarebbe decaduto il
+        31 dicembre 2000. La rinuncia delle banche ai crediti residui era condizionata
+        al pagamento tempestivo di C._S.p.A.
+      evidence:
+      - DOC1
+    - id: F2a
+      description: C._S.p.A. non ha rispettato le scadenze di pagamento previste
+        dalla convenzione ed era in mora (inadempiente). La condizione per la rinuncia
+        delle banche ai crediti residui — il pagamento tempestivo — non si è avverata.
       evidence:
       - DOC1
     - id: F3
@@ -118,6 +136,13 @@ case:
         fallimento dall'Ufficio di esecuzione e fallimenti di Mendrisio.
       evidence:
       - DOC3
+    - id: F6
+      description: La sospensione provvisoria dell'esecuzione è una misura cautelare;
+        il Tribunale federale la riesamina soltanto sotto il profilo della violazione
+        dei diritti costituzionali (arbitrio, diniego di giustizia), non con pieno
+        esame del diritto federale.
+      evidence:
+      - DOC2
     disputed:
     - id: D1
       description: Se l'azione di accertamento dell'inesistenza del debito proposta
@@ -135,8 +160,11 @@ case:
           e fondata la domanda di accertamento dell'inesistenza del debito e la sospensione
           dell'esecuzione.
         controparte: B._AG sostiene che il ricorso è irricevibile o, in subordine,
-          va respinto, contestando l'inesistenza del debito e la necessità di sospendere
-          l'esecuzione.
+          va respinto. La rinuncia ai crediti residui nella convenzione era condizionata
+          al pagamento tempestivo di C._S.p.A., che era in mora; la condizione
+          non essendosi avverata, il debito sussiste integralmente (fr. 16'429'738.67).
+          La domanda non è molto verosimilmente fondata ai sensi dell'art. 85a cpv. 2
+          n. 2 LEF e la sospensione va negata.
   legal_texts:
   - id: norm_1
     norm: art. 83 cpv. 2 LEF
@@ -173,6 +201,25 @@ case:
         references_facts:
         - F3
         - F4
+      - id: SEED_RARG2
+        claim: La rinuncia ai crediti residui era condizionata al pagamento tempestivo
+          di C._S.p.A., che è risultata inadempiente. La condizione non essendosi
+          avverata, il debito di A._AG sussiste integralmente.
+        direction: contra
+        references_facts:
+        - F2
+        - F2a
+        - F4
+      - id: SEED_RARG3
+        claim: La domanda di accertamento dell'inesistenza del debito non è molto
+          verosimilmente fondata ai sensi dell'art. 85a cpv. 2 n. 2 LEF, dato che
+          le prospettive di successo del debitore non appaiono evidentemente maggiori
+          di quelle del creditore.
+        direction: contra
+        references_facts:
+        - F2a
+        - F4
+        - F5
   timeline:
   - date: '1998-02-24'
     event: Stipula della convenzione di risanamento tra A._AG, C._S.p.A. e il consorzio
