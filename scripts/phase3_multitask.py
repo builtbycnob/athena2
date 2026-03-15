@@ -79,7 +79,28 @@ def step_supcon(
     temperature = supcon_config["temperature"]
 
     tokenizer = AutoTokenizer.from_pretrained(encoder_name)
-    encoder = AutoModel.from_pretrained(encoder_name).to(device)
+
+    # Load encoder with LayerNorm gamma/beta → weight/bias remapping
+    from transformers import AutoConfig
+    enc_config = AutoConfig.from_pretrained(encoder_name)
+    encoder = AutoModel.from_config(enc_config)
+
+    from huggingface_hub import hf_hub_download
+    try:
+        from safetensors.torch import load_file as load_safetensors
+        weight_path = hf_hub_download(encoder_name, "model.safetensors")
+        pretrained_state = load_safetensors(weight_path)
+    except Exception:
+        weight_path = hf_hub_download(encoder_name, "pytorch_model.bin")
+        pretrained_state = torch.load(weight_path, map_location="cpu", weights_only=True)
+
+    remapped = {}
+    for k, v in pretrained_state.items():
+        new_k = k.replace(".gamma", ".weight").replace(".beta", ".bias")
+        remapped[new_k] = v
+
+    encoder.load_state_dict(remapped, strict=False)
+    encoder = encoder.to(device)
 
     class TextDataset(Dataset):
         def __init__(self, texts, labels, tokenizer, max_length=512):
@@ -180,7 +201,8 @@ def step_train(
         n_law_areas=irp_config["feature_heads"]["law_area"]["n_classes"],
         n_reasoning_patterns=irp_config["feature_heads"]["reasoning_pattern"]["n_classes"],
         n_outcome_granular=irp_config["feature_heads"]["outcome_granular"]["n_classes"],
-        gat_dim=irp_config["gat"]["output_dim"] if irp_config["gat"]["enabled"] else 0,
+        # Only include GAT dim if GAT features are available (Phase 4)
+        gat_dim=0,  # Set to irp_config["gat"]["output_dim"] when GAT embeddings are loaded
         use_bsce_gra=True,
     )
     model.build()
@@ -310,12 +332,23 @@ def step_train(
             if sw is not None:
                 sw = sw.to(device)
 
+            # Extract feature labels from batch (if available from LUPI)
+            feature_kwargs = {}
+            for key, param_name in [
+                ("law_area_labels", "law_area_labels"),
+                ("error_labels", "error_labels"),
+                ("reasoning_labels", "reasoning_labels"),
+                ("outcome_labels", "outcome_labels"),
+            ]:
+                if key in batch:
+                    feature_kwargs[param_name] = batch[key].to(device)
+
             # R-Drop: two forward passes with different dropout
             if use_rdrop and train_config["rdrop"]["enabled"]:
                 outputs1 = model._model(input_ids, attention_mask)
                 outputs2 = model._model(input_ids, attention_mask)
-                losses1 = model.compute_loss(outputs1, labels, sample_weights=sw)
-                losses2 = model.compute_loss(outputs2, labels, sample_weights=sw)
+                losses1 = model.compute_loss(outputs1, labels, sample_weights=sw, **feature_kwargs)
+                losses2 = model.compute_loss(outputs2, labels, sample_weights=sw, **feature_kwargs)
                 # R-Drop KL
                 kl_loss = rdrop_loss(
                     outputs1["verdict_logits"], outputs2["verdict_logits"],
@@ -325,7 +358,7 @@ def step_train(
                 loss = (losses1["total"] + losses2["total"]) / 2.0 + kl_loss
             else:
                 outputs = model._model(input_ids, attention_mask)
-                losses = model.compute_loss(outputs, labels, sample_weights=sw)
+                losses = model.compute_loss(outputs, labels, sample_weights=sw, **feature_kwargs)
                 loss = losses["total"]
 
             loss = loss / grad_accum
@@ -341,7 +374,7 @@ def step_train(
                     optimizer.first_step()
                     # Second forward pass for SAM
                     outputs_sam = model._model(input_ids, attention_mask)
-                    losses_sam = model.compute_loss(outputs_sam, labels, sample_weights=sw)
+                    losses_sam = model.compute_loss(outputs_sam, labels, sample_weights=sw, **feature_kwargs)
                     (losses_sam["total"] / grad_accum).backward()
                     optimizer.second_step()
                 else:
@@ -452,10 +485,23 @@ def main():
     logger.info(f"Device: {device}")
 
     import pandas as pd
-    from scripts.phase2_baselines import load_sjp_xl, apply_official_splits
 
-    df = load_sjp_xl(args.data_dir)
-    train, val, test = apply_official_splits(df)
+    # Load data (inline to avoid cross-script import issues)
+    path = args.data_dir / "sjp_xl.parquet"
+    if not path.exists():
+        raise FileNotFoundError(f"SJP-XL not found at {path}. Run phase1_data_foundation.py first.")
+    df = pd.read_parquet(path)
+
+    # Map string labels to integers if needed
+    if df["label"].dtype == object or str(df["label"].dtype) == "str":
+        label_map = {"dismissal": 0, "approval": 1}
+        df["label"] = df["label"].map(label_map).astype(int)
+
+    # Official SJP-XL temporal splits
+    train = df[df["year"] <= 2015].copy()
+    val = df[df["year"].isin([2016, 2017])].copy()
+    test = df[df["year"] >= 2018].copy()
+    logger.info(f"Splits: train={len(train):,}, val={len(val):,}, test={len(test):,}")
 
     if args.sample > 0:
         train = train.sample(min(args.sample, len(train)), random_state=42)

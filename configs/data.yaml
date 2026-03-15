@@ -1,0 +1,68 @@
+# ATHENA2 Data Configuration
+# All hyperparameters and paths in one place — no magic numbers in code.
+
+datasets:
+  primary:
+    name: "rcds/swiss_judgment_prediction_xl"
+    description: "329K FSCS cases with facts + considerations + label"
+    fields: ["decision_id", "facts", "considerations", "label", "law_area", "law_sub_area", "language", "year", "court", "chamber", "canton", "region"]
+    label_map: {0: "dismissal", 1: "approval"}
+
+  secondary:
+    name: "rcds/swiss_judgment_prediction"
+    description: "85K FSCS cases, facts + label only (benchmark comparison)"
+    fields: ["id", "year", "text", "label", "language", "region", "canton", "legal_area"]
+    label_map: {0: "dismissal", 1: "approval"}
+
+  auxiliary:
+    criticality:
+      name: "rcds/swiss_criticality_prediction"
+      description: "139K cases with BGE publication label + citation criticality"
+    citation:
+      name: "rcds/swiss_citation_extraction"
+      description: "127K cases with IOB citation/law NER tags"
+    law_area:
+      name: "rcds/swiss_law_area_prediction"
+      description: "22K cases with law area + sub-area labels"
+    occlusion:
+      name: "rcds/occlusion_swiss_judgment_prediction"
+      description: "108 expert-annotated cases for explainability validation"
+
+paths:
+  raw: "data/raw"
+  processed: "data/processed"
+  features: "data/features"
+  models: "data/models"
+  reports: "data/reports"
+
+processing:
+  min_facts_tokens: 50          # Skip cases with very short facts
+  max_facts_tokens: 16384       # Truncate extremely long facts
+  min_considerations_tokens: 50 # Skip cases without real considerations
+  text_cleaning: true           # Remove HTML artifacts, normalize whitespace
+
+# Official SJP-XL temporal splits (Niklaus et al.)
+# 2-year temporal gap prevents leakage
+splits:
+  strategy: "official_sjp_xl"
+  train_max_year: 2015        # Train on ≤2015
+  validation_years: [2016, 2017]  # 2-year gap
+  test_min_year: 2018         # Test on 2018-2022
+  random_seed: 42
+
+feature_extraction:
+  # Regex-based (fast, run on all cases)
+  regex:
+    bge_citations: true         # Extract BGE/DTF references
+    law_references: true        # Extract SR number references
+    article_references: true    # Extract Art. X references
+
+  # LLM-based (slower, LUPI privileged features from considerations)
+  llm:
+    model: "qwen3.5-35b-a3b-text-hi"
+    batch_size: 100
+    error_types: true           # Extract error types from considerations
+    reasoning_patterns: true    # Extract reasoning patterns
+    decisive_arguments: true    # Identify which arguments were decisive
+    max_tokens: 2048
+    temperature: 0.1            # Low temp for extraction accuracy

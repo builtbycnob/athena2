@@ -43,6 +43,17 @@ def load_sjp_xl(processed_dir: Path) -> pd.DataFrame:
             f"SJP-XL not found at {path}. Run phase1_data_foundation.py first."
         )
     df = pd.read_parquet(path)
+
+    # Map string labels to integers if needed (HF dataset stores strings)
+    if df["label"].dtype == object or str(df["label"].dtype) == "str":
+        label_map = {"dismissal": 0, "approval": 1}
+        df["label"] = df["label"].map(label_map)
+        unmapped = df["label"].isna().sum()
+        if unmapped > 0:
+            logger.warning(f"Dropping {unmapped} rows with unmapped labels")
+            df = df.dropna(subset=["label"])
+        df["label"] = df["label"].astype(int)
+
     logger.info(f"Loaded SJP-XL: {len(df):,} rows")
     return df
 
