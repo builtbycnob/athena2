@@ -1,0 +1,190 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Riaccredito di US$ 2'000'000.--, restituzione di US$ 500'000.--
+      e risarcimento di US$ 1'000'000.--, oltre interessi, per un totale di US$ 3'500'000.--,
+      in relazione alla validità di un bonifico effettuato da un terzo e alla legittimazione
+      degli eredi del deponente.
+  evidence:
+  - id: DOC1
+    type: atto_pubblico
+    description: Documentazione bancaria relativa ai depositi e ai bonifici effettuati
+      nel 1986 presso la banca X._.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F1
+    - F2
+  facts:
+    undisputed:
+    - id: F1
+      description: Il 24 settembre 1986 lo sceicco A._ ha incontrato due dirigenti
+        della banca X._ a Lugano, accompagnato da C._, presidente della società Y._.
+        Il 6 ottobre 1986 lo sceicco ha depositato US$ 2'500'000.-- presso la banca
+        X._ a Lugano.
+      evidence:
+      - DOC1
+    - id: F2
+      description: Il 6 ottobre 1986, due giorni dopo il deposito, la somma di US$
+        2'000'000.-- è stata girata su un conto della società Y._ presso la banca
+        X._ di Nassau su ordine di C._, con la dicitura 'purchase in name of A._,
+        of 200.000 società Y._ shares'.
+      evidence:
+      - DOC1
+    - id: F3
+      description: Il 26 ottobre 1993 A._ ha adito il Tribunale d'appello del Cantone
+        Ticino chiedendo il riaccredito di US$ 2'000'000.--, la restituzione di US$
+        500'000.-- e il risarcimento di US$ 1'000'000.--.
+      evidence: []
+    - id: F4
+      description: La banca X._ si è opposta integralmente all'azione.
+      evidence: []
+    - id: F5
+      description: A._ è deceduto il 10 luglio 2003; la Corte cantonale non ne è stata
+        informata.
+      evidence: []
+    - id: F6
+      description: Con sentenza del 15 marzo 2004 la II Camera civile del Tribunale
+        d'appello del Cantone Ticino ha respinto la petizione.
+      evidence: []
+    - id: F7
+      description: Gli eredi di A._ hanno presentato ricorso al Tribunale federale
+        il 3 maggio 2004 sia per diritto pubblico che per riforma.
+      evidence: []
+    - id: F8
+      description: Il Presidente della I Corte civile del Tribunale federale ha imposto
+        ai ricorrenti una cauzione processuale di fr. 25'000.-- con decreto del 16
+        luglio 2004.
+      evidence: []
+    disputed:
+    - id: D1
+      description: C._ disponeva o meno di potere di rappresentanza per disporre del
+        bonifico di US$ 2'000'000.--.
+      depends_on_facts:
+      - F1
+      - F2
+      - F3
+      positions:
+        ricorrente: C._ non disponeva di alcun potere di rappresentanza; il bonifico
+          è stato effettuato senza autorizzazione valida.
+        controparte: La banca X._ si è opposta integralmente, implicando la validità
+          dell'ordine o la legittimazione di C._.
+    - id: D2
+      description: La corretta gestione della procedura in seguito al decesso di A._
+        e la legittimazione degli eredi.
+      depends_on_facts:
+      - F5
+      - F6
+      - F7
+      positions:
+        ricorrente: Gli eredi hanno diritto a proseguire l'azione e a ottenere la
+          modifica della sentenza.
+        controparte: La banca ha proposto la reiezione del gravame, contestando la
+          legittimazione o i motivi del ricorso.
+  legal_texts:
+  - id: norm_1
+    norm: art. 8 CC
+    text: '[Testo da fedlex.admin.ch: art. 8 CC]'
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: Condanna della banca X._ al riaccredito dell'importo bonificato e risarcimento
+          danni.
+        direction: accoglimento
+        references_facts:
+        - F1
+        - F2
+        - D1
+      - id: SEED_ARG2
+        claim: Violazione dell'art. 8 CC e richiesta di modifica della sentenza per
+          accogliere le domande originarie.
+        direction: accoglimento
+        references_facts:
+        - F6
+        - D2
+      - id: SEED_ARG3
+        claim: Rinvio della causa all'autorità cantonale per nuovo giudizio in via
+          subordinata.
+        direction: accoglimento
+        references_facts:
+        - F6
+        - D2
+      controparte:
+      - id: SEED_RARG1
+        claim: Reiezione del gravame e conferma della sentenza di primo grado.
+        direction: rigetto
+        references_facts:
+        - F1
+        - F2
+        - F4
+  timeline:
+  - date: '1986-09-24'
+    event: Incontro tra lo sceicco A._ e dirigenti della banca X._ a Lugano.
+  - date: '1986-10-06'
+    event: Deposito di US$ 2'500'000.-- presso la banca X._ a Lugano.
+  - date: '1986-10-08'
+    event: Bonifico di US$ 2'000'000.-- al conto della società Y._ a Nassau.
+  - date: '1993-10-26'
+    event: A._ adisce il Tribunale d'appello del Cantone Ticino.
+  - date: '2003-07-10'
+    event: Decesso di A._.
+  - date: '2004-03-15'
+    event: Sentenza del Tribunale d'appello del Cantone Ticino che respinge la petizione.
+  - date: '2004-05-03'
+    event: Ricorso al Tribunale federale da parte degli eredi di A._.
+  - date: '2004-10-13'
+    event: Risposta della banca X._ con proposta di reiezione del gravame.
+  - date: '2004-07-16'
+    event: Decreto del Tribunale federale che impone una cauzione processuale di fr.
+      25'000.--.
+  id: ch-1291

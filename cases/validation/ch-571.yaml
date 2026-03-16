@@ -1,0 +1,197 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: &id001
+    - id: prec_1
+      citation: Bruno Cocchi / Francesco Trezzini, Codice di procedura civile ticinese
+        massimato e commentato, Lugano 2000, margin. 7 ad art. 346 CPC
+      holding: Criteri per valutare la negligenza nella produzione di prove in sede
+        di revisione.
+      weight: binding
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: *id001
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione della responsabilità del ricorrente per la mancata
+      produzione tempestiva di prove decisive in sede di revisione di lodo arbitrale
+      e conseguente annullamento o conferma della sentenza cantonale.
+  evidence:
+  - id: DOC1
+    type: atto_privato
+    description: Esemplari del patto d'arbitrato del 24 febbraio 1990 muniti di firma
+      autografa di A.A._
+    produced_by: ricorrente
+    admissibility: contested
+    supports_facts:
+    - D1
+  - id: DOC2
+    type: atto_privato
+    description: Lettera del 20 novembre 1991 di un nipote della defunta che menziona
+      un accordo sugli onorari
+    produced_by: ricorrente
+    admissibility: contested
+    supports_facts:
+    - D1
+  - id: DOC3
+    type: testimonianza
+    description: Testimonianza dei coniugi C._
+    produced_by: controparte
+    admissibility: contested
+    supports_facts:
+    - D1
+  facts:
+    undisputed:
+    - id: F1
+      description: A.A._, avvocato, ha convenuto C.B._ davanti a un arbitro unico
+        chiedendo il pagamento di onorari per la curatela e prestazioni professionali,
+        il rimborso di ripetibili e il risarcimento di danni e torto morale.
+      evidence: []
+    - id: F2
+      description: Il Tribunale di appello del Cantone Ticino ha annullato il lodo
+        preliminare del 5 gennaio 2001 con sentenza del 30 agosto 2001, dichiarando
+        l'assoluta incompetenza dell'arbitro.
+      evidence: []
+    - id: F3
+      description: Una domanda di revisione della sentenza del 30 agosto 2001 è stata
+        respinta con sentenza del 22 gennaio 2002.
+      evidence: []
+    - id: F4
+      description: Il Tribunale di appello del Cantone Ticino ha respinto quattro
+        nuove domande di revisione ex art. 41 CIA e in subordine ex art. 346 CPC ticinese
+        presentate da A.A._.
+      evidence: []
+    disputed:
+    - id: D1
+      description: La causa della mancata produzione tempestiva dei nuovi documenti
+        (esemplari firmati del patto d'arbitrato) è attribuibile a negligenza del
+        ricorrente o a circostanze fortuite/non imputabili.
+      depends_on_facts:
+      - F1
+      - F2
+      - F3
+      - F4
+      positions:
+        ricorrente: 'La mancata produzione non è dovuta a negligenza: la validità
+          del patto non era contestata inizialmente, la controparte ha rifiutato la
+          testimonianza fino a maggio 2002, il ritrovamento del documento è stato
+          fortuito e la lettera del 1991 non è stata smarrita per errore ma per negazione
+          malafida della controparte.'
+        controparte: La mancata produzione è conseguenza diretta del comportamento
+          negligente di A.A._, non consono alla diligenza esigibile, avendo egli iniziato
+          le ricerche solo a maggio 2002 e rinunciato ad assumere prove in sede arbitrale.
+  legal_texts:
+  - id: norm_1
+    norm: art. 41 CIA
+    text: '[Testo da fedlex.admin.ch: art. 41 CIA]'
+  - id: norm_2
+    norm: art. 346 CPC ticinese
+    text: '[Testo da fedlex.admin.ch: art. 346 CPC ticinese]'
+  - id: norm_3
+    norm: art. 84 cpv. lit. b OG
+    text: '[Testo da fedlex.admin.ch: art. 84 cpv. lit. b OG]'
+  - id: norm_4
+    norm: art. 84 cpv. 1 lit. a OG
+    text: '[Testo da fedlex.admin.ch: art. 84 cpv. 1 lit. a OG]'
+  - id: norm_5
+    norm: art. 29 Cost.
+    text: '[Testo da fedlex.admin.ch: art. 29 Cost.]'
+  - id: norm_6
+    norm: art. 30 Cost.
+    text: '[Testo da fedlex.admin.ch: art. 30 Cost.]'
+  - id: norm_7
+    norm: art. 9 Cost.
+    text: '[Testo da fedlex.admin.ch: art. 9 Cost.]'
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: La decisione cantonale viola le garanzie di procedura (artt. 29 e 30
+          Cost.) e il divieto dell'arbitrio (art. 9 Cost.) imputando negligenza senza
+          esaminare tutte le giustificazioni.
+        direction: annullamento
+        references_facts:
+        - F1
+        - D1
+      - id: SEED_ARG2
+        claim: Non vi era necessità di provare la firma sul patto d'arbitrato inizialmente
+          poiché la validità non era contestata dalla controparte.
+        direction: annullamento
+        references_facts:
+        - D1
+      - id: SEED_ARG3
+        claim: Il ritrovamento del documento è stato assolutamente fortuito e la controparte
+          ha agito in malafede negando l'esistenza dei documenti.
+        direction: annullamento
+        references_facts:
+        - D1
+      controparte:
+      - id: SEED_RARG1
+        claim: Il ricorrente ha agito con negligenza non consono alla diligenza esigibile
+          da un avvocato, avendo rinviato le ricerche a maggio 2002 e rinunciato alle
+          prove in sede arbitrale.
+        direction: rigetto
+        references_facts:
+        - F1
+        - F4
+  timeline:
+  - date: '1990-02-24'
+    event: Firma del patto d'arbitrato
+  - date: '1991-11-20'
+    event: Lettera del nipote della defunta che menziona un accordo sugli onorari
+  - date: '2001-01-05'
+    event: Lodo preliminare dell'arbitro unico
+  - date: '2001-08-30'
+    event: Sentenza del Tribunale di appello del Cantone Ticino che annulla il lodo
+      preliminare
+  - date: '2002-01-22'
+    event: Sentenza che respinge la domanda di revisione della sentenza del 30 agosto
+      2001
+  - date: 2002-05
+    event: Accondiscendenza dei coniugi C._ a testimoniare e rinvenimento di documenti
+  - date: '2003-07-04'
+    event: Ricorso di diritto pubblico proposto da A.A._
+  id: ch-571

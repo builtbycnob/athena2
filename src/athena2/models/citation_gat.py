@@ -263,6 +263,12 @@ def build_node_features(
         # Label (for training signal, masked at inference)
         label = node.get("label")
         if label is not None:
+            # Handle string labels from SJP-XL ("dismissal"/"approval")
+            if isinstance(label, str):
+                label_map = {"dismissal": 0, "approval": 1}
+                label = label_map.get(label, -1)
+                if label < 0:
+                    continue
             features[i, 10] = float(label)
 
     return torch.tensor(features, dtype=torch.float32), node_id_to_idx

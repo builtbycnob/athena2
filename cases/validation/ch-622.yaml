@@ -1,0 +1,212 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: &id001
+    - id: prec_1
+      citation: Sentenza del Tribunale federale del 27 settembre 2002
+      holding: Annullamento della sentenza cantionale e rinvio per nuovo giudizio
+        in base ai considerandi del Tribunale federale.
+      weight: binding
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: *id001
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione della responsabilità contrattuale della casa di spedizione
+      Y._ per il mancato rimborso dell'IVA anticipata dalla società X._ a causa della
+      mancata esecuzione delle pratiche doganali da parte della ditta Z._.
+  evidence:
+  - id: DOC1
+    type: atto_pubblico
+    description: Documentazione relativa al contratto di compravendita, al contratto
+      di spedizione e alle comunicazioni doganali.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F1
+    - F2
+    - F3
+    - F4
+  - id: DOC2
+    type: sentenza
+    description: Sentenze dei tribunali di primo grado, d'appello e del Tribunale
+      federale precedenti.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F6
+    - F7
+    - F8
+    - F9
+  facts:
+    undisputed:
+    - id: F1
+      description: Tra il 1991 e il 1992 la società italiana X._ ha acquistato una
+        macchina dalla ditta irlandese K._ e la casa di spedizione Y._ ha gestito
+        il trasporto dalla Germania all'Italia.
+      evidence: []
+    - id: F2
+      description: Il 10 giugno 1992 la società X._ ha anticipato alla ditta Y._ la
+        somma di Lit. 150'700'000 per l'IVA d'importazione.
+      evidence: []
+    - id: F3
+      description: Il 25 giugno 1992 la società X._ ha rescisso il contratto di compravendita
+        per decorrenza dei termini di consegna.
+      evidence: []
+    - id: F4
+      description: La ditta Z._, incaricata del disbrigo doganale, non ha versato
+        l'IVA, causando il rigetto della richiesta di rimborso da parte delle autorità
+        doganali italiane e la rivalsa sull'assicuratrice garante J._.
+      evidence: []
+    - id: F5
+      description: Il 19 giugno 1998 la società X._ ha adito la Pretura di Mendrisio-Sud
+        chiedendo la condanna di Y._ al pagamento di fr. 127'341.50.
+      evidence: []
+    - id: F6
+      description: La Pretura di Mendrisio-Sud ha respinto integralmente la petizione
+        il 16 maggio 2001.
+      evidence: []
+    - id: F7
+      description: Il Tribunale d'appello del Cantone Ticino ha confermato la sentenza
+        di primo grado il 4 aprile 2002.
+      evidence: []
+    - id: F8
+      description: Il Tribunale federale ha annullato la sentenza cantionale del 4
+        aprile 2002 il 27 settembre 2002, rinviando la causa per nuovo giudizio.
+      evidence: []
+    - id: F9
+      description: Il 17 dicembre 2002 il Tribunale d'appello del Cantone Ticino ha
+        nuovamente respinto integralmente l'appello dell'attrice.
+      evidence: []
+    - id: F10
+      description: Il 23 gennaio 2003 la società X._ ha proposto ricorso per riforma
+        al Tribunale federale, chiedendo la modifica della pronunzia cantionale.
+      evidence: []
+    disputed:
+    - id: D1
+      description: Se la casa di spedizione Y._ sia tenuta al risarcimento della somma
+        anticipata per l'IVA a causa della mancata esecuzione delle obbligazioni contrattuali.
+      depends_on_facts:
+      - F1
+      - F2
+      - F4
+      - F9
+      positions:
+        ricorrente: La convenuta Y._ ha violato diverse obbligazioni contrattuali
+          relative al trasporto e alla gestione doganale, causando la perdita dell'importo
+          destinato all'IVA.
+        controparte: La convenuta Y._ non è responsabile della mancata versamento
+          dell'IVA da parte della ditta Z._, non avendo violato le obbligazioni contrattuali.
+  legal_texts:
+  - id: norm_1
+    norm: art. 97 CO
+    text: '[Testo da fedlex.admin.ch: art. 97 CO]'
+  - id: norm_2
+    norm: art. 99 CO
+    text: '[Testo da fedlex.admin.ch: art. 99 CO]'
+  - id: norm_3
+    norm: art. 100 CO
+    text: '[Testo da fedlex.admin.ch: art. 100 CO]'
+  - id: norm_4
+    norm: art. 101 CO
+    text: '[Testo da fedlex.admin.ch: art. 101 CO]'
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: La casa di spedizione Y._ è tenuta al risarcimento del danno per violazione
+          contrattuale.
+        direction: pro
+        references_facts:
+        - F1
+        - F2
+        - F4
+        - D1
+      - id: SEED_ARG2
+        claim: La mancata esecuzione delle obbligazioni doganali da parte di Y._ (tramite
+          Z._) ha causato direttamente la perdita dell'importo anticipato.
+        direction: pro
+        references_facts:
+        - F2
+        - F4
+        - D1
+      controparte:
+      - id: SEED_RARG1
+        claim: La responsabilità per il mancato versamento dell'IVA non può essere
+          addebitata alla casa di spedizione Y._.
+        direction: contro
+        references_facts:
+        - F4
+        - D1
+      - id: SEED_RARG2
+        claim: Non sussiste violazione contrattuale da parte di Y._ in relazione alla
+          gestione doganale.
+        direction: contro
+        references_facts:
+        - F1
+        - F4
+  timeline:
+  - date: '1991-01-01'
+    event: Inizio delle trattative per l'acquisto della macchina tra X._ e K._
+  - date: '1992-06-10'
+    event: Anticipo della somma per l'IVA da parte di X._ a Y._
+  - date: '1992-06-25'
+    event: Rescissione del contratto di compravendita e richiesta di rimborso dell'IVA
+  - date: '1998-06-19'
+    event: Azione legale di X._ presso la Pretura di Mendrisio-Sud
+  - date: '2001-05-16'
+    event: Respinta della petizione da parte della Pretura
+  - date: '2002-04-04'
+    event: Conferma della sentenza di primo grado da parte del Tribunale d'appello
+  - date: '2002-09-27'
+    event: Annullamento della sentenza cantionale da parte del Tribunale federale
+  - date: '2002-12-17'
+    event: Nuovo respingimento dell'appello da parte del Tribunale d'appello
+  - date: '2003-01-23'
+    event: Proposizione del ricorso per riforma al Tribunale federale
+  - date: '2003-04-09'
+    event: Risposta della casa di spedizione Y._ alla reiezione del gravame
+  id: ch-622

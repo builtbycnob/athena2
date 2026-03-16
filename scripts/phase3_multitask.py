@@ -443,10 +443,12 @@ def step_train(
         if f1 > best_f1:
             best_f1 = f1
             patience_counter = 0
-            # Save best model
+            # Save best model + validation predictions (needed by phase4_calibration)
             model_dir = output_dir / "best_model"
             model_dir.mkdir(parents=True, exist_ok=True)
             torch.save(model._model.state_dict(), model_dir / "model.pt")
+            np.save(model_dir / "val_probs.npy", val_probs)
+            np.save(model_dir / "val_labels.npy", val_labels_arr)
         else:
             patience_counter += 1
             if patience_counter >= patience:
@@ -462,6 +464,87 @@ def step_train(
         torch.save(model._model.state_dict(), swa_dir / "model.pt")
 
     return {"best_val_f1": best_f1}
+
+
+def step_save_test_predictions(
+    config: dict,
+    test_texts: list[str],
+    test_labels: np.ndarray,
+    output_dir: Path,
+    device: str,
+) -> None:
+    """Run inference on test set and save predictions for phase4_calibration."""
+    from torch.utils.data import DataLoader, Dataset
+    from athena2.models.world_model import LegalWorldModel
+
+    logger.info("=" * 60)
+    logger.info("Saving test set predictions for calibration")
+    logger.info("=" * 60)
+
+    model_dir = output_dir / "best_model"
+    if not (model_dir / "model.pt").exists():
+        logger.warning("No best_model found, skipping test predictions")
+        return
+
+    irp_config = config["intermediate_reasoning_predictor"]
+    encoder_name = irp_config["encoder"]["model_name"]
+    supcon_dir = output_dir / "supcon_encoder"
+    if supcon_dir.exists():
+        encoder_name = str(supcon_dir)
+
+    model = LegalWorldModel(
+        encoder_name=encoder_name,
+        max_length=irp_config["encoder"]["max_length"],
+        hidden_size=irp_config["encoder"]["hidden_size"],
+        n_law_areas=irp_config["feature_heads"]["law_area"]["n_classes"],
+        n_reasoning_patterns=irp_config["feature_heads"]["reasoning_pattern"]["n_classes"],
+        n_outcome_granular=irp_config["feature_heads"]["outcome_granular"]["n_classes"],
+        gat_dim=0,
+        use_bsce_gra=True,
+    )
+    model.build()
+    model._model.load_state_dict(torch.load(model_dir / "model.pt", map_location=device, weights_only=True))
+    model._model.to(device)
+    model._model.eval()
+
+    class SimpleDataset(Dataset):
+        def __init__(self, texts, tokenizer, max_length):
+            self.texts = texts
+            self.tokenizer = tokenizer
+            self.max_length = max_length
+        def __len__(self):
+            return len(self.texts)
+        def __getitem__(self, idx):
+            enc = self.tokenizer(
+                self.texts[idx], truncation=True,
+                max_length=self.max_length, padding="max_length",
+                return_tensors="pt",
+            )
+            return {
+                "input_ids": enc["input_ids"].squeeze(),
+                "attention_mask": enc["attention_mask"].squeeze(),
+            }
+
+    test_dataset = SimpleDataset(test_texts, model._tokenizer, irp_config["encoder"]["max_length"])
+    test_loader = DataLoader(test_dataset, batch_size=irp_config["training"]["batch_size"] * 2,
+                             shuffle=False, num_workers=0)
+
+    all_logits = []
+    all_probs = []
+    with torch.no_grad():
+        for batch in test_loader:
+            input_ids = batch["input_ids"].to(device)
+            attention_mask = batch["attention_mask"].to(device)
+            outputs = model._model(input_ids, attention_mask)
+            logits = outputs["verdict_logits"]
+            probs = torch.softmax(logits, dim=-1)[:, 1]
+            all_logits.extend(logits.cpu().numpy())
+            all_probs.extend(probs.cpu().numpy())
+
+    np.save(model_dir / "test_logits.npy", np.array(all_logits))
+    np.save(model_dir / "test_probs.npy", np.array(all_probs))
+    np.save(model_dir / "test_labels.npy", test_labels)
+    logger.info(f"Test predictions saved: {len(all_probs)} samples")
 
 
 def main():
@@ -551,6 +634,12 @@ def main():
             use_swa=not args.no_swa,
         )
         logger.info(f"Results: {json.dumps(results, indent=2)}")
+
+        # Save test predictions for phase4_calibration
+        step_save_test_predictions(
+            config, test["facts"].tolist(), test["label"].values,
+            args.output_dir, device,
+        )
 
     elapsed = time.time() - t0
     logger.info(f"\nPhase 2 complete in {elapsed/60:.1f} min")

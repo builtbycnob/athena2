@@ -47,6 +47,29 @@ def step_build_graph(data_dir: Path, output_dir: Path) -> dict:
     graph = CitationGraph()
     graph.build_from_regex(rows)
 
+    # Resolve BGE targets to decision-to-decision edges
+    # Raw edges are decision_id → BGE_key, but BGE keys aren't nodes.
+    # Use bge_to_decisions to create decision → decision edges via shared BGE citations.
+    resolved_edges = []
+    for edge in graph.edges:
+        target = edge["target"]
+        if target in graph.nodes:
+            # Already a decision_id
+            resolved_edges.append(edge)
+        elif target in graph.bge_to_decisions:
+            # BGE key — link to all decisions that cite the same BGE
+            # This creates co-citation edges (decisions sharing a BGE reference)
+            for cited_decision in graph.bge_to_decisions[target]:
+                if cited_decision != edge["source"]:
+                    resolved_edges.append({
+                        "source": edge["source"],
+                        "target": cited_decision,
+                        "type": "CO_CITES",
+                    })
+
+    logger.info(f"Resolved edges: {len(graph.edges):,} raw → {len(resolved_edges):,} decision-to-decision")
+    graph.edges = resolved_edges
+
     # Compute PageRank via NetworkX
     try:
         import networkx as nx

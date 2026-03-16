@@ -1,0 +1,11 @@
+{
+  "case_id": "ch-1886",
+  "source": "swiss_judgment_prediction",
+  "outcome": "annulment",
+  "outcome_raw": 1,
+  "extraction_confidence": "high",
+  "legal_area": "civil law",
+  "year": 2007,
+  "canton": "ti",
+  "region": "Ticino"
+}

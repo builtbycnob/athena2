@@ -1,0 +1,133 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione dell'importo dovuto per danni derivanti da ritardo
+      nella consegna e minor valore dell'opera di ristrutturazione alberghiera, nonché
+      ripartizione delle spese processuali.
+  evidence: []
+  facts:
+    undisputed:
+    - id: F1
+      description: Nel 1993 B. ha affidato all'arch. A. la progettazione e la direzione
+        dei lavori di ristrutturazione di un albergo a Lugano.
+      evidence: []
+    - id: F2
+      description: I lavori sono iniziati nell'ottobre 1994 e sono terminati alla
+        fine del mese di settembre 1995.
+      evidence: []
+    - id: F3
+      description: Il 18 ottobre 1996 B. ha convenuto in giudizio A. chiedendo il
+        pagamento di fr. 3'619'484.10, poi ridotti a fr. 2'902'113.--.
+      evidence: []
+    - id: F4
+      description: Con sentenza 30 ottobre 2008 il Pretore ha respinto la petizione
+        di B. e ha accolto la domanda riconvenzionale di A. limitatamente a fr. 274'942.30,
+        oltre accessori.
+      evidence: []
+    - id: F5
+      description: Con sentenza 17 febbraio 2011 la II Camera civile del Tribunale
+        di appello del Cantone Ticino ha parzialmente accolto la petizione, condannando
+        A. a versare fr. 459'123.35 e riducendo a fr. 146'595.-- l'importo che B.
+        deve versare ad A.
+      evidence: []
+    disputed:
+    - id: D1
+      description: L'entità del danno conseguente al ritardo nella consegna dell'opera
+        e del minor valore dell'opera.
+      depends_on_facts:
+      - F1
+      - F2
+      - F5
+      positions:
+        ricorrente: Il ricorrente (A.) contesta gli importi messi a suo carico per
+          il ritardo nella consegna e il minor valore dell'opera, chiedendo che la
+          petizione sia accolta solo per fr. 9'623.35.
+        controparte: La controparte (B.) ha proposto la reiezione del ricorso, sostenendo
+          la correttezza delle valutazioni della Corte cantonale sui danni.
+  legal_texts: []
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: Riforma della sentenza impugnata limitando l'accoglimento della petizione
+          a fr. 9'623.35 e contestando i calcoli del danno per ritardo e minor valore.
+        direction: a favore del ricorrente
+        references_facts:
+        - F5
+        - D1
+      controparte:
+      - id: SEED_RARG1
+        claim: Reiezione del ricorso in quanto la sentenza di appello è corretta nei
+          suoi accertamenti e valutazioni.
+        direction: a favore della controparte
+        references_facts:
+        - F5
+  timeline:
+  - date: '1993'
+    event: Affidamento della progettazione e direzione lavori a A.
+  - date: 1994-10
+    event: Inizio dei lavori
+  - date: 1995-09
+    event: Fine dei lavori
+  - date: '1996-10-18'
+    event: Azione giudiziaria di B. contro A.
+  - date: '2008-10-30'
+    event: Sentenza del Pretore
+  - date: '2011-02-17'
+    event: Sentenza della II Camera civile del Tribunale di appello del Cantone Ticino
+  - date: '2011-03-28'
+    event: Ricorso in materia civile di A. al Tribunale Federale
+  - date: '2011-04-15'
+    event: Comunicazione della Corte cantonale al Tribunale Federale
+  - date: '2011-05-19'
+    event: Risposta di B. al ricorso
+  id: ch-2997

@@ -1,0 +1,256 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione della legittimazione dell'avvocato a chiedere il
+      pagamento di onorari, correttezza delle tariffe e delle ore, e validità della
+      compensazione eccepita dal cliente, con conseguente annullamento o conferma
+      delle sentenze cantonali.
+  evidence:
+  - id: DOC1
+    type: atto_pubblico
+    description: Documentazione relativa all'assistenza legale fornita tra dicembre
+      2000 e ottobre 2003.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F1
+  - id: DOC2
+    type: atto_pubblico
+    description: Cinque fatture emesse dall'avvocato B. per un totale di fr. 461'384.60.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F2
+  - id: DOC3
+    type: atto_pubblico
+    description: Opposizione al precetto esecutivo depositata dal cliente A.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F3
+  - id: DOC4
+    type: atto_pubblico
+    description: Petizione del 19 dicembre 2003 dell'avvocato B. al Pretore di Lugano.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F4
+  - id: DOC5
+    type: atto_pubblico
+    description: Decisione del Consiglio di moderazione del 25 agosto 2008.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F5
+  - id: DOC6
+    type: atto_pubblico
+    description: Conclusioni dell'attore con riduzione della pretesa a fr. 185'225.95.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F6
+  - id: DOC7
+    type: atto_pubblico
+    description: Sentenza del Pretore del 1° ottobre 2010.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F7
+  - id: DOC8
+    type: atto_pubblico
+    description: Sentenza della II Camera civile del Tribunale di appello ticinese
+      del 30 gennaio 2012.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F8
+  - id: DOC9
+    type: atto_pubblico
+    description: Provvedimento della Presidente del Tribunale federale del 14 marzo
+      2012.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F9
+  facts:
+    undisputed:
+    - id: F1
+      description: Tra dicembre 2000 e ottobre 2003 l'avvocato B. ha assistito il
+        cliente A. in diverse procedure amministrative, civili e penali.
+      evidence:
+      - DOC1
+    - id: F2
+      description: L'avvocato B. ha emesso cinque fatture per un importo totale di
+        fr. 461'384.60.
+      evidence:
+      - DOC2
+    - id: F3
+      description: Il cliente A. non ha pagato le fatture e ha dichiarato opposizione
+        contro il precetto esecutivo.
+      evidence:
+      - DOC3
+    - id: F4
+      description: Con petizione del 19 dicembre 2003 l'avvocato B. ha chiesto la
+        condanna al pagamento della somma con interessi del 5% dal 5 dicembre 2003.
+      evidence:
+      - DOC4
+    - id: F5
+      description: Le fatture sono state sottoposte agli organi di moderazione, con
+        decisione del Consiglio di moderazione del 25 agosto 2008.
+      evidence:
+      - DOC5
+    - id: F6
+      description: L'attore ha ridotto la propria pretesa a fr. 185'225.95 in considerazione
+        della decisione di moderazione.
+      evidence:
+      - DOC6
+    - id: F7
+      description: Il Pretore ha accolto parzialmente la petizione con sentenza del
+        1° ottobre 2010, condannando il convenuto a pagare fr. 149'912.65 con interessi.
+      evidence:
+      - DOC7
+    - id: F8
+      description: La II Camera civile del Tribunale di appello ticinese ha respinto
+        l'appellazione del convenuto con sentenza del 30 gennaio 2012.
+      evidence:
+      - DOC8
+    - id: F9
+      description: Il 14 marzo 2012 la Presidente del Tribunale federale ha concesso
+        l'effetto sospensivo.
+      evidence:
+      - DOC9
+    disputed:
+    - id: D1
+      description: Legittimazione attiva e passiva dell'avvocato B. nel procedimento.
+      depends_on_facts:
+      - F1
+      - F2
+      positions:
+        ricorrente: Il convenuto eccepisce la carenza delle legittimazioni attiva
+          e passiva.
+        controparte: L'attore sostiene la piena legittimazione attiva e passiva.
+    - id: D2
+      description: Correttezza delle tariffe applicate e esosità delle ore esposte.
+      depends_on_facts:
+      - F2
+      - F5
+      - F6
+      positions:
+        ricorrente: Il convenuto eccepisce l'erroneità delle tariffe e l'esosità delle
+          ore.
+        controparte: L'attore sostiene la correttezza delle tariffe e delle ore.
+    - id: D3
+      description: Esistenza di compensazione con prelievi sul conto e danni causati
+        dall'avvocato C.
+      depends_on_facts:
+      - F1
+      - F2
+      positions:
+        ricorrente: Il convenuto eccepisce la compensazione con prelievi e danni.
+        controparte: L'attore nega l'esistenza di tali compensazioni.
+  legal_texts: []
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: Carenza di legittimazione attiva e passiva dell'avvocato B.
+        direction: annullamento
+        references_facts:
+        - F1
+        - D1
+      - id: SEED_ARG2
+        claim: Erroneità delle tariffe applicate ed esosità delle ore esposte.
+        direction: annullamento
+        references_facts:
+        - F2
+        - F5
+        - D2
+      - id: SEED_ARG3
+        claim: Esistenza di compensazione con prelievi sul conto e danni causati dall'avvocato
+          C.
+        direction: annullamento
+        references_facts:
+        - F1
+        - D3
+      controparte:
+      - id: SEED_RARG1
+        claim: Piena legittimazione attiva e passiva dell'avvocato B.
+        direction: rigetto
+        references_facts:
+        - F1
+      - id: SEED_RARG2
+        claim: Correttezza delle tariffe e delle ore esposte, in linea con la decisione
+          di moderazione.
+        direction: rigetto
+        references_facts:
+        - F5
+        - F6
+  timeline:
+  - date: '2000-12-01'
+    event: Inizio assistenza legale da parte dell'avvocato B.
+  - date: '2003-10-01'
+    event: Cessazione del mandato e emissione delle fatture.
+  - date: '2003-12-05'
+    event: Decorrenza interessi del 5%.
+  - date: '2003-12-19'
+    event: Petizione dell'avvocato B. al Pretore di Lugano.
+  - date: '2008-08-25'
+    event: Decisione del Consiglio di moderazione.
+  - date: '2010-10-01'
+    event: Sentenza del Pretore che accoglie parzialmente la petizione.
+  - date: '2012-01-30'
+    event: Sentenza della II Camera civile del Tribunale di appello ticinese.
+  - date: '2012-02-21'
+    event: Ricorso in materia civile al Tribunale federale.
+  - date: '2012-03-14'
+    event: Concessione dell'effetto sospensivo dalla Presidente del Tribunale federale.
+  id: ch-3425

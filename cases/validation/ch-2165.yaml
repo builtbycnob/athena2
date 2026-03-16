@@ -1,0 +1,218 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione della legittimità del fallimento pronunciato sulla
+      base di una segnalazione di eccedenza di debiti da parte dell'organo di revisione,
+      senza verifica indipendente dei documenti prodotti dagli amministratori, e chiarimento
+      sull'applicabilità dell'art. 725a CO.
+  evidence:
+  - id: DOC1
+    type: scritto_di_revisione
+    description: Scritto del 19 luglio 2007 dell'ufficio di revisione B._SA indirizzato
+      al consiglio di amministrazione e trasmesso al Pretore, contenente la segnalazione
+      di timore di eccedenza di debiti.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F1
+  - id: DOC2
+    type: comunicazione_di_procedura
+    description: Lettera del 6 novembre 2007 della B._SA al Pretore, con cui si avvia
+      nuova procedura e si conferma il timore di eccedenza di debiti.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F3
+  - id: DOC3
+    type: bilancio_intermedio
+    description: Bilancio intermedio al 30 settembre 2007 allestito dal consiglio
+      di amministrazione con supervisione della C._SA, privo di verifica di revisione.
+    produced_by: controparte
+    admissibility: contested
+    supports_facts:
+    - F2
+    - F5
+  facts:
+    undisputed:
+    - id: F1
+      description: Il 20 luglio 2007, l'ufficio di revisione B._SA ha segnalato al
+        Pretore del distretto di Lugano che la società A._SA versava in una situazione
+        di timore di eccedenza di debiti (art. 725 cpv. 2 CO) basandosi sul conto
+        annuale 2006, evidenziando un patrimonio netto di fr. 23'000.-- e la mancanza
+        di dichiarazioni di postergazione sufficienti a coprire una perdita di capitale
+        a valori di continuazione.
+      evidence:
+      - DOC1
+    - id: F2
+      description: Il 24 ottobre 2007, l'udienza ha visto la B._SA ritirare la segnalazione
+        dopo aver visionato un bilancio intermedio al 30 settembre 2007 allestito
+        dal consiglio di amministrazione con la supervisione della C._SA, portando
+        allo stralcio della causa da parte del Pretore.
+      evidence: []
+    - id: F3
+      description: Il 6 novembre 2007, la B._SA ha avviato una nuova procedura, confermando
+        il timore di eccedenza di debiti e lamentando l'impossibilità di verificare
+        adeguatamente i documenti prodotti, dato che l'assemblea degli azionisti aveva
+        destituito la segnalante.
+      evidence:
+      - DOC2
+    - id: F4
+      description: Con sentenza del 15 febbraio 2008, il Pretore ha pronunciato il
+        fallimento della A._SA, non ritenendo dati i presupposti per un differimento.
+      evidence: []
+    - id: F5
+      description: Con sentenza del 1° aprile 2008, la Camera di esecuzione e fallimenti
+        del Tribunale d'appello del Cantone Ticino ha respinto il rimedio della A._SA
+        e confermato il fallimento, ritenendo giustificata la reiezione della domanda
+        di differimento per mancanza di verifica indipendente dei documenti.
+      evidence: []
+    disputed:
+    - id: D1
+      description: La validità della segnalazione di eccedenza di debiti e la necessità
+        di una verifica indipendente dei documenti prodotti per confermare o smentire
+        la situazione finanziaria.
+      depends_on_facts:
+      - F1
+      - F3
+      - F5
+      positions:
+        ricorrente: La lettera del 6 novembre 2007 non costituisce un avviso di manifesta
+          eccedenza di debiti documentata; il fallimento non può basarsi su un mero
+          sospetto e la parte segnalata non deve provare l'infondatezza del sospetto.
+        controparte: Spettava agli amministratori presentare un bilancio intermedio
+          soggetto a verifica di un organo di revisione o revisore abilitato per dimostrare
+          l'assenza di sovraindebitamento; il bilancio intermedio privo di verifica
+          e l'attività della C._SA non costituiscono revisione.
+    - id: D2
+      description: L'applicabilità dell'art. 725a CO quando la segnalazione proviene
+        dall'organo di revisione e non dal consiglio di amministrazione.
+      depends_on_facts:
+      - F1
+      - F3
+      positions:
+        ricorrente: L'art. 725a CO disciplina unicamente il caso in cui il consiglio
+          di amministrazione notifica l'eccedenza di debiti e non può essere applicato
+          quando la segnalazione è partita dall'organo di revisione.
+        controparte: La norma si applica indipendentemente dalla fonte della segnalazione,
+          dato che l'obbligo di verificare la situazione finanziaria e presentare
+          documenti verificati incombe agli amministratori.
+  legal_texts:
+  - id: norm_1
+    norm: art. 725 cpv. 2 CO
+    text: '[Testo da fedlex.admin.ch: art. 725 cpv. 2 CO]'
+  - id: norm_2
+    norm: art. 725a CO
+    text: '[Testo da fedlex.admin.ch: art. 725a CO]'
+  - id: norm_3
+    norm: art. 729b CO
+    text: '[Testo da fedlex.admin.ch: art. 729b CO]'
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: Il fallimento non può essere pronunciato sulla base di un mero sospetto
+          o di una notifica non documentata.
+        direction: revoca_del_fallimento
+        references_facts:
+        - F1
+        - D1
+      - id: SEED_ARG2
+        claim: L'art. 725a CO non si applica quando la segnalazione proviene dall'organo
+          di revisione.
+        direction: erronea_applicazione_norma
+        references_facts:
+        - F3
+        - D2
+      - id: SEED_ARG3
+        claim: Il giudice avrebbe dovuto esaminare la domanda subordinata di differimento/moratoria
+          fallimentare.
+        direction: rinvio_ati
+        references_facts:
+        - F5
+        - D1
+      controparte:
+      - id: SEED_RARG1
+        claim: Gli amministratori avevano l'onere di presentare un bilancio intermedio
+          verificato da un organo di revisione per smentire la segnalazione.
+        direction: conferma_fallimento
+        references_facts:
+        - F1
+        - F5
+      - id: SEED_RARG2
+        claim: L'attività della C._SA non costituisce un rapporto di revisione, rendendo
+          il bilancio intermedio inadatto a dimostrare l'assenza di sovraindebitamento.
+        direction: giustificazione_reiezione_differimento
+        references_facts:
+        - F2
+        - F5
+  timeline:
+  - date: '2007-07-19'
+    event: Redazione dello scritto di revisione da parte della B._SA.
+  - date: '2007-07-20'
+    event: Trasmissione della segnalazione di timore di eccedenza di debiti al Pretore
+      di Lugano.
+  - date: '2007-10-24'
+    event: Udienza in cui la B._SA ritira la segnalazione e la causa viene stralciata.
+  - date: '2007-11-06'
+    event: Avvio di nuova procedura da parte della B._SA e conferma del timore di
+      eccedenza di debiti.
+  - date: '2008-02-15'
+    event: Sentenza del Pretore che pronuncia il fallimento della A._SA.
+  - date: '2008-04-01'
+    event: Sentenza della Camera di esecuzione e fallimenti del Tribunale d'appello
+      che conferma il fallimento.
+  - date: '2008-04-08'
+    event: Deposito del ricorso in materia civile da parte della A._SA.
+  - date: '2008-04-30'
+    event: Decreto del Presidente della Corte che conferisce effetto sospensivo al
+      ricorso.
+  id: ch-2165

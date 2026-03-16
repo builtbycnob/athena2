@@ -1,0 +1,218 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione della validità del decreto pretorile come titolo
+      esecutivo o transazione e possibilità di rigetto provvisorio dell'opposizione
+      in procedura esecutiva.
+  evidence:
+  - id: DOC1
+    type: atto_pubblico
+    description: Decreto del Pretore del distretto di Bellinzona del 18 marzo 2005
+      (causa inc. OA.2004.213).
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F1
+  - id: DOC2
+    type: corrispondenza
+    description: Lettera del 1° febbraio 2005 dell'attrice e risposta della convenuta
+      del 4 febbraio 2005.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F2
+  - id: DOC3
+    type: corrispondenza
+    description: Comunicazione dell'attrice di non accettazione della proposta della
+      convenuta.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F3
+  - id: DOC4
+    type: atto_pubblico
+    description: Decreto del Segretario assessore della Pretura del distretto di Bellinzona
+      del 14 giugno 2007.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F4
+  - id: DOC5
+    type: sentenza
+    description: Sentenza della Camera di esecuzione e fallimenti del Tribunale d'appello
+      del Cantone Ticino del 12 dicembre 2007.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F5
+  facts:
+    undisputed:
+    - id: F1
+      description: Il 18 marzo 2005 il Pretore del distretto di Bellinzona ha decretato
+        la dichiarazione di privazione d'oggetto della causa OA.2004.213, motivando
+        che tra le parti si era perfezionato un contratto per la cessione della partecipazione
+        sociale al prezzo di fr. 60'600.--.
+      evidence:
+      - DOC1
+    - id: F2
+      description: Il 1° febbraio 2005 l'attrice ha proposto la cessione della quota
+        per fr. 60'600.--; la convenuta ha risposto il 4 febbraio 2005 mostrando interesse
+        ma subordinando l'accordo alla liquidazione delle pendenze e alla redazione
+        di un contratto di scioglimento.
+      evidence:
+      - DOC2
+    - id: F3
+      description: Tre giorni dopo la proposta della convenuta, l'attrice ha comunicato
+        di non accettare la proposta.
+      evidence:
+      - DOC3
+    - id: F4
+      description: Nell'aprile 2007 l'attrice ha escusso la convenuta per fr. 60'600.--
+        basandosi sul decreto pretorile; il 14 giugno 2007 il Segretario assessore
+        ha rigettato definitivamente l'opposizione.
+      evidence:
+      - DOC4
+    - id: F5
+      description: Con sentenza del 12 dicembre 2007, la Camera di esecuzione e fallimenti
+        del Tribunale d'appello del Cantone Ticino ha accolto il rimedio della convenuta,
+        respingendo l'istanza esecutiva.
+      evidence:
+      - DOC5
+    disputed:
+    - id: D1
+      description: Se il decreto pretorile del 18 marzo 2005 costituisca un titolo
+        di rigetto definitivo dell'opposizione o una transazione ai sensi dell'art.
+        80 cpv. 2 n. 1 LEF.
+      depends_on_facts:
+      - F1
+      - F2
+      - F3
+      positions:
+        ricorrente: Il decreto è un titolo valido e costituisce una transazione che
+          impone l'obbligo di pagamento.
+        controparte: Il decreto non è un titolo di rigetto definitivo né una transazione,
+          poiché non scaturisce alcun obbligo di pagamento e non vi è stato un effettivo
+          accordo sulla liquidazione.
+    - id: D2
+      description: Se, in via subordinata, sussistano i presupposti per il rigetto
+        provvisorio dell'opposizione basandosi sulla documentazione disponibile.
+      depends_on_facts:
+      - F2
+      - F3
+      positions:
+        ricorrente: Sussistono i presupposti per il rigetto provvisorio poiché l'accordo
+          non era sottoposto a condizioni o le condizioni non erano essenziali.
+        controparte: Non sussistono i presupposti poiché la documentazione non prova
+          un effettivo accordo e le condizioni poste dalla convenuta non sono state
+          soddisfatte.
+  legal_texts:
+  - id: norm_1
+    norm: art. 80 cpv. 2 n. 1 LEF
+    text: '[Testo da fedlex.admin.ch: art. 80 cpv. 2 n. 1 LEF]'
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: Il decreto pretorile costituisce una transazione ai sensi dell'art.
+          80 cpv. 2 n. 1 LEF e un titolo di rigetto definitivo.
+        direction: procedente
+        references_facts:
+        - F1
+        - D1
+      - id: SEED_ARG2
+        claim: In via subordinata, la documentazione è sufficiente per il rigetto
+          provvisorio dell'opposizione.
+        direction: procedente
+        references_facts:
+        - F2
+        - F3
+        - D2
+      controparte:
+      - id: SEED_RARG1
+        claim: Il decreto non è un titolo di rigetto definitivo né una transazione,
+          mancando un obbligo di pagamento e un effettivo accordo.
+        direction: opponente
+        references_facts:
+        - F1
+        - F2
+        - D1
+      - id: SEED_RARG2
+        claim: Non sussistono i presupposti per il rigetto provvisorio poiché le condizioni
+          poste dalla convenuta non sono state soddisfatte.
+        direction: opponente
+        references_facts:
+        - F2
+        - F3
+        - D2
+  timeline:
+  - date: '2004-10-21'
+    event: Promozione della causa inc. OA.2004.213 da parte di A._
+  - date: '2005-02-01'
+    event: Proposta di cessione della quota da parte dell'attrice
+  - date: '2005-02-04'
+    event: Risposta della convenuta con condizioni
+  - date: '2005-02-07'
+    event: Comunicazione di non accettazione da parte dell'attrice
+  - date: '2005-03-18'
+    event: Decreto del Pretore di Bellinzona che dichiara la causa priva d'oggetto
+  - date: '2007-01-15'
+    event: Ritiro dell'appello da parte dell'attrice
+  - date: 2007-04
+    event: Escussione della convenuta da parte dell'attrice
+  - date: '2007-06-14'
+    event: Rigetto definitivo dell'opposizione da parte del Segretario assessore
+  - date: '2007-12-12'
+    event: Sentenza della Camera di esecuzione e fallimenti che accoglie il rimedio
+      della convenuta
+  - date: '2008-01-10'
+    event: Ricorso in materia civile depositato da A._
+  id: ch-2046

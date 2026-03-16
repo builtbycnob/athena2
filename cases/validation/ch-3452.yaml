@@ -1,0 +1,172 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: &id001
+    - id: prec_1
+      citation: Sentenza del Tribunale Federale (non specificata nel testo, ma riferita
+        alla giurisprudenza sull'art. 257a CO)
+      holding: Le spese accessorie sono a carico del conduttore unicamente se le parti
+        le hanno concordate in maniera chiara e precisa, dettagliando le poste effettive.
+      weight: binding
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: *id001
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione della responsabilità del conduttore per il pagamento
+      del conguaglio delle spese accessorie in assenza di una pattuizione esplicita
+      e dettagliata, e valutazione della presunzione applicabile nei rapporti commerciali.
+  evidence:
+  - id: DOC1
+    type: contratto_di_locazione
+    description: Contratto stipulato il 1° settembre 1999 tra A._SA e B._SA, che fissa
+      le spese accessorie a CHF 5'000.- mensili come acconto.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F1
+    - F2
+  facts:
+    undisputed:
+    - id: F1
+      description: Il 1° settembre 1999, la A._SA ha locato alla B._SA parti di uno
+        stabile a Lugano adibite a centro fitness e wellness, con inizio retroattivo
+        al 1° gennaio 1998.
+      evidence:
+      - DOC1
+    - id: F2
+      description: Il contratto di locazione prevede spese accessorie fisse di CHF
+        5'000.- mensili a titolo di acconto, con conguaglio da versare entro 30 giorni
+        dalla presentazione del conteggio definitivo.
+      evidence:
+      - DOC1
+    - id: F3
+      description: Il 9 maggio 2008 la locatrice ha chiesto alla conduttrice il pagamento
+        di fr. 115'371.80 a titolo di conguaglio spese accessorie per l'anno 2007,
+        richiesta respinta.
+      evidence: []
+    - id: F4
+      description: Il Pretore del distretto di Lugano ha respinto l'azione della A._SA
+        volta a ottenere la condanna della B._SA al pagamento di fr. 108'843.07.
+      evidence: []
+    - id: F5
+      description: Con sentenza del 14 novembre 2011, la II Camera civile del Tribunale
+        di appello del Cantone Ticino ha respinto l'appello dell'attrice.
+      evidence: []
+    disputed:
+    - id: D1
+      description: Se esista una pattuizione chiara e precisa tra le parti secondo
+        cui le spese accessorie siano a carico del conduttore, al di là del versamento
+        di acconti fissi.
+      depends_on_facts:
+      - F1
+      - F2
+      - F3
+      positions:
+        ricorrente: La A._SA sostiene che le parti abbiano concordato che le spese
+          accessorie siano a carico della conduttrice, citando anche una presunzione
+          nei rapporti commerciali e il comportamento abusivo dell'inquilina.
+        controparte: La B._SA sostiene che non vi sia alcuna espressa pattuizione
+          chiara e precisa sulle spese accessorie e che il versamento di acconti non
+          implichi l'assunzione del rischio spese da parte del conduttore.
+  legal_texts:
+  - id: norm_1
+    norm: art. 257a CO
+    text: '[Testo da fedlex.admin.ch: art. 257a CO]'
+  - id: norm_2
+    norm: art. 18 CO
+    text: '[Testo da fedlex.admin.ch: art. 18 CO]'
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: Le parti hanno concordato che le spese accessorie siano a carico della
+          conduttrice.
+        direction: pro
+        references_facts:
+        - F1
+        - F2
+        - D1
+      - id: SEED_ARG2
+        claim: Nei rapporti commerciali vige una presunzione secondo cui le spese
+          di consumo sono a carico del conduttore.
+        direction: pro
+        references_facts:
+        - D1
+      - id: SEED_ARG3
+        claim: Il comportamento dell'inquilina è abusivo e viola l'art. 18 CO.
+        direction: pro
+        references_facts:
+        - D1
+      controparte:
+      - id: SEED_RARG1
+        claim: Non esiste una pattuizione chiara e precisa sulle spese accessorie;
+          il versamento di acconti non costituisce prova di assunzione del rischio
+          spese.
+        direction: anti
+        references_facts:
+        - F1
+        - F2
+        - D1
+  timeline:
+  - date: '1998-01-01'
+    event: Inizio retroattivo della locazione.
+  - date: '1999-09-01'
+    event: Stipula del contratto di locazione tra A._SA e B._SA.
+  - date: '2008-05-09'
+    event: Richiesta della locatrice di pagamento del conguaglio spese accessorie
+      per il 2007.
+  - date: '2011-11-14'
+    event: Sentenza della II Camera civile del Tribunale di appello del Cantone Ticino
+      che respinge l'appello.
+  - date: '2012-01-13'
+    event: Ricorso in materia civile depositato dalla A._SA.
+  - date: '2012-02-03'
+    event: Decreto della Presidente della Corte adita che respinge la domanda di effetto
+      sospensivo.
+  - date: '2012-02-16'
+    event: Risposta della B._SA con proposta di reiezione del ricorso.
+  id: ch-3452

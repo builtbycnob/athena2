@@ -1,0 +1,165 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione dell'importo dovuto dalla banca al cliente per perdite
+      subite su conti swap e gestione amministrativa, oltre alla questione della responsabilità
+      per la mancanza di rendicontazione.
+  evidence: []
+  facts:
+    undisputed:
+    - id: F1
+      description: Nel 1992 il cittadino italiano A. ha aperto i conti xxx e yyy presso
+        la succursale di Lugano di B.B._SA, concedendo una procura amministrativa
+        a C., funzionario della succursale milanese di D.B._.
+      evidence: []
+    - id: F2
+      description: Nel 1993 A. ha aperto un conto yyy presso la succursale di Zurigo
+        di D.B._, su cui C. ha agito quale procuratore amministrativo.
+      evidence: []
+    - id: F3
+      description: Tra il 1997 e il 1998 il patrimonio di A. ha subito diminuzioni
+        rilevanti.
+      evidence: []
+    - id: F4
+      description: Il 11 febbraio 2000 A. ha adito la Pretura del Distretto di Lugano
+        chiedendo la condanna al pagamento di fr. 1'035'964.-- e la presentazione
+        di un rendiconto dettagliato.
+      evidence: []
+    - id: F5
+      description: Il Pretore ha respinto la petizione il 27 agosto 2007.
+      evidence: []
+    - id: F6
+      description: La II Camera civile del Tribunale d'appello del Cantone Ticino
+        ha accolto parzialmente l'appello con sentenza del 3 febbraio 2009, riconoscendo
+        a A. il diritto a Euro 26'590.75, US$ 5'000.-- e fr. 2'874.40 oltre interessi.
+      evidence: []
+    - id: F7
+      description: Il 6 marzo 2009 A. ha proposto ricorso al Tribunale federale chiedendo
+        la modifica della sentenza cantonale.
+      evidence: []
+    disputed:
+    - id: D1
+      description: L'entità delle perdite subite da A. e la conseguente responsabilità
+        della banca per la gestione dei conti.
+      depends_on_facts:
+      - F1
+      - F2
+      - F3
+      - F6
+      positions:
+        ricorrente: La banca deve essere condannata al pagamento di importi significativi
+          in diverse valute (fr. 1'064.--, US$ 16'743.85, GB£ 105'559.--, AU$ 41'329.--,
+          Euro 173'150.90, US$ 75'000.--, fr. 43'116.--) con interessi al 5%.
+        controparte: La sentenza cantonale è corretta e il gravame deve essere respinto.
+  legal_texts:
+  - id: norm_1
+    norm: art. 8 Cost.
+    text: '[Testo da fedlex.admin.ch: art. 8 Cost.]'
+  - id: norm_2
+    norm: art. 9 Cost.
+    text: '[Testo da fedlex.admin.ch: art. 9 Cost.]'
+  - id: norm_3
+    norm: art. 29 cpv. 1 e cpv. 2 Cost.
+    text: '[Testo da fedlex.admin.ch: art. 29 cpv. 1 e cpv. 2 Cost.]'
+  - id: norm_4
+    norm: art. 8 CC
+    text: '[Testo da fedlex.admin.ch: art. 8 CC]'
+  - id: norm_5
+    norm: art. 1 CO
+    text: '[Testo da fedlex.admin.ch: art. 1 CO]'
+  - id: norm_6
+    norm: art. 97 CO
+    text: '[Testo da fedlex.admin.ch: art. 97 CO]'
+  - id: norm_7
+    norm: art. 394 segg. CO
+    text: '[Testo da fedlex.admin.ch: art. 394 segg. CO]'
+  - id: norm_8
+    norm: art. 398 CO
+    text: '[Testo da fedlex.admin.ch: art. 398 CO]'
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: Violazione di diverse disposizioni del diritto federale e diritto a
+          un rendiconto dettagliato non concesso.
+        direction: Accoglimento integrale del ricorso e condanna della banca al versamento
+          di somme superiori a quelle riconosciute in appello.
+        references_facts:
+        - F3
+        - F6
+        - D1
+      controparte:
+      - id: SEED_RARG1
+        claim: Il ricorso è infondato e la sentenza cantonale deve essere confermata.
+        direction: Respinto il gravame.
+        references_facts:
+        - F6
+  timeline:
+  - date: '1992'
+    event: Apertura conti xxx e yyy presso succursale di Lugano di B.B._SA e concessione
+      procura a C.
+  - date: '1993'
+    event: Apertura conto yyy presso succursale di Zurigo di D.B._
+  - date: 1997-1998
+    event: Rilevanti diminuzioni del patrimonio di A.
+  - date: '2000-02-11'
+    event: A. adisce la Pretura del Distretto di Lugano
+  - date: '2007-08-27'
+    event: Sentenza del Pretore che respinge la petizione
+  - date: '2009-02-03'
+    event: Sentenza della II Camera civile del Tribunale d'appello del Cantone Ticino
+      che accoglie parzialmente l'appello
+  - date: '2009-03-06'
+    event: Ricorso al Tribunale federale proposto da A.
+  - date: '2009-04-07'
+    event: Risposta di B.B._SA proposta di respingere il gravame
+  id: ch-2435

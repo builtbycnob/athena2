@@ -1,0 +1,188 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione della responsabilità della banca A._SA per la gestione
+      di conti di una fondazione, la validità di garanzie prestate in presenza di
+      conflitto d'interessi e la ripartizione delle perdite tra banca e fondazione
+      per prelevamenti illeciti.
+  evidence:
+  - id: DOC1
+    type: atto_pubblico
+    description: Sentenza del 10 aprile 2008 del Tribunale d'appello del Cantone Ticino
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F7
+    - F8
+    - F9
+  - id: DOC2
+    type: documento_privato
+    description: Formulario A indicante la beneficiaria economica
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F3
+  facts:
+    undisputed:
+    - id: F1
+      description: La fondazione B._ è stata costituita nel 1978 da un industriale
+        italiano per regolare la sua successione.
+      evidence: []
+    - id: F2
+      description: I beni della fondazione sono stati depositati su conti presso la
+        A._SA con facoltà di firma individuale per il presidente del consiglio di
+        fondazione C._.
+      evidence: []
+    - id: F3
+      description: Alla morte del beneficiario originario, la fondazione è passata
+        a una figlia, regolarmente indicata quale avente diritto economico.
+      evidence: []
+    - id: F4
+      description: Agli inizi del 1998 la beneficiaria economica ha scoperto l'esistenza
+        di garanzie e prelevamenti illeciti a debito del conto della fondazione.
+      evidence: []
+    - id: F5
+      description: È stato avviato un procedimento penale contro C._, non ancora concluso
+        a causa della sua età avanzata e precario stato di salute.
+      evidence: []
+    - id: F6
+      description: Il 9 maggio 2001 la fondazione B._ ha convenuto la A._SA dinanzi
+        al Tribunale d'appello del Cantone Ticino per ottenere il rimborso di fr.
+        676'784.25 oltre interessi.
+      evidence: []
+    - id: F7
+      description: Con sentenza del 10 aprile 2008, il Tribunale d'appello ha accolto
+        la petizione limitatamente a fr. 394'584.25 per la restituzione degli importi
+        prelevati in esecuzione di una garanzia dichiarata nulla.
+      evidence: []
+    - id: F8
+      description: Il Tribunale d'appello ha ammesso la domanda di restituzione per
+        fr. 62'724.60, ritenendo la fondazione responsabile di parte della perdita
+        per la fiducia riposta in C._.
+      evidence: []
+    - id: F9
+      description: Le richieste relative alla liberazione della cauzione processuale
+        sono state disattese.
+      evidence: []
+    - id: F10
+      description: Il 15 maggio 2008 la A._SA ha insorto dinanzi al Tribunale federale
+        con ricorso in materia civile.
+      evidence: []
+    - id: F11
+      description: La fondazione B._ ha proposto di respingere il ricorso nella risposta
+        del 26 giugno 2008.
+      evidence: []
+    disputed:
+    - id: D1
+      description: Validità della messa a garanzia dei beni della fondazione a favore
+        di esposizioni personali di C._ e conoscenza da parte della banca del conflitto
+        d'interessi.
+      depends_on_facts:
+      - F1
+      - F2
+      - F4
+      - F7
+      positions:
+        ricorrente: La banca non ha violato i doveri di diligenza e la garanzia è
+          valida o la banca non era tenuta a scoprire il conflitto d'interessi.
+        controparte: La messa a garanzia è nulla poiché non prevista dagli scopi della
+          fondazione e il conflitto d'interessi era evidente; la banca sapeva che
+          l'atto beneficiava C._ personalmente.
+    - id: D2
+      description: Responsabilità della fondazione per i prelevamenti illeciti e ripartizione
+        delle perdite tra banca e fondazione.
+      depends_on_facts:
+      - F4
+      - F5
+      - F8
+      positions:
+        ricorrente: La banca non è responsabile per i prelevamenti o la responsabilità
+          è inferiore a quanto stabilito dal tribunale cantonale.
+        controparte: La fondazione deve sopportare parte delle perdite (fr. 62'724.60)
+          a causa della cieca fiducia riposta in C._, nonostante la negligenza della
+          banca.
+  legal_texts: []
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: La sentenza deve essere modificata per la reiezione integrale della
+          petizione.
+        direction: appello
+        references_facts:
+        - F7
+        - F8
+        - D1
+      controparte:
+      - id: SEED_RARG1
+        claim: Il ricorso deve essere respinto confermando la sentenza cantonale.
+        direction: difesa
+        references_facts:
+        - F1
+        - F4
+        - D1
+  timeline:
+  - date: '1978'
+    event: Costituzione della fondazione B._
+  - date: '1998-01-01'
+    event: Scoperta dei prelevamenti illeciti e delle garanzie
+  - date: '2001-05-09'
+    event: Azione legale della fondazione contro la banca
+  - date: '2001-10-04'
+    event: Decorrenza interessi sulla somma di garanzia
+  - date: '2008-04-10'
+    event: Sentenza del Tribunale d'appello del Cantone Ticino
+  - date: '2008-05-15'
+    event: Ricorso in materia civile della A._SA al Tribunale federale
+  - date: '2008-06-26'
+    event: Risposta della fondazione B._ al ricorso
+  id: ch-2344

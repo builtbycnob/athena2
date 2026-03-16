@@ -1,0 +1,11 @@
+{
+  "case_id": "ch-1295",
+  "source": "swiss_judgment_prediction",
+  "outcome": "rejection",
+  "outcome_raw": 0,
+  "extraction_confidence": "high",
+  "legal_area": "civil law",
+  "year": 2006,
+  "canton": "ti",
+  "region": "Ticino"
+}

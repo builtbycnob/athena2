@@ -1,0 +1,157 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: n/a
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Accertamento della proprietà di una stradicciola pubblica e verifica
+      della legittimità della presunzione di proprietà comunale e dell'assenza di
+      malafede.
+  evidence:
+  - id: DOC1
+    type: contratti
+    description: Contratti agli atti concernenti fondi siti nella frazione di Neer.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F1
+  - id: DOC2
+    type: deposizioni_testimoniali
+    description: Deposizioni testimoniali confermate dalla Corte cantonale.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F2
+  facts:
+    undisputed:
+    - id: F1
+      description: La particella stradale zzz (tratto di una stradicciola sita nella
+        frazione di Neer) è stata attribuita al Comune politico di Roveredo nell'ambito
+        della procedura di terminazione.
+      evidence: []
+    - id: F2
+      description: La stradicciola in questione serve e serviva da memoria d'uomo
+        al pubblico quale via di collegamento fra le due strade che da San Giulio
+        portano alle frazioni di Rugno, Maron e Guerra.
+      evidence: []
+    disputed:
+    - id: D1
+      description: La proprietà della particella stradale zzz appartiene alla comunione
+        ereditaria fu D._ (A., B., C.) o al Comune politico di Roveredo.
+      depends_on_facts:
+      - F1
+      - F2
+      positions:
+        ricorrente: La particella stradale zzz è parte della particella vvv di loro
+          proprietà e non del Comune.
+        controparte: La particella appartiene al Comune politico di Roveredo in virtù
+          della presunzione di proprietà per le strade sul territorio comunale e dell'uso
+          pubblico.
+    - id: D2
+      description: Il Comune politico di Roveredo ha agito in malafede tollerando
+        gli atti dei proprietari.
+      depends_on_facts:
+      - F1
+      - F2
+      positions:
+        ricorrente: Il Comune ha agito in malafede tollerando gli atti degli appellanti.
+        controparte: Il Comune non ha agito in malafede.
+  legal_texts:
+  - id: norm_1
+    norm: art. 664 CC
+    text: '[Testo da fedlex.admin.ch: art. 664 CC]'
+  - id: norm_2
+    norm: art. 119 LICC
+    text: '[Testo da fedlex.admin.ch: art. 119 LICC]'
+  - id: norm_3
+    norm: art. 10 Ordinanza grigione sulla misurazione ufficiale
+    text: '[Testo da fedlex.admin.ch: art. 10 Ordinanza grigione sulla misurazione
+      ufficiale]'
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: Violazione del diritto cantonale e arbitrarietà nell'applicazione dell'art.
+          119 LICC e dell'art. 10 Ordinanza grigione sulla misurazione ufficiale.
+        direction: annullamento
+        references_facts:
+        - F1
+        - D1
+      - id: SEED_ARG2
+        claim: Violazione del principio della buona fede per l'agire in malafede del
+          Comune.
+        direction: annullamento
+        references_facts:
+        - D2
+      controparte:
+      - id: SEED_RARG1
+        claim: Esistenza di una presunzione di proprietà in favore del Comune per
+          le strade sul suo territorio e sussistenza dei presupposti per l'uso pubblico.
+        direction: rigetto
+        references_facts:
+        - F1
+        - F2
+      - id: SEED_RARG2
+        claim: Assenza di malafede del Comune nel tollerare gli atti degli appellanti.
+        direction: rigetto
+        references_facts:
+        - D2
+  timeline:
+  - date: '2002-07-10'
+    event: Decisione della Commissione di terminazione che respinge l'opposizione.
+  - date: '2002-09-12'
+    event: Istanza di A., B. e C. che convenivano il Comune politico di Roveredo.
+  - date: '2004-02-04'
+    event: Sentenza del Tribunale distrettuale Moesa che respinge l'azione.
+  - date: '2004-11-02'
+    event: Decisione della Camera civile del Tribunale cantonale dei Grigioni che
+      respinge l'appello.
+  - date: '2005-02-01'
+    event: Ricorso di diritto pubblico al Tribunale Federale.
+  id: ch-1040

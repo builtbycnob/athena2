@@ -1,0 +1,231 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione dell'entità del risarcimento dovuto da A._ SA e dai
+      singoli comproprietari per mancata redistribuzione degli utili, affitti di favore
+      e spese sproporzionate, nonché validità della compensazione per proventi fiscali
+      non tracciati.
+  evidence:
+  - id: DOC1
+    type: atto_pubblico
+    description: Verbale dell'asta pubblica del 2 dicembre 2002 relativa alla quota
+      di F.A._.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F5
+  - id: DOC2
+    type: atto_pubblico
+    description: Sentenza del Pretore del Distretto di Bellinzona del 6 agosto 2008.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F10
+  - id: DOC3
+    type: atto_pubblico
+    description: Sentenza della II Camera civile del Tribunale d'appello del Cantone
+      Ticino del 26 febbraio 2010.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F11
+  - id: DOC4
+    type: documento_privato
+    description: Atti di cessione dei crediti del 7 settembre 2000 e 6 aprile 2002.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F7
+    - F8
+  facts:
+    undisputed:
+    - id: F1
+      description: L'immobile denominato 'X._' sorge sulla part. xxx RFD ed è composto
+        da appartamenti, uffici e negozi. Appartiene alla famiglia A._ dalla fine
+        degli anni Sessanta.
+      evidence: []
+    - id: F2
+      description: Dal 1969 al 1982 la comproprietà era composta dai coniugi C.A._
+        e D.A._ e dai figli E.A._, F.A._ e G.A._ in ragione di 1/5 ciascuno.
+      evidence: []
+    - id: F3
+      description: Il 26 febbraio 1982 C.A._, D.A._ e G.A._ hanno ceduto le loro quote
+        a E.A._.
+      evidence: []
+    - id: F4
+      description: L'11 agosto 1989 E.A._ ha donato una quota di 1/5 ai figli H.A._,
+        I.A._, J.A._ e K.A._.
+      evidence: []
+    - id: F5
+      description: Il 2 dicembre 2002 i quattro figli si sono aggiudicati all'asta
+        la quota di 1/5 dello zio F.A._, diventando comproprietari in misura di 1/10
+        ciascuno.
+      evidence: []
+    - id: F6
+      description: L'amministrazione dell'immobile è stata gestita dalla società di
+        famiglia A._ SA.
+      evidence: []
+    - id: F7
+      description: Il 7 settembre 2000 L._ ha acquistato all'asta un credito contestato
+        di fr. 870'000.-- vantato da F.A._ contro E.A._.
+      evidence: []
+    - id: F8
+      description: Il 6 aprile 2002 la società B._ si è fatta cedere da F.A._ tutti
+        gli ulteriori crediti verso A._ SA, E.A._, J.A._, K.A._, H.A._ e I.A._.
+      evidence: []
+    - id: F9
+      description: L'11 giugno 2002 B._ ha avviato causa dinanzi alla Pretura del
+        Distretto di Bellinzona.
+      evidence: []
+    - id: F10
+      description: Il 6 agosto 2008 il Pretore ha condannato A._ SA e E.A._ in solido
+        al pagamento di fr. 887'310.90 oltre interessi.
+      evidence: []
+    - id: F11
+      description: Il 26 febbraio 2010 la II Camera civile del Tribunale d'appello
+        del Cantone Ticino ha riformato la sentenza pretorile, condannando la sola
+        A._ SA al pagamento di fr. 713'757.90 oltre interessi.
+      evidence: []
+    - id: F12
+      description: Il 16 aprile 2010 A._ SA ha presentato ricorso al Tribunale federale.
+      evidence: []
+    disputed:
+    - id: D1
+      description: La validità della compensazione proposta da A._ SA di un credito
+        di fr. 1'300'000.-- (o fr. 780'781.20) derivante dai proventi delle marche
+        di bollo incassati da F.A._.
+      depends_on_facts:
+      - F6
+      - F10
+      positions:
+        ricorrente: A._ SA sostiene di poter validamente porre in compensazione il
+          proprio credito per i proventi delle marche di bollo, riducendo l'importo
+          dovuto.
+        controparte: B._ e F.A._ sostengono che non è stato possibile stabilire l'esatta
+          destinazione dei proventi e che mancano le prove necessarie per la compensazione.
+    - id: D2
+      description: L'entità del danno derivante dalla mancata redistribuzione degli
+        utili e dagli affitti di favore concessi.
+      depends_on_facts:
+      - F1
+      - F6
+      - F9
+      positions:
+        ricorrente: A._ SA chiede la reiezione della petizione o una riduzione drastica
+          degli importi, sostenendo che gli utili sono stati redistribuiti o che le
+          spese sono legittime.
+        controparte: B._ sostiene la correttezza delle somme richieste per la mancata
+          redistribuzione degli utili (fr. 583'927.--), gli affitti di favore e le
+          spese sproporzionate.
+  legal_texts: []
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: Reiezione della petizione in via principale e recesso dalla condanna
+          al pagamento.
+        direction: favorabile
+        references_facts:
+        - F10
+        - F11
+        - D1
+      - id: SEED_ARG2
+        claim: Riforma della decisione cantonale per accoglimento della petizione
+          limitatamente all'importo che il Tribunale federale riterrà di fissare.
+        direction: favorabile
+        references_facts:
+        - F11
+        - D2
+      - id: SEED_ARG3
+        claim: Riconoscimento della compensazione valida per i proventi delle marche
+          di bollo.
+        direction: favorabile
+        references_facts:
+        - D1
+      controparte:
+      - id: SEED_RARG1
+        claim: Reiezione del gravame nella misura in cui ammissibile, confermando
+          la condanna della sola A._ SA.
+        direction: contrario
+        references_facts:
+        - F11
+        - D1
+      - id: SEED_RARG2
+        claim: Conferma dell'assenza di prove per la compensazione dei proventi delle
+          marche di bollo.
+        direction: contrario
+        references_facts:
+        - D1
+  timeline:
+  - date: '1969-01-01'
+    event: Inizio della comproprietà della famiglia A._ sull'immobile.
+  - date: '1982-02-26'
+    event: Cessione delle quote da C.A._, D.A._ e G.A._ a E.A._.
+  - date: '1989-08-11'
+    event: Donazione di una quota di 1/5 da E.A._ ai figli.
+  - date: '2000-09-07'
+    event: Acquisto all'asta del credito di F.A._ da parte di L._.
+  - date: '2002-04-06'
+    event: Cessione dei crediti a B._.
+  - date: '2002-06-11'
+    event: Avvio della causa giudiziaria da parte di B._.
+  - date: '2008-08-06'
+    event: Sentenza pretorile parziale accoglimento.
+  - date: '2010-02-26'
+    event: Sentenza di appello che condanna la sola A._ SA.
+  - date: '2010-04-16'
+    event: Ricorso al Tribunale federale da parte di A._ SA.
+  - date: '2010-06-22'
+    event: Respingimento istanza effetto sospensivo.
+  - date: '2010-09-07'
+    event: Accoglimento supercautelare istanza effetto sospensivo.
+  id: ch-2873

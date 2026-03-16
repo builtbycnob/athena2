@@ -1,0 +1,195 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Accertamento di discriminazione sessuale in materia di retribuzione
+      e qualifica professionale, con conseguente condanna al pagamento di arretrati
+      salariali e indennità.
+  evidence:
+  - id: DOC1
+    type: atto_pubblico
+    description: Documentazione relativa all'assunzione, all'inserimento in organico
+      e alle qualifiche professionali di A._.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F1
+    - F2
+  - id: DOC2
+    type: atto_pubblico
+    description: Lettera della RTSI del 17 dicembre 1997 e documenti relativi al nuovo
+      sistema remunerativo.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F4
+  facts:
+    undisputed:
+    - id: F1
+      description: A._ si è laureata nel 1973 e assunta dalla RTSI nel 1976 come praticante
+        e free lance, inserita in organico nel 1983 in 16esima classe come redattrice,
+        raggiungendo il massimo salariale nel 1988.
+      evidence:
+      - DOC1
+    - id: F2
+      description: A partire dal 1995, A._ ha richiesto una ridefinizione della qualifica
+        salariale per la doppia funzione di giornalista e regista, ottenendo gratifiche
+        nel 1995 e 1996.
+      evidence: []
+    - id: F3
+      description: Il 23 aprile 1997 A._ ha adito l'Ufficio di conciliazione in materia
+        di parità dei sessi, con constatazione di mancata conciliazione il 19 settembre
+        1997.
+      evidence: []
+    - id: F4
+      description: Con lettera del 17 dicembre 1997, la RTSI ha collocato A._ nella
+        categoria 'redattrice-documentarista DAC' (245 punti, fr. 116'700.--), mentre
+        C._, D._, F._ e G._ sono stati inseriti nella categoria 'registi livello I'
+        (270 punti, fr. 131'118.--).
+      evidence:
+      - DOC2
+    - id: F5
+      description: Il Pretore del Distretto di Lugano, con sentenza del 4 agosto 2003,
+        ha accertato una discriminazione salariale fondata sul sesso ai sensi dell'art.
+        3 LPar e ha condannato la RTSI al pagamento di fr. 147'785.-- lordi più interessi
+        e fr. 15'000.-- di ripetibili.
+      evidence: []
+    - id: F6
+      description: La Corte cantonale, con sentenza del 1° marzo 2005, ha riformato
+        la sentenza pretorile, negando la discriminazione fondata sul sesso e respingendo
+        integralmente la petizione, riconoscendo una giustificazione oggettiva nella
+        diversità delle attività.
+      evidence: []
+    disputed:
+    - id: D1
+      description: Esistenza di una discriminazione salariale fondata sul sesso tra
+        A._ e i colleghi maschi (C._, D._, E._, F._, G._) per attività comparabili.
+      depends_on_facts:
+      - F1
+      - F4
+      - F6
+      positions:
+        ricorrente: A._ sostiene che la differenza di trattamento è discriminatoria
+          e non giustificata, poiché svolge attività comparabile ai colleghi maschi
+          che godono di una classe superiore.
+        controparte: La RTSI sostiene che la differenza di statuto e salario trova
+          giustificazione oggettiva nella diversità delle attività svolte (redattrice
+          vs regista).
+  legal_texts:
+  - id: norm_1
+    norm: art. 3 LPar
+    text: '[Testo da fedlex.admin.ch: art. 3 LPar]'
+  - id: norm_2
+    norm: art. 6 LPar
+    text: '[Testo da fedlex.admin.ch: art. 6 LPar]'
+  - id: norm_3
+    norm: art. 64 cpv. 2 OG
+    text: '[Testo da fedlex.admin.ch: art. 64 cpv. 2 OG]'
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: Accertamento della discriminazione sessuale e riconoscimento del diritto
+          a un trattamento salariale paritario.
+        direction: a favore della ricorrente
+        references_facts:
+        - F1
+        - F4
+        - D1
+      - id: SEED_ARG2
+        claim: La differenza di trattamento non è obiettivamente giustificata e viola
+          gli art. 3 e 6 LPar.
+        direction: a favore della ricorrente
+        references_facts:
+        - F4
+        - D1
+      controparte:
+      - id: SEED_RARG1
+        claim: La differenza di retribuzione è giustificata oggettivamente dalla diversità
+          delle attività svolte (redattrice vs regista).
+        direction: a favore della controparte
+        references_facts:
+        - F4
+        - D1
+  timeline:
+  - date: '1973-00-00'
+    event: Laurea di A._ in storia e lettere a Friburgo.
+  - date: '1976-08-01'
+    event: Assunzione di A._ dalla RTSI come praticante e free lance.
+  - date: '1983-00-00'
+    event: Inserimento di A._ in organico in 16esima classe come redattrice.
+  - date: '1988-00-00'
+    event: Raggiungimento del massimo salariale da parte di A._.
+  - date: '1995-00-00'
+    event: Prima richiesta di ridefinizione della qualifica salariale da parte di
+      A._.
+  - date: '1996-00-00'
+    event: Seconda richiesta di ridefinizione della qualifica salariale da parte di
+      A._.
+  - date: '1997-04-23'
+    event: Ricorso di A._ all'Ufficio di conciliazione in materia di parità dei sessi.
+  - date: '1997-09-19'
+    event: Constatazione di mancata conciliazione.
+  - date: '1997-12-17'
+    event: Comunicazione della RTSI del nuovo inquadramento salariale di A._ e dei
+      colleghi.
+  - date: '1997-12-16'
+    event: Ricorso di A._ alla Pretura del Distretto di Lugano.
+  - date: '2003-08-04'
+    event: Sentenza del Pretore che accerta la discriminazione e condanna la RTSI.
+  - date: '2005-03-01'
+    event: Sentenza della Corte cantonale che riforma la sentenza pretorile e respinge
+      la petizione.
+  - date: '2005-04-20'
+    event: Ricorso di A._ al Tribunale federale.
+  - date: '2005-05-25'
+    event: Risposta della RTSI al ricorso federale.
+  id: ch-1146

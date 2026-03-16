@@ -1,0 +1,197 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione della validità della delegazione dei creditori, della
+      nomina dell'amministratrice speciale e della possibilità di disdire immediatamente
+      il contratto di locazione dei macchinari della fallita.
+  evidence:
+  - id: DOC1
+    type: verbale_assemblea
+    description: Verbale dell'assemblea dei creditori del 29 novembre 2007 relativa
+      alla nomina dell'amministratrice e della delegazione.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F1
+    - F2
+    - F3
+  - id: DOC2
+    type: decisione_cantonale
+    description: Decisione della Camera di esecuzione e fallimenti del 18 febbraio
+      2008 con nuovo conteggio dei voti ed esclusione di società.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F4
+    - F5
+  - id: DOC3
+    type: decreto_presidenziale
+    description: Decreto del Presidente della Corte adita del 25 marzo 2008 che conferisce
+      effetto sospensivo.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F6
+  facts:
+    undisputed:
+    - id: F1
+      description: Il Pretore del distretto di Riviera ha dichiarato il fallimento
+        della C._SA il 9 ottobre 2007.
+      evidence:
+      - DOC1
+    - id: F2
+      description: L'assemblea dei creditori del 29 novembre 2007 ha nominato l'avv.
+        H._ amministratrice speciale e una delegazione composta dagli avvocati I._,
+        J._ e K._.
+      evidence: []
+    - id: F3
+      description: L'assemblea ha respinto la richiesta di disdire con effetto immediato
+        il contratto di locazione dei macchinari stipulato tra l'Ufficio fallimenti
+        di Riviera e la E._SA.
+      evidence: []
+    - id: F4
+      description: La Camera di esecuzione e fallimenti del Tribunale di appello del
+        Cantone Ticino ha respinto il gravame con decisione del 18 febbraio 2008.
+      evidence:
+      - DOC2
+    - id: F5
+      description: L'autorità di vigilanza ha escluso tre procure firmate da persone
+        non abilitate e ha escluso dal voto le società E._SA e D._SA per appartenenza
+        al gruppo L._.
+      evidence:
+      - DOC2
+    - id: F6
+      description: Il Presidente della Corte adita ha conferito effetto sospensivo
+        al gravame con decreto del 25 marzo 2008.
+      evidence:
+      - DOC3
+    disputed:
+    - id: D1
+      description: Validità delle procure concesse all'avv. F._ e composizione della
+        delegazione dei creditori.
+      depends_on_facts:
+      - F1
+      - F2
+      - F5
+      positions:
+        ricorrente: Le procure concesse a F._ non sono valide e vi è una macchinazione
+          orchestrata dalla E._SA.
+        controparte: L'autorità cantonale ha confermato le risoluzioni basandosi su
+          un nuovo conteggio, ritenendo valide le procure residue e negando prove
+          di compera dei voti o appartenenza al gruppo L._ per le altre società.
+    - id: D2
+      description: Legittimità della disdetta immediata del contratto di locazione
+        dei macchinari.
+      depends_on_facts:
+      - F3
+      - F6
+      positions:
+        ricorrente: Le ricorrenti chiedono la disdetta immediata del contratto di
+          locazione.
+        controparte: L'Ufficio di esecuzione e fallimenti ritiene che la richiesta
+          di disdetta diverrà senza oggetto poiché intende procedere alla realizzazione
+          dei beni entro metà novembre.
+  legal_texts: []
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: Le procure concesse all'avv. F._ sono nulle e la delegazione dei creditori
+          è viziata.
+        direction: annullamento
+        references_facts:
+        - F1
+        - D1
+      - id: SEED_ARG2
+        claim: Esiste una macchinazione orchestrata dalla E._SA per manipolare il
+          voto.
+        direction: annullamento
+        references_facts:
+        - D1
+      - id: SEED_ARG3
+        claim: La disdetta immediata del contratto di locazione deve essere accolta.
+        direction: accoglimento
+        references_facts:
+        - D2
+      controparte:
+      - id: SEED_RARG1
+        claim: L'operato dell'Ufficio di esecuzione e fallimenti è corretto e le risoluzioni
+          sono legittime.
+        direction: rigetto
+        references_facts:
+        - F1
+        - F5
+      - id: SEED_RARG2
+        claim: La richiesta di disdetta diverrà senza oggetto a causa della prossima
+          realizzazione dei beni.
+        direction: rigetto
+        references_facts:
+        - D2
+  timeline:
+  - date: '2007-10-09'
+    event: Dichiarazione del fallimento della C._SA da parte del Pretore del distretto
+      di Riviera.
+  - date: '2007-11-29'
+    event: 'Prima assemblea dei creditori: nomina amministratrice e delegazione, respinta
+      disdetta contratto.'
+  - date: '2008-02-18'
+    event: Decisione della Camera di esecuzione e fallimenti del Cantone Ticino che
+      respinge il gravame.
+  - date: '2008-02-25'
+    event: Ricorso in materia civile depositato da A._SA e B._SA.
+  - date: '2008-03-25'
+    event: Decreto del Presidente della Corte adita che conferisce effetto sospensivo.
+  - date: '2008-10-06'
+    event: Osservazioni dell'Ufficio di esecuzione e fallimenti.
+  - date: '2008-10-09'
+    event: Osservazioni della D._SA e E._SA.
+  id: ch-2195

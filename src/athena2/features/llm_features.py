@@ -167,8 +167,40 @@ class LLMFeatures:
     extraction_time_s: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
+        """Convert to dict with column names matching phase3_multitask expectations.
+
+        phase3 MultiTaskDataset expects feature keys: law_area, error, reasoning, outcome.
+        We provide integer-encoded versions for direct use as training labels.
+        """
+        # Integer-encode error presence (binary label for error head)
+        error_label = 1 if any(
+            e.get("severity") in ("decisive", "significant") for e in self.errors_identified
+        ) else 0
+
+        # Integer-encode reasoning pattern
+        reasoning_map = {
+            "de_novo_review": 0, "arbitrariness_review": 1, "proportionality_test": 2,
+            "balancing_test": 3, "subsumption": 4, "teleological": 5,
+            "systematic": 6, "historical": 7, "mixed": 8,
+        }
+        reasoning_label = reasoning_map.get(self.reasoning_pattern, 8)  # default to "mixed"
+
+        # Integer-encode outcome granular
+        outcome_map = {
+            "full_dismissal": 0, "full_approval": 1, "partial_approval": 2,
+            "remand": 3, "inadmissible": 4, "withdrawn": 5, "other": 6,
+        }
+        outcome_label = outcome_map.get(self.outcome_granular, 6)  # default to "other"
+
         return {
             "decision_id": self.decision_id,
+            # Integer-encoded labels matching phase3 MultiTaskDataset keys
+            "error": error_label,
+            "reasoning": reasoning_label,
+            "outcome": outcome_label,
+            # Raw string values for analysis
+            "reasoning_pattern": self.reasoning_pattern,
+            "outcome_granular": self.outcome_granular,
             "n_errors": len(self.errors_identified),
             "has_decisive_error": any(
                 e.get("severity") == "decisive" for e in self.errors_identified
@@ -179,10 +211,8 @@ class LLMFeatures:
                 key=lambda s: {"decisive": 3, "significant": 2, "minor": 1, "none": 0}.get(s, -1),
                 default="none",
             ),
-            "reasoning_pattern": self.reasoning_pattern,
             "decisive_factor": self.decisive_factor,
             "standard_of_review": self.standard_of_review,
-            "outcome_granular": self.outcome_granular,
             "errors_json": json.dumps(self.errors_identified),
             "extraction_success": self.extraction_success,
             "extraction_error": self.extraction_error,
@@ -244,12 +274,24 @@ def extract_single(
 
     t0 = time.time()
     try:
-        client = httpx.Client(base_url=omlx_base_url, timeout=300.0)
-        resp = client.post("/v1/chat/completions", json=payload)
-        resp.raise_for_status()
+        with httpx.Client(base_url=omlx_base_url, timeout=300.0) as client:
+            resp = client.post("/v1/chat/completions", json=payload)
+            resp.raise_for_status()
 
         data = resp.json()
         content = data["choices"][0]["message"]["content"]
+
+        # JSON repair: strip markdown fences, fix trailing commas
+        content = content.strip()
+        if content.startswith("```"):
+            content = content.split("\n", 1)[-1]
+            if content.endswith("```"):
+                content = content[:-3]
+            content = content.strip()
+        # Fix trailing commas before } or ]
+        import re
+        content = re.sub(r",\s*([}\]])", r"\1", content)
+
         parsed = json.loads(content)
 
         features.errors_identified = parsed.get("errors_identified", [])

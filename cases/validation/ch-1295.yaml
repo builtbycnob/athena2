@@ -1,0 +1,210 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: La posta in gioco riguarda la revoca della privazione della custodia
+      parentale dei genitori A.B. e A.A. sulla figlia C.A., il mantenimento o meno
+      del collocamento della minore in un istituto di cura e la regolamentazione del
+      diritto di visita, valutando la sussistenza di gravi motivi che ostano al ripristino
+      della custodia.
+  evidence:
+  - id: DOC1
+    type: atto_pubblico
+    description: Decisione del 22 febbraio 1996 di privazione della custodia parentale.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F1
+  - id: DOC2
+    type: atto_pubblico
+    description: Decisione della CTR 7 del 22 giugno 2004 sulla revoca dell'affidamento
+      e collocamento in foyer.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F2
+  - id: DOC3
+    type: atto_pubblico
+    description: Decisione dell'autorità di vigilanza del 18 febbraio 2005 sul ricorso
+      dei genitori.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F3
+  - id: DOC4
+    type: atto_pubblico
+    description: Sentenza della I Camera civile del Tribunale d'appello del Cantone
+      Ticino del 29 settembre 2005.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F4
+    - F5
+  facts:
+    undisputed:
+    - id: F1
+      description: Il 22 febbraio 1996, A.B. e A.A. sono stati privati della custodia
+        parentale sulla figlia C.A. (nata nel 1991), collocata presso una famiglia
+        affidataria.
+      evidence:
+      - DOC1
+    - id: F2
+      description: Il 22 giugno 2004, la CTR 7 ha revocato l'affidamento alla famiglia
+        affidataria, confermato la privazione della custodia parentale e collocato
+        C.A. in un foyer a Mendrisio a spese dei genitori.
+      evidence:
+      - DOC2
+    - id: F3
+      description: Il 18 febbraio 2005, l'autorità di vigilanza sulle tutele e curatele
+        ha respinto il ricorso dei genitori contro la privazione della custodia e
+        il collocamento, annullando solo la decisione sulle rette dell'istituto.
+      evidence:
+      - DOC3
+    - id: F4
+      description: Con sentenza del 29 settembre 2005, la I Camera civile del Tribunale
+        d'appello del Cantone Ticino ha riformato la decisione del 18 febbraio 2005,
+        regolamentando il diritto di visita dei genitori.
+      evidence:
+      - DOC4
+    - id: F5
+      description: La Corte cantonale ha rilevato che, sebbene l'art. 310 cpv. 3 CC
+        non sia più applicabile, sussistono gravi ragioni che ostano al ripristino
+        immediato della custodia parentale ai sensi dell'art. 310 cpv. 1 CC.
+      evidence:
+      - DOC4
+    disputed:
+    - id: D1
+      description: Sussistenza di gravi motivi ai sensi dell'art. 310 CC per negare
+        la custodia parentale e la necessità di mantenere il collocamento in istituto.
+      depends_on_facts:
+      - F1
+      - F2
+      - F5
+      positions:
+        ricorrente: I genitori sostengono che non sussistano gravi motivi per negare
+          la custodia e che eventuali pericoli per la salute della figlia possano
+          essere gestiti con provvedimenti adeguati o cercando specialisti.
+        controparte: Le autorità giudiziarie e la Corte cantonale ritengono che esistano
+          gravi ragioni che mettono a repentaglio lo sviluppo della ragazza, giustificando
+          la privazione della custodia e il collocamento.
+    - id: D2
+      description: Correttezza della regolamentazione del diritto di visita e dell'addebito
+        delle rette dell'istituto.
+      depends_on_facts:
+      - F2
+      - F3
+      - F4
+      positions:
+        ricorrente: I genitori chiedono l'annullamento dei dispositivi della CTR 7
+          riguardanti il collocamento in foyer e l'attribuzione delle rette ai genitori.
+        controparte: Le autorità hanno confermato quanto disposto dalla CTR 7 e dalla
+          Corte cantonale, ritenendo il diritto di visita e l'assetto economico adeguati.
+  legal_texts:
+  - id: norm_1
+    norm: art. 310 cpv. 1 CC
+    text: '[Testo da fedlex.admin.ch: art. 310 cpv. 1 CC]'
+  - id: norm_2
+    norm: art. 310 cpv. 3 CC
+    text: '[Testo da fedlex.admin.ch: art. 310 cpv. 3 CC]'
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: Revoca della privazione della custodia parentale e annullamento del
+          collocamento in istituto.
+        direction: favorevole
+        references_facts:
+        - F1
+        - F2
+        - D1
+      - id: SEED_ARG2
+        claim: Non sussistono gravi motivi ai sensi dell'art. 310 CC per negare la
+          custodia; eventuali rischi possono essere gestiti con provvedimenti adeguati.
+        direction: favorevole
+        references_facts:
+        - F5
+        - D1
+      - id: SEED_ARG3
+        claim: Annulamento dei dispositivi relativi alle rette dell'istituto e alla
+          vigilanza sul collocamento.
+        direction: favorevole
+        references_facts:
+        - F2
+        - D2
+      controparte:
+      - id: SEED_RARG1
+        claim: Sussistono gravi motivi ai sensi dell'art. 310 cpv. 1 CC che ostano
+          al ripristino immediato della custodia parentale.
+        direction: sfavorevole
+        references_facts:
+        - F5
+      - id: SEED_RARG2
+        claim: Il collocamento in istituto e la regolamentazione del diritto di visita
+          sono necessari per proteggere lo sviluppo della ragazza.
+        direction: sfavorevole
+        references_facts:
+        - F2
+        - F4
+  timeline:
+  - date: '1996-02-22'
+    event: Privazione della custodia parentale e collocamento in famiglia affidataria.
+  - date: '2004-06-22'
+    event: 'Decisione CTR 7: revoca affidamento, conferma privazione custodia, collocamento
+      in foyer a Mendrisio.'
+  - date: '2005-02-18'
+    event: Autorità di vigilanza respinge ricorso genitori su privazione custodia
+      e collocamento.
+  - date: '2005-09-29'
+    event: 'Sentenza Tribunale d''appello Ticino: riforma decisione, regolamentazione
+      diritto di visita.'
+  - date: '2005-10-29'
+    event: Ricorso per riforma al Tribunale Federale da parte dei genitori.
+  id: ch-1295

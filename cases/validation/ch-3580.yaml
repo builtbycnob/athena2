@@ -1,0 +1,147 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione della validità di un testamento olografo successivo
+      e della conseguente attribuzione della qualifica di erede universale, in contrasto
+      con la diseredazione della figlia legittima.
+  evidence:
+  - id: DOC1
+    type: testamento_olografo
+    description: Testamento olografo del 26 aprile 2003 redatto da C._
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F2
+  - id: DOC2
+    type: sentenza_giudiziaria
+    description: Sentenza del Pretore di Locarno Campagna del 11 febbraio 2011 e sentenza
+      del Tribunale d'appello del Cantone Ticino del 30 luglio 2012
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F3
+    - F4
+  facts:
+    undisputed:
+    - id: F1
+      description: C._, cittadina tedesca domiciliata a X._, è deceduta il 13 agosto
+        2003 lasciando quale unica erede legittima la figlia B._.
+      evidence:
+      - DOC1
+    - id: F2
+      description: Il 26 aprile 2003 C._ ha redatto un testamento olografo istituendo
+        A._ come erede universale e diseredando la figlia B._.
+      evidence:
+      - DOC1
+    - id: F3
+      description: Il Pretore di Locarno Campagna ha annullato il testamento del 26
+        aprile 2003 con sentenza 11 febbraio 2011, dichiarando B._ unica erede.
+      evidence:
+      - DOC2
+    - id: F4
+      description: La I Camera civile del Tribunale d'appello del Cantone Ticino ha
+        confermato la decisione pretorile con sentenza 30 luglio 2012.
+      evidence:
+      - DOC2
+    disputed:
+    - id: D1
+      description: Validità del testamento olografo del 26 aprile 2003 e legittimità
+        della diseredazione della figlia B._.
+      depends_on_facts:
+      - F1
+      - F2
+      - F3
+      positions:
+        ricorrente: Il testamento del 26 aprile 2003 è valido e A._ deve essere riconosciuta
+          come unica erede universale.
+        controparte: Il testamento del 26 aprile 2003 deve essere annullato e B._
+          deve essere riconosciuta come unica erede legittima.
+  legal_texts: []
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: Il testamento olografo del 26 aprile 2003 è valido e deve essere fatto
+          valere, annullando la decisione pretorile.
+        direction: annullamento
+        references_facts:
+        - F1
+        - D1
+      controparte:
+      - id: SEED_RARG1
+        claim: Il testamento del 26 aprile 2003 è nullo e la figlia B._ deve essere
+          riconosciuta come unica erede legittima.
+        direction: conferma
+        references_facts:
+        - F1
+  timeline:
+  - date: '1973-03-07'
+    event: Redazione del primo testamento olografo da parte di C._
+  - date: '2002'
+    event: Morte dell'ex marito di C._
+  - date: '2003-06-26'
+    event: Redazione del secondo testamento olografo da parte di C._
+  - date: '2003-08-13'
+    event: Decesso di C._
+  - date: '2003-09-11'
+    event: Pubblicazione dei due testamenti olografi da parte del notaio avv. D._
+  - date: '2004-06-05'
+    event: Introduzione della petizione da parte di B._
+  - date: '2011-02-11'
+    event: Sentenza del Pretore di Locarno Campagna che annulla il testamento del
+      2003
+  - date: '2012-07-30'
+    event: Sentenza del Tribunale d'appello del Cantone Ticino che conferma la decisione
+      pretorile
+  - date: '2012-09-14'
+    event: Ricorso in materia civile al Tribunale federale da parte di A._
+  id: ch-3580

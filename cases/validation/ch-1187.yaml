@@ -1,0 +1,177 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione della responsabilità dei venditori per difetti occulti
+      del bene immobile (infiltrazioni d'acqua), quantificazione del danno (minor
+      valore/spese di riparazione) e verifica della violazione dei diritti costituzionali
+      procedurali nella decisione cantonale.
+  evidence:
+  - id: DOC1
+    type: atto_pubblico
+    description: Atto pubblico di vendita del 8 giugno 2001
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F1
+  - id: DOC2
+    type: sentenza_pretoriale
+    description: Sentenza del Pretore del Distretto di Bellinzona del 19 maggio 2003
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F3
+  - id: DOC3
+    type: sentenza_cantonale
+    description: Sentenza della II Camera civile del Tribunale d'appello del Cantone
+      Ticino del 5 agosto 2004
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F4
+  facts:
+    undisputed:
+    - id: F1
+      description: Con atto pubblico dell'8 giugno 2001, A.A. e B.A. hanno venduto
+        a C.D. ed E.D. la particella n. xxx RFD con casa edificata nel 1989 per fr.
+        450'000.--; il trapasso di proprietà è stato iscritto il 25 settembre 2001.
+      evidence:
+      - DOC1
+    - id: F2
+      description: Nel maggio 2002 si sono verificate infiltrazioni d'acqua riconducibili
+        all'insufficiente tenuta del tetto, che è stato rifatto.
+      evidence: []
+    - id: F3
+      description: Il 19 maggio 2003 il Pretore ha accolto l'azione principale per
+        difetto del bene (art. 197 cpv. 1 CO) e respinto la domanda riconvenzionale,
+        quantificando il danno in fr. 12'500.--.
+      evidence: []
+    - id: F4
+      description: Il 5 agosto 2004 la II Camera civile del Tribunale d'appello del
+        Cantone Ticino ha riformato la sentenza di primo grado accogliendo la domanda
+        riconvenzionale, mantenendo l'accoglimento dell'azione principale.
+      evidence: []
+    disputed:
+    - id: D1
+      description: La legittimità della decisione cantonale e l'eventuale violazione
+        dei diritti costituzionali (arbitrio e diritto di essere sentito) in relazione
+        alla quantificazione del danno e all'accoglimento della domanda riconvenzionale.
+      depends_on_facts:
+      - F1
+      - F2
+      - F3
+      - F4
+      positions:
+        ricorrente: I ricorrenti (venditori) contestano la decisione cantonale, chiedendo
+          l'annullamento per violazione dell'art. 9 Cost. (divieto dell'arbitrio)
+          e dell'art. 29 cpv. 2 Cost. (diritto di essere sentito).
+        controparte: La controparte (acquirenti) ha proposto la reiezione del gravame,
+          difendendo la decisione cantonale.
+  legal_texts:
+  - id: norm_1
+    norm: art. 9 Cost.
+    text: '[Testo da fedlex.admin.ch: art. 9 Cost.]'
+  - id: norm_2
+    norm: art. 29 cpv. 2 Cost.
+    text: '[Testo da fedlex.admin.ch: art. 29 cpv. 2 Cost.]'
+  - id: norm_3
+    norm: art. 197 cpv. 1 CO
+    text: '[Testo da fedlex.admin.ch: art. 197 cpv. 1 CO]'
+  - id: norm_4
+    norm: art. 200 CO
+    text: '[Testo da fedlex.admin.ch: art. 200 CO]'
+  - id: norm_5
+    norm: art. 201 cpv. 3 CO
+    text: '[Testo da fedlex.admin.ch: art. 201 cpv. 3 CO]'
+  - id: norm_6
+    norm: art. 205 CO
+    text: '[Testo da fedlex.admin.ch: art. 205 CO]'
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: Violazione dell'art. 9 Cost. (divieto dell'arbitrio) e dell'art. 29
+          cpv. 2 Cost. (diritto di essere sentito) nella decisione cantonale.
+        direction: annullamento
+        references_facts:
+        - F1
+        - F4
+        - D1
+      controparte:
+      - id: SEED_RARG1
+        claim: Reiezione del gravame e conferma della decisione cantonale che ha accolto
+          la domanda riconvenzionale.
+        direction: reiezione
+        references_facts:
+        - F1
+        - F4
+  timeline:
+  - date: '2001-06-08'
+    event: Stipula dell'atto pubblico di vendita
+  - date: '2001-07-01'
+    event: Preso possesso del fondo dai coniugi D.
+  - date: '2001-09-25'
+    event: Iscrizione del trapasso di proprietà al registro fondiario
+  - date: '2002-05-01'
+    event: Verifica delle infiltrazioni d'acqua e rifacimento del tetto
+  - date: '2002-08-28'
+    event: Azione in pretura per risarcimento del minor valore
+  - date: '2003-05-19'
+    event: Sentenza del Pretore di Bellinzona (accoglimento azione principale, respingimento
+      riconvenzionale)
+  - date: '2004-08-05'
+    event: Sentenza della II Camera civile del Tribunale d'appello del Ticino (riforma
+      parziale)
+  - date: '2004-09-14'
+    event: Ricorso al Tribunale Federale da parte dei venditori
+  - date: '2004-10-27'
+    event: Osservazioni della controparte
+  id: ch-1187

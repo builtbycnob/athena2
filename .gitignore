@@ -14,3 +14,21 @@ build/
 .ruff_cache/
 cases/private/
 .worktrees/
+
+# Data files (large)
+*.parquet
+*.npy
+*.npz
+*.arrow
+*.pt
+*.bin
+*.safetensors
+checkpoint*
+data/models/
+data/processed/
+data/cleaned/
+data/features/
+data/raw/
+
+# Output
+output/

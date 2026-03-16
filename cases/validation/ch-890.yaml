@@ -1,0 +1,138 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione dell'importo corretto del contributo alimentare per
+      la moglie separata e del metodo di calcolo (ripartizione dell'eccedenza vs.
+      dispendio effettivo/tenore di vita) in assenza di risparmi accumulati.
+  evidence:
+  - id: DOC1
+    type: decisione_giudiziaria
+    description: Sentenza del Pretore del distretto di Lugano del 10 settembre 2002
+      e sentenza della I Camera civile del Tribunale d'appello del Cantone Ticino
+      del 21 ottobre 2003.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F2
+    - F3
+  facts:
+    undisputed:
+    - id: F1
+      description: A. B.A. (nata nel 1942) e A.A. (nato nel 1941) si sono sposati
+        nel 1968 e vivono separati dal gennaio 2001. Dalla loro unione sono nati due
+        figli, il minore è divenuto maggiorenne nel 1996. La moglie non esercita attività
+        lucrativa. Le parti non hanno praticamente accumulato risparmi durante la
+        loro convivenza.
+      evidence: []
+    - id: F2
+      description: Con decisione del 10 settembre 2002, il Pretore del distretto di
+        Lugano ha accolto la proposta del marito di versare un contributo mensile
+        di fr. 5'280.-- e di pagare gli oneri fiscali.
+      evidence: []
+    - id: F3
+      description: Con sentenza del 21 ottobre 2003, la I Camera civile del Tribunale
+        d'appello del Cantone Ticino ha modificato il giudizio di primo grado, condannando
+        il marito a versare un contributo mensile di fr. 8'163.-- comprensivo del
+        carico fiscale, ripartendo a metà l'eccedenza dopo aver soddisfatto i fabbisogni
+        dei coniugi.
+      evidence: []
+    disputed:
+    - id: D1
+      description: Determinazione del metodo di calcolo del contributo alimentare
+        e del tenore di vita della moglie durante il matrimonio.
+      depends_on_facts:
+      - F1
+      - F3
+      positions:
+        ricorrente: Il ricorrente sostiene che la decisione cantonale sia arbitraria
+          perché, in presenza di un reddito elevato, non si deve applicare il metodo
+          della ripartizione a metà dell'eccedenza, ma basarsi sul dispendio effettivo
+          delle parti e sul tenore di vita durante il matrimonio (art. 125 CC), il
+          quale non superava i fr. 5'280.-- mensili.
+        controparte: La moglie non ha aderito al sistema adottato dalla Corte cantonale,
+          ma la sua posizione specifica sul calcolo non è dettagliata nel testo; il
+          giudice cantonale ha applicato il metodo della ripartizione a metà dell'eccedenza
+          basandosi sull'assenza di risparmi accumulati.
+  legal_texts:
+  - id: norm_1
+    norm: art. 125 CC
+    text: '[Testo da fedlex.admin.ch: art. 125 CC]'
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: La decisione cantonale è arbitraria e viola l'art. 125 CC.
+        direction: annullamento
+        references_facts:
+        - F1
+        - D1
+      - id: SEED_ARG2
+        claim: Il tenore di vita della moglie durante il matrimonio non superava i
+          fr. 5'280.-- mensili, come dimostrato dai versamenti effettuati in passato.
+        direction: riduzione del contributo
+        references_facts:
+        - F1
+        - D1
+  timeline:
+  - date: '1968-00-00'
+    event: Sposo tra A. B.A. e A.A.
+  - date: '1996-00-00'
+    event: Il minore dei due figli diventa maggiorenne.
+  - date: '2001-01-00'
+    event: Le parti iniziano a vivere separate.
+  - date: '2002-09-10'
+    event: Decisione del Pretore del distretto di Lugano.
+  - date: '2003-10-21'
+    event: Sentenza della I Camera civile del Tribunale d'appello del Cantone Ticino.
+  - date: '2003-11-27'
+    event: Ricorso di diritto pubblico al Tribunale federale da parte di A.A.
+  id: ch-890

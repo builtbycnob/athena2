@@ -1,0 +1,164 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione della legittimazione attiva della società A._ assicurazioni
+      (ex C._ assicurazioni) a richiedere il pagamento di un debito contrattuale e
+      la conseguente conferma o revoca della sentenza pretorile che aveva accolto
+      la petizione.
+  evidence:
+  - id: DOC1
+    type: scrittura_privata
+    description: Conferma sottoscritta da B._ in data 10 marzo 1998 relativa al saldo
+      negativo del conto corrente dell'agenzia di Chiasso al 31 dicembre 1997.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F1
+    - F2
+  facts:
+    undisputed:
+    - id: F1
+      description: In data 15 novembre 1995 C._ assicurazioni, Zurigo, e C._ assicurazioni
+        sulla vita, Ginevra, hanno concluso un contratto di agenzia con B._, il quale
+        ha gestito l'agenzia generale C._ di Chiasso dal 1° gennaio 1996 al 31 dicembre
+        1997.
+      evidence:
+      - DOC1
+    - id: F2
+      description: In data 10 marzo 1998, B._ ha sottoscritto una conferma secondo
+        cui al 31 dicembre 1997 il conto corrente dell'agenzia di Chiasso presentava
+        un saldo negativo di fr. 300'916.25, corrispondente ad anticipi versati in
+        eccesso, importo successivamente ridotto a fr. 140'670.30.
+      evidence:
+      - DOC1
+    - id: F3
+      description: La parte attrice ha modificato la propria ragione sociale da C._
+        assicurazioni, Zurigo, in A._ assicurazioni, Zurigo.
+      evidence: []
+    disputed:
+    - id: D1
+      description: Legittimazione attiva della parte attrice (A._ assicurazioni) a
+        chiedere il pagamento del debito derivante dal contratto di agenzia originariamente
+        stipulato con C._ assicurazioni.
+      depends_on_facts:
+      - F1
+      - F3
+      positions:
+        ricorrente: La parte attrice, subentrata nella ragione sociale, è legittimata
+          a chiedere il pagamento della somma dovuta e la conferma della sentenza
+          pretorile.
+        controparte: La parte attrice non è legittimata attivamente a proporre la
+          petizione, in quanto il contratto originario è stato stipulato con un'altra
+          entità giuridica (C._ assicurazioni) e la successione non conferisce tale
+          legittimazione.
+    - id: D2
+      description: Correttezza della data di decorrenza degli interessi sul debito.
+      depends_on_facts:
+      - F2
+      positions:
+        ricorrente: Gli interessi dovrebbero decorrere dal 31 dicembre 1997, data
+          del saldo negativo confermato.
+        controparte: La questione degli interessi è secondaria rispetto alla carenza
+          di legittimazione attiva; in ogni caso, la sentenza pretorile ha correttamente
+          fissato la decorrenza al 10 luglio 2000.
+  legal_texts: []
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: La sentenza cantonale è errata nel respingere la petizione per carenza
+          di legittimazione attiva; la modifica della ragione sociale non pregiudica
+          la titolarità del credito.
+        direction: conferma
+        references_facts:
+        - F1
+        - F3
+      - id: SEED_ARG2
+        claim: Il debito è provato e dovuto; la questione della legittimazione attiva
+          non deve ostacolare l'esecuzione del titolo esecutivo.
+        direction: conferma
+        references_facts:
+        - F2
+        - D1
+      controparte:
+      - id: SEED_RARG1
+        claim: La parte attrice non ha legittimazione attiva a procedere per il recupero
+          del credito derivante da un contratto stipulato con un'altra società, rendendo
+          la petizione inammissibile.
+        direction: rigetto
+        references_facts:
+        - F1
+        - F3
+        - D1
+  timeline:
+  - date: '1995-11-15'
+    event: Conclusione del contratto di agenzia tra C._ assicurazioni, C._ assicurazioni
+      sulla vita e B._.
+  - date: '1996-01-01'
+    event: Inizio attività di B._ come agente generale.
+  - date: '1997-12-31'
+    event: Fine attività di B._ e saldo negativo del conto corrente.
+  - date: '1998-03-10'
+    event: Sottoscrizione della conferma del debito da parte di B._.
+  - date: '2001-07-24'
+    event: Petizione di C._ assicurazioni per condanna al pagamento.
+  - date: '2007-02-14'
+    event: Sentenza del Pretore di Mendrisio-Sud che accoglie la petizione.
+  - date: '2008-02-22'
+    event: Sentenza della II Camera civile del Tribunale d'appello del Cantone Ticino
+      che accoglie l'appello e respinge la petizione per carenza di legittimazione
+      attiva.
+  - date: '2008-04-07'
+    event: Ricorso in materia civile al Tribunale Federale.
+  - date: '2008-05-19'
+    event: Risposta di B._ al ricorso.
+  id: ch-2210

@@ -1,0 +1,177 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione se la sospensione della procedura di esecutività
+      di una sentenza straniera sia legittima quando l'appello pendente nello Stato
+      di origine non sia privo di possibilità di esito favorevole, e se tale sospensione
+      violi i principi della Convenzione di Lugano.
+  evidence:
+  - id: DOC1
+    type: atto_pubblico
+    description: Decreto ingiuntivo del 27 febbraio 2006, sentenza del 3 aprile 2009,
+      decisione del Pretore del distretto di Lugano del 6 novembre 2009 e decisione
+      del Tribunale di appello del Cantone Ticino del 24 marzo 2010.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F1
+    - F2
+    - F3
+    - F4
+  facts:
+    undisputed:
+    - id: F1
+      description: Il Tribunale di Varese ha ingiunto all'impresa ticinese B._ Sagl
+        di pagare alla società italiana A._ Srl la somma di fr. 168'000.-- per il
+        noleggio di un macchinario.
+      evidence:
+      - DOC1
+    - id: F2
+      description: Il Tribunale di Varese ha respinto con sentenza del 3 aprile 2009
+        l'opposizione presentata dalla B._ Sagl contro il decreto ingiuntivo.
+      evidence:
+      - DOC1
+    - id: F3
+      description: Il Pretore del distretto di Lugano ha accolto l'istanza della A._
+        Srl di dichiarare esecutivi in Svizzera il decreto ingiuntivo e la sentenza
+        del 3 aprile 2009 in base alla Convenzione di Lugano.
+      evidence:
+      - DOC1
+    - id: F4
+      description: Il Tribunale di appello del Cantone Ticino ha accolto la domanda
+        di sospensione della procedura di opposizione all'exequatur fino all'evasione
+        dell'appello pendente innanzi alla Corte di Milano.
+      evidence:
+      - DOC1
+    disputed:
+    - id: D1
+      description: Se il Tribunale cantonale abbia violato la Convenzione di Lugano
+        sospendendo la procedura di exequatur basandosi sulla mera possibilità di
+        esito favorevole dell'appello pendente in Italia.
+      depends_on_facts:
+      - F1
+      - F2
+      - F3
+      - F4
+      positions:
+        ricorrente: La Convenzione di Lugano vieta al Tribunale dello Stato richiesto
+          di riesaminare la decisione straniera e la sospensione non è giustificata
+          dal solo fatto che l'appello non sia privo di possibilità di esito favorevole;
+          l'esecuzione deve essere concessa anche per sentenze provvisoriamente esecutive.
+        controparte: La decisione impugnata rientra nel libero apprezzamento della
+          Corte cantonale ed è conforme alla dottrina svizzera; l'appello pendente
+          in Italia non è privo di possibilità di esito favorevole.
+  legal_texts:
+  - id: norm_1
+    norm: art. 37 CLug
+    text: '[Testo da fedlex.admin.ch: art. 37 CLug]'
+  - id: norm_2
+    norm: art. 38 cpv. 1 CLug
+    text: '[Testo da fedlex.admin.ch: art. 38 cpv. 1 CLug]'
+  - id: norm_3
+    norm: art. 93 cpv. 1 lett. a LTF
+    text: '[Testo da fedlex.admin.ch: art. 93 cpv. 1 lett. a LTF]'
+  - id: norm_4
+    norm: Convenzione di Lugano del 16 settembre 1988 (RS 0.275.11)
+    text: '[Testo da fedlex.admin.ch: Convenzione di Lugano del 16 settembre 1988
+      (RS 0.275.11)]'
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: Violazione della Convenzione di Lugano per riesame della decisione
+          straniera e sospensione ingiustificata.
+        direction: annullare la decisione cantonale e rejezione dell'opposizione
+        references_facts:
+        - F1
+        - F2
+        - F3
+        - F4
+        - D1
+      - id: SEED_ARG2
+        claim: La Convenzione di Lugano prevede l'esecuzione anche di sentenze provvisoriamente
+          esecutive.
+        direction: annullare la decisione cantonale
+        references_facts:
+        - F3
+        - F4
+        - D1
+      controparte:
+      - id: SEED_RARG1
+        claim: La decisione è conforme alla dottrina svizzera e rientra nel libero
+          apprezzamento della Corte cantonale.
+        direction: respingere il ricorso
+        references_facts:
+        - F4
+        - D1
+      - id: SEED_RARG2
+        claim: Il ricorso è irricevibile per assenza di danno irreparabile.
+        direction: dichiarare il ricorso irricevibile
+        references_facts:
+        - D1
+  timeline:
+  - date: '2006-02-27'
+    event: Decreto ingiuntivo del Tribunale di Varese
+  - date: '2009-04-03'
+    event: Sentenza del Tribunale di Varese che respinge l'opposizione
+  - date: '2009-11-06'
+    event: Decisione del Pretore di Lugano che dichiara esecutivi i provvedimenti
+      italiani
+  - date: '2009-12-03'
+    event: Opposizione all'exequatur presentata da B._ Sagl
+  - date: '2010-03-24'
+    event: Decisione del Tribunale di appello del Cantone Ticino che sospende la procedura
+  - date: '2010-04-28'
+    event: Ricorso in materia civile presentato da A._ Srl
+  - date: '2010-06-18'
+    event: Risposta di B._ Sagl
+  id: ch-3046

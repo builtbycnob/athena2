@@ -1,0 +1,172 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione dell'ampiezza dell'obbligo di informazione e consegna
+      della documentazione bancaria da parte di una banca a un erede in caso di successione,
+      con particolare riguardo alle relazioni indirette e alle entità giuridiche estere.
+  evidence:
+  - id: DOC1
+    type: atto_pubblico
+    description: Testamento olografo del 21 febbraio 1997 pubblicato il 19 ottobre
+      2007
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F2
+  - id: DOC2
+    type: precetto_esecutivo_civile
+    description: Precetto esecutivo civile del 13 marzo 2008
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F3
+  - id: DOC3
+    type: sentenza
+    description: Sentenza del Pretore del Distretto di Lugano del 5 giugno 2008
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F5
+  - id: DOC4
+    type: sentenza
+    description: Sentenza della II Camera civile del Tribunale d'appello del Cantone
+      Ticino del 26 giugno 2009
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F6
+  facts:
+    undisputed:
+    - id: F1
+      description: A. C.A., cittadino italiano con ultimo domicilio a Collina d'Oro
+        (Cantone Ticino), è deceduto a Milano il 14 settembre 2007, lasciando tre
+        figli e la vedova di seconde nozze A.A._.
+      evidence: []
+    - id: F2
+      description: Il 19 ottobre 2007 è stato pubblicato davanti alla Pretura di Lugano,
+        sezione 4, il testamento olografo datato 21 febbraio 1997 nel quale il defunto
+        designava eredi i tre figli in parti uguali.
+      evidence: []
+    - id: F3
+      description: Con precetto esecutivo civile del 13 marzo 2008 A.A._ ha intimato
+        a B._ SA di consegnare documentazione completa concernente il conto xxx e
+        qualsiasi altra relazione diretta intestata o cointestata al defunto, nonché
+        informazioni su relazioni indirette e entità giuridiche.
+      evidence: []
+    - id: F4
+      description: La banca B._ SA si è opposta al precetto esecutivo civile.
+      evidence: []
+    - id: F5
+      description: Con sentenza del 5 giugno 2008 il Pretore del Distretto di Lugano,
+        sezione 1, ha respinto l'opposizione limitatamente alle informazioni concernenti
+        il conto xxx e altre relazioni bancarie intestate o cointestate al defunto,
+        mantenendo l'opposizione per il resto.
+      evidence: []
+    - id: F6
+      description: Con sentenza del 26 giugno 2009 la II Camera civile del Tribunale
+        d'appello del Cantone Ticino ha respinto le due appellazioni.
+      evidence: []
+    disputed:
+    - id: D1
+      description: Estensione dell'obbligo della banca di fornire informazioni e documentazione
+        relative a relazioni indirette, rapporti fiduciari, società, fondazioni, Anstalt
+        e trust del defunto.
+      depends_on_facts:
+      - F3
+      - F4
+      - F5
+      positions:
+        ricorrente: A.A._ richiede la reiezione integrale dell'opposizione della banca,
+          chiedendo l'accesso a tutte le relazioni indirette e le informazioni necessarie
+          per identificare i gestori.
+        controparte: B._ SA sostiene che l'obbligo di consegna si limiti alle relazioni
+          dirette (intestate o cointestate) e chiede la conferma della propria opposizione
+          per il resto.
+  legal_texts: []
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: La banca deve essere obbligata a fornire tutte le informazioni e la
+          documentazione relative a relazioni indirette e entità giuridiche in cui
+          il defunto avesse diritti economici.
+        direction: a favore dell'appellante
+        references_facts:
+        - F3
+        - D1
+      controparte:
+      - id: SEED_RARG1
+        claim: L'obbligo di consegna si limita alle relazioni dirette intestate o
+          cointestate al defunto; le relazioni indirette e le entità giuridiche non
+          rientrano nell'ambito del precetto esecutivo.
+        direction: a favore della controparte
+        references_facts:
+        - F4
+        - D1
+  timeline:
+  - date: '1997-02-21'
+    event: Data del testamento olografo
+  - date: '2007-09-14'
+    event: Decesso di A. C.A.
+  - date: '2007-10-19'
+    event: Pubblicazione del testamento davanti alla Pretura di Lugano
+  - date: '2008-03-13'
+    event: Intimazione del precetto esecutivo civile da parte di A.A._
+  - date: '2008-06-05'
+    event: Sentenza del Pretore del Distretto di Lugano
+  - date: '2009-06-26'
+    event: Sentenza della II Camera civile del Tribunale d'appello del Cantone Ticino
+  - date: '2009-09-04'
+    event: Ricorso in materia civile davanti al Tribunale federale
+  - date: '2009-10-16'
+    event: Osservazioni della banca B._ SA
+  id: ch-2874

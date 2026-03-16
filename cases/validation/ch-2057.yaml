@@ -1,0 +1,225 @@
+case:
+  jurisdiction:
+    country: CH
+    court: bundesgericht
+    venue: ti
+    applicable_law:
+    - Legge sul Tribunale federale (LTF)
+    key_precedents: []
+    procedural_rules:
+      rite: ricorso_tribunale_federale
+      phases:
+      - ricorso
+      - risposta
+      - deliberazione
+      - sentenza
+      allowed_moves:
+        appellant:
+        - memoria_ricorso
+        - replica
+        - produzione_documenti
+        respondent:
+        - risposta
+        - duplica
+        - produzione_documenti
+  key_precedents: []
+  parties:
+  - id: ricorrente
+    role: appellant
+    type: persona_fisica
+    objectives:
+      primary: accoglimento_ricorso
+      subordinate: rinvio_istanza_inferiore
+  - id: controparte
+    role: respondent
+    type: autorita_cantonale
+    objectives:
+      primary: rigetto_ricorso
+      subordinate: conferma_decisione_impugnata
+  stakes:
+    current_sanction:
+      norm: decisione impugnata
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    alternative_sanction:
+      norm: esito favorevole ricorrente
+      fine_range:
+      - 0
+      - 0
+      points_deducted: 0
+    litigation_cost_estimate: 2000
+    non_monetary: Determinazione della legittimità del licenziamento di un dipendente
+      bancario che ha segnalato irregolarità (whistleblowing) e valutazione delle
+      modalità di gestione delle indagini interne da parte della banca.
+  evidence:
+  - id: DOC1
+    type: sentenza_pretorile
+    description: Sentenza del Pretore del Distretto di Lugano del 12 dicembre 2006
+      che ha accolto l'istanza di B.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F8
+  - id: DOC2
+    type: sentenza_appello
+    description: Sentenza della II Camera civile del Tribunale d'appello del Cantone
+      Ticino del 12 novembre 2007 che ha respinto l'impugnativa della banca.
+    produced_by: controparte
+    admissibility: uncontested
+    supports_facts:
+    - F9
+  - id: DOC3
+    type: documenti_interrogatorio
+    description: Verbale dell'interrogatorio del 3 marzo 2005 in cui B. ha negato
+      di aver parlato con terzi.
+    produced_by: ricorrente
+    admissibility: uncontested
+    supports_facts:
+    - F5
+  facts:
+    undisputed:
+    - id: F1
+      description: A. B. ha lavorato alle dipendenze della succursale luganese di
+        A._ dal 1° gennaio 2000 al 30 giugno 2005, in qualità di responsabile del
+        traffico dei pagamenti e della cassa.
+      evidence: []
+    - id: F2
+      description: Agli inizi del 2005, B. ha riscontrato delle irregolarità in alcuni
+        ordini di pagamento effettuati dal direttore della succursale C._ e ha confidato
+        la sua scoperta all'avv. D._, incaricato dalla banca di tutelare i suoi interessi.
+      evidence: []
+    - id: F3
+      description: L'avv. D._ ha comunicato le informazioni ricevute da B._ ai membri
+        della direzione generale, i quali le hanno riferite al direttore della succursale
+        C._.
+      evidence: []
+    - id: F4
+      description: Le verifiche interne della banca non hanno confermato i sospetti
+        di B., poiché i clienti contattati si sono detti contenti degli investimenti.
+      evidence: []
+    - id: F5
+      description: Il 3 marzo 2005, B. è stato interrogato dalla banca e ha negato
+        di aver parlato con persone esterne alla banca di questioni coperte dal segreto
+        bancario.
+      evidence: []
+    - id: F6
+      description: Il 7 marzo 2005, C._ ha comunicato a B. la decisione della banca
+        di licenziarlo con effetto al 30 giugno 2005, esonerandolo immediatamente
+        dall'obbligo di presenza.
+      evidence: []
+    - id: F7
+      description: Il 23 novembre 2005, la stampa ha pubblicato la notizia dell'arresto
+        di C._ per sospette malversazioni.
+      evidence: []
+    - id: F8
+      description: Il Pretore del Distretto di Lugano ha condannato la banca al pagamento
+        di fr. 30'000.-- a titolo di indennità per licenziamento abusivo il 12 dicembre
+        2006.
+      evidence: []
+    - id: F9
+      description: La II Camera civile del Tribunale d'appello del Cantone Ticino
+        ha respinto l'impugnativa della banca il 12 novembre 2007, confermando il
+        licenziamento abusivo.
+      evidence: []
+    disputed:
+    - id: D1
+      description: La legittimità del licenziamento di B. e la correttezza del suo
+        comportamento nel rivelare informazioni coperte da segreto bancario.
+      depends_on_facts:
+      - F1
+      - F2
+      - F3
+      - F5
+      - F6
+      positions:
+        ricorrente: La banca sostiene che il licenziamento sia giustificato perché
+          B. ha violato il segreto bancario rivelando fatti all'avv. D._ e ha mentito
+          durante l'indagine interna negando di averlo fatto.
+        controparte: B. sostiene che la sua segnalazione sia avvenuta in buona fede
+          e nell'interesse della banca, rispettando la proporzionalità, e che non
+          abbia mentito poiché l'avv. D._ aveva una posizione speciale.
+    - id: D2
+      description: La modalità e le motivazioni del licenziamento, in particolare
+        se la banca abbia agito con modalità censurabili e ritorsive.
+      depends_on_facts:
+      - F3
+      - F5
+      - F6
+      - F7
+      positions:
+        ricorrente: La banca non ha agito con modalità censurabili e il licenziamento
+          era giustificato dalla perdita di fiducia.
+        controparte: La banca ha gestito le indagini con superficialità, ha coinvolto
+          il sospettato C._ nelle indagini interne, ha sottoposto B. a un interrogatorio
+          vessatorio e ha licenziato B. immediatamente senza proteggere i suoi interessi.
+  legal_texts:
+  - id: norm_1
+    norm: art. 336 CO
+    text: '[Testo da fedlex.admin.ch: art. 336 CO]'
+  - id: norm_2
+    norm: art. 97 LTF
+    text: '[Testo da fedlex.admin.ch: art. 97 LTF]'
+  seed_arguments:
+    by_party:
+      ricorrente:
+      - id: SEED_ARG1
+        claim: Il licenziamento è legittimo in quanto B. ha violato il segreto bancario
+          e ha mentito durante le indagini interne, venendo meno al dovere di fedeltà.
+        direction: appello
+        references_facts:
+        - F5
+        - F6
+        - D1
+      - id: SEED_ARG2
+        claim: La perdita di fiducia nel dipendente è legittima motivazione per il
+          licenziamento, indipendentemente dalla fondatezza dei sospetti iniziali.
+        direction: appello
+        references_facts:
+        - F2
+        - F3
+        - D2
+      controparte:
+      - id: SEED_RARG1
+        claim: La segnalazione è avvenuta in buona fede, nell'interesse della banca
+          e nel rispetto della proporzionalità, non violando il segreto bancario data
+          la posizione speciale dell'avv. D._.
+        direction: difesa
+        references_facts:
+        - F2
+        - F3
+        - D1
+      - id: SEED_RARG2
+        claim: La banca ha agito con modalità censurabili, coinvolgendo il sospettato
+          nelle indagini, sottoponendo il dipendente a interrogatorio vessatorio e
+          licenziandolo immediatamente senza proteggere i suoi interessi.
+        direction: difesa
+        references_facts:
+        - F3
+        - F5
+        - F6
+        - D2
+  timeline:
+  - date: '2000-01-01'
+    event: Inizio del rapporto di lavoro tra B. e A._.
+  - date: '2005-02-00'
+    event: B. riscontra irregolarità e le confida all'avv. D._.
+  - date: '2005-03-03'
+    event: Interrogatorio di B. da parte della banca; negazione di aver parlato con
+      terzi.
+  - date: '2005-03-07'
+    event: Comunicazione del licenziamento di B. con effetto immediato.
+  - date: '2005-03-08'
+    event: B. contesta il licenziamento tramite patrocinatore.
+  - date: '2005-11-23'
+    event: Pubblicazione sulla stampa dell'arresto di C._.
+  - date: '2005-12-23'
+    event: B. convene A._ dinanzi alla Pretura di Lugano.
+  - date: '2006-12-12'
+    event: Sentenza del Pretore che condanna la banca al pagamento di fr. 30'000.--.
+  - date: '2007-11-12'
+    event: Sentenza della Corte d'appello che respinge l'impugnativa della banca.
+  - date: '2008-02-11'
+    event: Risposta di B. al ricorso in materia civile dinanzi al Tribunale federale.
+  id: ch-2057
