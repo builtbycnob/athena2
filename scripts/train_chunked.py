@@ -308,34 +308,12 @@ def load_checkpoint(path: Path, model, optimizer, scheduler, ema):
 # ── Training ──────────────────────────────────────────────────────
 
 def load_encoder(encoder_name: str):
-    """Load encoder with LayerNorm gamma/beta remapping if needed."""
-    from transformers import AutoModel, AutoConfig
+    """Load pre-trained encoder via AutoModel."""
+    from transformers import AutoModel
 
-    if Path(encoder_name).exists():
-        return AutoModel.from_pretrained(encoder_name)
-
-    config = AutoConfig.from_pretrained(encoder_name)
-    encoder = AutoModel.from_config(config)
-
-    from huggingface_hub import hf_hub_download
-    try:
-        from safetensors.torch import load_file as load_safetensors
-        weight_path = hf_hub_download(encoder_name, "model.safetensors")
-        pretrained = load_safetensors(weight_path)
-    except Exception:
-        try:
-            weight_path = hf_hub_download(encoder_name, "pytorch_model.bin")
-            pretrained = torch.load(weight_path, map_location="cpu", weights_only=True)
-        except Exception:
-            return AutoModel.from_pretrained(encoder_name)
-
-    remapped = {
-        k.replace(".gamma", ".weight").replace(".beta", ".bias"): v
-        for k, v in pretrained.items()
-    }
-    missing, unexpected = encoder.load_state_dict(remapped, strict=False)
-    if missing:
-        logger.info(f"Encoder missing keys (expected for classification head): {len(missing)}")
+    encoder = AutoModel.from_pretrained(encoder_name)
+    n_params = sum(p.numel() for p in encoder.parameters())
+    logger.info(f"Encoder loaded: {encoder_name}, {n_params:,} params")
     return encoder
 
 
@@ -468,8 +446,9 @@ def train(args):
 
     # ── Mixed precision ───────────────────────────────────────────
     use_amp = device in ("mps", "cuda")
-    amp_dtype = torch.float16
-    scaler = torch.amp.GradScaler(enabled=(device == "cuda"))
+    amp_dtype = torch.bfloat16 if device == "cuda" else torch.float16
+    use_scaler = device == "cuda" and amp_dtype == torch.float16
+    scaler = torch.amp.GradScaler(enabled=use_scaler)
     logger.info(f"Mixed precision: {use_amp} (dtype={amp_dtype})")
 
     # ── Resume from checkpoint ────────────────────────────────────
@@ -532,14 +511,14 @@ def train(args):
                 loss = verdict_loss + 0.2 * law_area_loss
                 loss = loss / args.grad_accum
 
-            if device == "cuda":
+            if use_scaler:
                 scaler.scale(loss).backward()
             else:
                 loss.backward()
 
             if (step + 1) % args.grad_accum == 0:
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-                if device == "cuda":
+                if use_scaler:
                     scaler.step(optimizer)
                     scaler.update()
                 else:
@@ -593,7 +572,7 @@ def train(args):
                 with torch.autocast(device_type=device, dtype=amp_dtype, enabled=use_amp):
                     outputs = model(input_ids, attention_mask, chunk_counts)
                 probs = torch.softmax(outputs["verdict_logits"], dim=-1)[:, 1]
-                val_probs_list.extend(probs.cpu().numpy())
+                val_probs_list.extend(probs.cpu().float().numpy())
                 val_labels_list.extend(batch["labels"].numpy())
 
         ema.restore(model)
@@ -633,9 +612,10 @@ def train(args):
                 logger.info(f"Early stopping at epoch {epoch+1}")
                 break
 
-        # End-of-epoch checkpoint
-        save_checkpoint(ckpt_path, model, optimizer, scheduler, ema,
-                        epoch, len(train_loader), global_step, best_f1, patience_counter)
+        # End-of-epoch checkpoint (skip if --no-checkpoint)
+        if args.ckpt_steps < 999999:
+            save_checkpoint(ckpt_path, model, optimizer, scheduler, ema,
+                            epoch, len(train_loader), global_step, best_f1, patience_counter)
 
     elapsed = time.time() - t0
     logger.info(f"\nTraining complete in {elapsed/3600:.1f}h, best val F1={best_f1:.4f}")
@@ -666,8 +646,8 @@ def train(args):
                 outputs = model(input_ids, attention_mask, chunk_counts)
             logits = outputs["verdict_logits"]
             probs = torch.softmax(logits, dim=-1)[:, 1]
-            test_logits_list.extend(logits.cpu().numpy())
-            test_probs_list.extend(probs.cpu().numpy())
+            test_logits_list.extend(logits.cpu().float().numpy())
+            test_probs_list.extend(probs.cpu().float().numpy())
             test_labels_list.extend(batch["labels"].numpy())
 
             if (i + 1) % 500 == 0:
